@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -15,27 +17,44 @@ class PatsspaceBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.md),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: AppTab.values.map((tab) {
-          final selected = selectedTab == tab;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onTabSelected(tab),
-            child: SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                tab.icon,
-                color: selected ? AppColors.charcoal : AppColors.grayWarm,
-                size: selected ? 28 : 26,
-              ),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.08),
+          ),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.screenHorizontal,
+              AppSpacing.xs,
+              AppSpacing.screenHorizontal,
+              bottomInset + AppSpacing.xs,
             ),
-          );
-        }).toList(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: AppTab.values.map((tab) {
+                final selected = selectedTab == tab;
+
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTabSelected(tab),
+                  child: SizedBox(
+                    width: 52,
+                    height: 44,
+                    child: Icon(
+                      tab.icon,
+                      color: selected ? AppColors.charcoal : AppColors.grayWarm,
+                      size: selected ? 28 : 26,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
       ),
     );
   }

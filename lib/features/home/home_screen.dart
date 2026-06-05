@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
 import 'package:pats_space/features/focus/controllers/focus_character_animator.dart';
+import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
 import 'package:pats_space/features/focus/focus_animation_catalog.dart';
 import 'package:pats_space/features/focus/models/focus_animation_spec.dart';
@@ -13,7 +14,9 @@ import 'package:pats_space/features/home/widgets/patsspace_character_view.dart';
 import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.historyController});
+
+  final FocusHistoryController historyController;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,7 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _timerController = FocusTimerController()..addListener(_syncAnimation);
+    _timerController = FocusTimerController(
+      onFocusSessionCompleted: widget.historyController.addRecord,
+    )..addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
   }
 
@@ -52,10 +57,14 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxHeight < 720;
-            final tight = constraints.maxHeight < 650;
+            final bottomNavigationInset =
+                MediaQuery.paddingOf(context).bottom + AppSpacing.xs * 2 + 44;
+            final availableHeight =
+                constraints.maxHeight - bottomNavigationInset;
+            final compact = availableHeight < 720;
+            final tight = availableHeight < 650;
             final topSpace =
-                (constraints.maxHeight *
+                (availableHeight *
                         (tight
                             ? 0.16
                             : compact
@@ -72,42 +81,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? AppSpacing.xxl * 1.25
                 : AppSpacing.xxl * 1.75;
 
-            return Column(
-              children: [
-                SizedBox(height: topSpace),
-                FocusModeLabel(
-                  label: _focusLabel,
-                  accentColor: _timerController.settings.accentColor.color,
-                  onPressed: _settingsAction,
-                ),
-                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.lg),
-                FocusTimerPreview(
-                  timeLabel: _formatTime(_timerController.remainingSeconds),
-                  onPressed: _settingsAction,
-                ),
-                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-                FocusSessionDots(states: _timerController.sessionStatuses),
-                SizedBox(height: characterGap),
-                PatsspaceCharacterView(
-                  compact: compact,
-                  assetPath: _currentCharacterAsset,
-                  visualScale: _currentAnimationSpec.visualScale,
-                  alignment: _currentAnimationSpec.alignment,
-                  verticalOffset: _currentAnimationSpec.verticalOffset,
-                ),
-                SizedBox(height: compact ? 0 : AppSpacing.xxs),
-                _FocusControls(
-                  active: _timerController.active,
-                  running: _timerController.running,
-                  canSkip:
-                      _timerController.phase != FocusSessionPhase.stopwatch,
-                  onSkip: _timerController.skip,
-                  onPlayPause: _timerController.toggle,
-                  onRestart: _timerController.restartCurrentSession,
-                  onCancel: _confirmCancelFocusRound,
-                ),
-                const Spacer(),
-              ],
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomNavigationInset),
+              child: Column(
+                children: [
+                  SizedBox(height: topSpace),
+                  FocusModeLabel(
+                    label: _focusLabel,
+                    accentColor: _timerController.settings.accentColor.color,
+                    onPressed: _settingsAction,
+                  ),
+                  SizedBox(height: compact ? AppSpacing.sm : AppSpacing.lg),
+                  FocusTimerPreview(
+                    timeLabel: _formatTime(_timerController.remainingSeconds),
+                    onPressed: _settingsAction,
+                  ),
+                  SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+                  FocusSessionDots(states: _timerController.sessionStatuses),
+                  SizedBox(height: characterGap),
+                  PatsspaceCharacterView(
+                    compact: compact,
+                    assetPath: _currentCharacterAsset,
+                    visualScale: _currentAnimationSpec.visualScale,
+                    alignment: _currentAnimationSpec.alignment,
+                    verticalOffset: _currentAnimationSpec.verticalOffset,
+                  ),
+                  SizedBox(height: compact ? 0 : AppSpacing.xxs),
+                  _FocusControls(
+                    active: _timerController.active,
+                    running: _timerController.running,
+                    canSkip:
+                        _timerController.phase != FocusSessionPhase.stopwatch,
+                    onSkip: _timerController.skip,
+                    onPlayPause: _timerController.toggle,
+                    onRestart: _timerController.restartCurrentSession,
+                    onCancel: _confirmCancelFocusRound,
+                  ),
+                  const Spacer(),
+                ],
+              ),
             );
           },
         );

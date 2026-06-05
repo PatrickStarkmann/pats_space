@@ -5,14 +5,17 @@ import 'package:pats_space/features/focus/models/focus_accent_color.dart';
 import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
+import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_session_status.dart';
+import 'package:pats_space/features/focus/models/focus_tag.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 
 class FocusTimerController extends ChangeNotifier {
   FocusTimerController({
     FocusTimerSettings initialSettings = defaultSettings,
     this.tickStep = const Duration(seconds: 1),
+    this.onFocusSessionCompleted,
   }) : _settings = initialSettings,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
@@ -32,6 +35,7 @@ class FocusTimerController extends ChangeNotifier {
   );
 
   final Duration tickStep;
+  final ValueChanged<FocusSessionRecord>? onFocusSessionCompleted;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
@@ -39,6 +43,7 @@ class FocusTimerController extends ChangeNotifier {
   bool _paused = false;
   int _remainingSeconds;
   int _completedSessions = 0;
+  DateTime? _focusStartedAt;
 
   FocusTimerSettings get settings => _settings;
   FocusSessionPhase get phase => _phase;
@@ -148,6 +153,7 @@ class FocusTimerController extends ChangeNotifier {
     _ticker?.cancel();
     _phase = FocusSessionPhase.focus;
     _paused = false;
+    _focusStartedAt = DateTime.now();
     if (_completedSessions >= _settings.sessionsPerRound) {
       _completedSessions = 0;
     }
@@ -160,6 +166,7 @@ class FocusTimerController extends ChangeNotifier {
     _ticker?.cancel();
     _phase = FocusSessionPhase.stopwatch;
     _paused = false;
+    _focusStartedAt = DateTime.now();
     _remainingSeconds = 0;
     _startTicker();
     notifyListeners();
@@ -179,6 +186,7 @@ class FocusTimerController extends ChangeNotifier {
 
   void _startBreak() {
     _ticker?.cancel();
+    _focusStartedAt = null;
     final isLongBreak =
         (_completedSessions + 1) % _settings.longBreakInterval == 0;
     _phase = FocusSessionPhase.breakTime;
@@ -218,7 +226,7 @@ class FocusTimerController extends ChangeNotifier {
 
     if (_remainingSeconds <= 1) {
       if (_phase == FocusSessionPhase.focus) {
-        _startBreak();
+        _completeFocus();
       } else if (_phase == FocusSessionPhase.breakTime) {
         _completeBreak();
       }
@@ -229,10 +237,39 @@ class FocusTimerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _completeFocus() {
+    _recordCompletedFocusSession();
+    _startBreak();
+  }
+
+  void _recordCompletedFocusSession() {
+    final completedAt = DateTime.now();
+    final startedAt =
+        _focusStartedAt ??
+        completedAt.subtract(Duration(minutes: _settings.focusMinutes));
+
+    onFocusSessionCompleted?.call(
+      FocusSessionRecord(
+        id: completedAt.microsecondsSinceEpoch.toString(),
+        tag: FocusTag(
+          name: _settings.focusLabel,
+          accentColor: _settings.accentColor,
+          badgeIcon: _settings.badgeIcon,
+        ),
+        mode: FocusMode.pomodoro,
+        focusDuration: Duration(minutes: _settings.focusMinutes),
+        startedAt: startedAt,
+        completedAt: completedAt,
+        animationPair: _settings.animationPair,
+      ),
+    );
+  }
+
   void _resetToIdleWithoutNotify() {
     _ticker?.cancel();
     _phase = FocusSessionPhase.idle;
     _paused = false;
+    _focusStartedAt = null;
     _remainingSeconds = isStopwatch ? 0 : _settings.focusMinutes * 60;
   }
 }
