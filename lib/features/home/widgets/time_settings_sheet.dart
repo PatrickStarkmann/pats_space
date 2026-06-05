@@ -1,50 +1,25 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
-import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
-import 'package:pats_space/core/theme/app_text_styles.dart';
-import 'package:pats_space/core/widgets/segmented_selector.dart';
+import 'package:pats_space/features/focus/models/focus_accent_color.dart';
+import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
+import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
+import 'package:pats_space/features/focus/models/focus_mode.dart';
+import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
+import 'package:pats_space/features/home/widgets/time_settings/animation_pair_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/appearance_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/break_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/focus_mode_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/pomodoro_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/time_settings_list_picker_page.dart';
+import 'package:pats_space/features/home/widgets/time_settings/time_settings_header.dart';
+import 'package:pats_space/features/home/widgets/time_settings/time_settings_value_picker_page.dart';
 
-class TimeSettings {
-  const TimeSettings({
-    required this.mode,
-    required this.focusMinutes,
-    required this.shortBreakMinutes,
-    required this.longBreakMinutes,
-    required this.longBreakInterval,
-  });
-
-  final FocusMode mode;
-  final int focusMinutes;
-  final int shortBreakMinutes;
-  final int longBreakMinutes;
-  final int longBreakInterval;
-
-  TimeSettings copyWith({
-    FocusMode? mode,
-    int? focusMinutes,
-    int? shortBreakMinutes,
-    int? longBreakMinutes,
-    int? longBreakInterval,
-  }) {
-    return TimeSettings(
-      mode: mode ?? this.mode,
-      focusMinutes: focusMinutes ?? this.focusMinutes,
-      shortBreakMinutes: shortBreakMinutes ?? this.shortBreakMinutes,
-      longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
-      longBreakInterval: longBreakInterval ?? this.longBreakInterval,
-    );
-  }
-}
-
-enum FocusMode { pomodoro, stopwatch }
-
-Future<TimeSettings?> showTimeSettingsSheet({
+Future<FocusTimerSettings?> showTimeSettingsSheet({
   required BuildContext context,
-  required TimeSettings settings,
+  required FocusTimerSettings settings,
 }) {
-  return showModalBottomSheet<TimeSettings>(
+  return showModalBottomSheet<FocusTimerSettings>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.transparent,
@@ -55,14 +30,15 @@ Future<TimeSettings?> showTimeSettingsSheet({
 class TimeSettingsSheet extends StatefulWidget {
   const TimeSettingsSheet({super.key, required this.initialSettings});
 
-  final TimeSettings initialSettings;
+  final FocusTimerSettings initialSettings;
 
   @override
   State<TimeSettingsSheet> createState() => _TimeSettingsSheetState();
 }
 
 class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
-  late TimeSettings _settings = widget.initialSettings;
+  late FocusTimerSettings _settings = widget.initialSettings;
+  _TimeSettingsDetail? _detail;
 
   @override
   Widget build(BuildContext context) {
@@ -85,377 +61,267 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
             color: Color(0xFFF5F4FA),
             borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
           ),
-          child: Column(
-            children: [
-              const _SheetGrabber(),
-              _SheetHeader(
-                compact: compact,
-                onCancel: () => Navigator.of(context).pop(),
-                onDone: () => Navigator.of(context).pop(_settings),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      SizedBox(height: contentGap),
-                      _ModeCard(
-                        mode: _settings.mode,
-                        onModeChanged: (mode) {
-                          setState(() {
-                            _settings = _settings.copyWith(mode: mode);
-                          });
-                        },
-                      ),
-                      SizedBox(height: contentGap),
-                      if (_settings.mode == FocusMode.pomodoro) ...[
-                        _PomodoroCard(
-                          compact: compact,
-                          focusMinutes: _settings.focusMinutes,
-                          onChanged: (value) {
-                            setState(() {
-                              _settings = _settings.copyWith(
-                                focusMinutes: value,
-                              );
-                            });
-                          },
-                        ),
-                        SizedBox(height: contentGap),
-                        _BreakSettingsCard(
-                          settings: _settings,
-                          onChanged: (settings) {
-                            setState(() => _settings = settings);
-                          },
-                        ),
-                      ] else
-                        const _StopwatchCard(),
-                    ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeOutCubic,
+            child: _detail == null
+                ? _OverviewPage(
+                    key: const ValueKey('overview'),
+                    compact: compact,
+                    contentGap: contentGap,
+                    settings: _settings,
+                    onDone: () => Navigator.of(context).pop(_settings),
+                    onCancel: () => Navigator.of(context).pop(),
+                    onModeChanged: (mode) {
+                      setState(() {
+                        _settings = _settings.copyWith(mode: mode);
+                      });
+                    },
+                    onFocusMinutesChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(focusMinutes: value);
+                      });
+                    },
+                    onAccentColorChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(accentColor: value);
+                      });
+                    },
+                    onBadgeIconChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(badgeIcon: value);
+                      });
+                    },
+                    onAnimationPairChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(animationPair: value);
+                      });
+                    },
+                    onDetailSelected: (detail) {
+                      setState(() => _detail = detail);
+                    },
+                  )
+                : _DetailPage(
+                    key: ValueKey(_detail),
+                    compact: compact,
+                    detail: _detail!,
+                    settings: _settings,
+                    onBack: () => setState(() => _detail = null),
+                    onChanged: _updateDetailValue,
                   ),
-                ),
-              ),
-            ],
           ),
         ),
       ),
     );
   }
-}
 
-class _SheetGrabber extends StatelessWidget {
-  const _SheetGrabber();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.graySoft,
-        borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
-      ),
-      child: SizedBox(width: 44, height: 7),
-    );
+  void _updateDetailValue(int value) {
+    setState(() {
+      _settings = switch (_detail) {
+        _TimeSettingsDetail.sessions => _settings.copyWith(
+          sessionsPerRound: value,
+        ),
+        _TimeSettingsDetail.longBreakInterval => _settings.copyWith(
+          longBreakInterval: value,
+        ),
+        _TimeSettingsDetail.shortBreak => _settings.copyWith(
+          shortBreakMinutes: value,
+        ),
+        _TimeSettingsDetail.longBreak => _settings.copyWith(
+          longBreakMinutes: value,
+        ),
+        null => _settings,
+      };
+    });
   }
 }
 
-class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({
+class _OverviewPage extends StatelessWidget {
+  const _OverviewPage({
+    super.key,
     required this.compact,
-    required this.onCancel,
+    required this.contentGap,
+    required this.settings,
     required this.onDone,
+    required this.onCancel,
+    required this.onModeChanged,
+    required this.onFocusMinutesChanged,
+    required this.onAccentColorChanged,
+    required this.onBadgeIconChanged,
+    required this.onAnimationPairChanged,
+    required this.onDetailSelected,
   });
 
   final bool compact;
-  final VoidCallback onCancel;
+  final double contentGap;
+  final FocusTimerSettings settings;
   final VoidCallback onDone;
+  final VoidCallback onCancel;
+  final ValueChanged<FocusMode> onModeChanged;
+  final ValueChanged<int> onFocusMinutesChanged;
+  final ValueChanged<FocusAccentColor> onAccentColorChanged;
+  final ValueChanged<FocusBadgeIcon> onBadgeIconChanged;
+  final ValueChanged<FocusAnimationPair> onAnimationPairChanged;
+  final ValueChanged<_TimeSettingsDetail> onDetailSelected;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: compact ? 58 : 72,
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onCancel,
-            icon: const Icon(CupertinoIcons.xmark, size: 30),
-          ),
-          Expanded(
-            child: Text(
-              'Time Settings',
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.title.copyWith(fontSize: compact ? 24 : 28),
+    return Column(
+      children: [
+        const TimeSettingsGrabber(),
+        TimeSettingsHeader(
+          compact: compact,
+          onCancel: onCancel,
+          onDone: onDone,
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                SizedBox(height: contentGap),
+                FocusModeSettingsCard(
+                  mode: settings.mode,
+                  onModeChanged: onModeChanged,
+                ),
+                SizedBox(height: contentGap),
+                AppearanceSettingsCard(
+                  settings: settings,
+                  onAccentColorChanged: onAccentColorChanged,
+                  onBadgeIconChanged: onBadgeIconChanged,
+                ),
+                SizedBox(height: contentGap),
+                if (settings.mode == FocusMode.pomodoro) ...[
+                  PomodoroSettingsCard(
+                    compact: compact,
+                    focusMinutes: settings.focusMinutes,
+                    onChanged: onFocusMinutesChanged,
+                  ),
+                  SizedBox(height: contentGap),
+                ],
+                BreakSettingsCard(
+                  settings: settings,
+                  onSessionsPressed: () {
+                    onDetailSelected(_TimeSettingsDetail.sessions);
+                  },
+                  onLongBreakIntervalPressed: () {
+                    onDetailSelected(_TimeSettingsDetail.longBreakInterval);
+                  },
+                  onShortBreakPressed: () {
+                    onDetailSelected(_TimeSettingsDetail.shortBreak);
+                  },
+                  onLongBreakPressed: () {
+                    onDetailSelected(_TimeSettingsDetail.longBreak);
+                  },
+                ),
+                SizedBox(height: contentGap),
+                AnimationPairSettingsCard(
+                  selectedPair: settings.animationPair,
+                  onChanged: onAnimationPairChanged,
+                ),
+              ],
             ),
           ),
-          IconButton(
-            onPressed: onDone,
-            icon: const Icon(CupertinoIcons.checkmark, size: 32),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({required this.mode, required this.onModeChanged});
-
-  final FocusMode mode;
-  final ValueChanged<FocusMode> onModeChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsCard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final tight = constraints.maxWidth < 340;
-
-          final selector = SegmentedSelector<FocusMode>(
-            values: const [FocusMode.pomodoro, FocusMode.stopwatch],
-            selectedValue: mode,
-            labelBuilder: (value) {
-              return switch (value) {
-                FocusMode.pomodoro => 'Pomodoro',
-                FocusMode.stopwatch => 'Stopwatch',
-              };
-            },
-            onChanged: onModeChanged,
-          );
-
-          if (tight) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Focus Mode', style: AppTextStyles.headline),
-                const SizedBox(height: AppSpacing.md),
-                selector,
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(
-                child: Text('Focus Mode', style: AppTextStyles.headline),
-              ),
-              selector,
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _PomodoroCard extends StatelessWidget {
-  const _PomodoroCard({
+class _DetailPage extends StatelessWidget {
+  const _DetailPage({
+    super.key,
     required this.compact,
-    required this.focusMinutes,
+    required this.detail,
+    required this.settings,
+    required this.onBack,
     required this.onChanged,
   });
 
   final bool compact;
-  final int focusMinutes;
+  final _TimeSettingsDetail detail;
+  final FocusTimerSettings settings;
+  final VoidCallback onBack;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.charcoal,
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(AppRadii.pill),
-                  ),
-                ),
-                child: SizedBox(width: 6, height: 28),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Pomodoro', style: AppTextStyles.headline),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Center(
-            child: Text(
-              '${focusMinutes}m',
-              style: AppTextStyles.timer.copyWith(fontSize: compact ? 56 : 68),
-            ),
-          ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.graySoft,
-              inactiveTrackColor: AppColors.graySoft,
-              thumbColor: const Color(0xFFF16C72),
-              trackHeight: 0,
-              tickMarkShape: const RoundSliderTickMarkShape(tickMarkRadius: 2),
-              activeTickMarkColor: AppColors.charcoal,
-              inactiveTickMarkColor: AppColors.charcoal,
-            ),
-            child: Slider(
-              value: focusMinutes.toDouble(),
-              min: 5,
-              max: 60,
-              divisions: 11,
-              onChanged: (value) => onChanged(value.round()),
-            ),
-          ),
-        ],
-      ),
+    if (detail.usesListPicker) {
+      return TimeSettingsListPickerPage(
+        compact: compact,
+        title: detail.title,
+        values: detail.pickerValues,
+        selectedValue: detail.selectedValue(settings),
+        labelBuilder: detail.labelBuilder,
+        onBack: onBack,
+        onChanged: onChanged,
+      );
+    }
+
+    return TimeSettingsValuePickerPage(
+      compact: compact,
+      title: detail.title,
+      values: detail.pickerValues,
+      selectedValue: detail.selectedValue(settings),
+      labelBuilder: detail.labelBuilder,
+      onBack: onBack,
+      onChanged: onChanged,
     );
   }
 }
 
-class _BreakSettingsCard extends StatelessWidget {
-  const _BreakSettingsCard({required this.settings, required this.onChanged});
+enum _TimeSettingsDetail {
+  sessions,
+  longBreakInterval,
+  shortBreak,
+  longBreak;
 
-  final TimeSettings settings;
-  final ValueChanged<TimeSettings> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsCard(
-      child: Column(
-        children: [
-          _SettingsRow(
-            label: 'Long Break Interval',
-            value: '${settings.longBreakInterval}',
-            onTap: () => onChanged(
-              settings.copyWith(
-                longBreakInterval: _cycle(settings.longBreakInterval, 2, 6, 1),
-              ),
-            ),
-          ),
-          const Divider(color: AppColors.graySoft),
-          _SettingsRow(
-            label: 'Short Break',
-            value: '${settings.shortBreakMinutes}m',
-            onTap: () => onChanged(
-              settings.copyWith(
-                shortBreakMinutes: _cycle(settings.shortBreakMinutes, 5, 15),
-              ),
-            ),
-          ),
-          const Divider(color: AppColors.graySoft),
-          _SettingsRow(
-            label: 'Long Break',
-            value: '${settings.longBreakMinutes}m',
-            onTap: () => onChanged(
-              settings.copyWith(
-                longBreakMinutes: _cycle(settings.longBreakMinutes, 15, 30),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  String get title {
+    return switch (this) {
+      _TimeSettingsDetail.sessions => 'Sessions',
+      _TimeSettingsDetail.longBreakInterval => 'Long Break Interval',
+      _TimeSettingsDetail.shortBreak => 'Short Break',
+      _TimeSettingsDetail.longBreak => 'Long Break',
+    };
   }
 
-  int _cycle(int value, int min, int max, [int step = 5]) {
-    final next = value + step;
-    return next > max ? min : next;
+  List<int> get pickerValues {
+    return switch (this) {
+      _TimeSettingsDetail.sessions => _range(1, 10),
+      _TimeSettingsDetail.longBreakInterval => _range(2, 4),
+      _TimeSettingsDetail.shortBreak => _range(1, 20),
+      _TimeSettingsDetail.longBreak => _range(5, 30),
+    };
   }
-}
 
-class _StopwatchCard extends StatelessWidget {
-  const _StopwatchCard();
+  bool get usesListPicker {
+    return switch (this) {
+      _TimeSettingsDetail.sessions ||
+      _TimeSettingsDetail.longBreakInterval => true,
+      _TimeSettingsDetail.shortBreak || _TimeSettingsDetail.longBreak => false,
+    };
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.charcoal,
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(AppRadii.pill),
-                  ),
-                ),
-                child: SizedBox(width: 6, height: 28),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Stopwatch', style: AppTextStyles.headline),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Counts up until you stop or skip. Breaks are not started automatically.',
-            style: AppTextStyles.bodyMuted,
-          ),
-        ],
-      ),
-    );
+  int selectedValue(FocusTimerSettings settings) {
+    return switch (this) {
+      _TimeSettingsDetail.sessions => settings.sessionsPerRound,
+      _TimeSettingsDetail.longBreakInterval => settings.longBreakInterval,
+      _TimeSettingsDetail.shortBreak => settings.shortBreakMinutes,
+      _TimeSettingsDetail.longBreak => settings.longBreakMinutes,
+    };
+  }
+
+  String labelBuilder(int value) {
+    return switch (this) {
+      _TimeSettingsDetail.sessions => '$value',
+      _TimeSettingsDetail.longBreakInterval => '$value',
+      _TimeSettingsDetail.shortBreak => '${value}m',
+      _TimeSettingsDetail.longBreak => '${value}m',
+    };
   }
 }
 
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.headline,
-              ),
-            ),
-            Text(value, style: AppTextStyles.bodyMuted),
-            const SizedBox(width: AppSpacing.sm),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              color: AppColors.charcoal,
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: child,
-        ),
-      ),
-    );
-  }
+List<int> _range(int min, int max) {
+  return List.generate(max - min + 1, (index) => min + index);
 }

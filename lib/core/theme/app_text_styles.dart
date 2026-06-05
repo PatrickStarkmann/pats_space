@@ -8,7 +8,7 @@ class AppTextStyles {
 
   static const timer = TextStyle(
     color: AppColors.charcoal,
-    fontSize: 96,
+    fontSize: 88,
     fontWeight: FontWeight.w200,
     height: 1,
     letterSpacing: 0,

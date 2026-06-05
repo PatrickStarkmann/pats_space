@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 
 class FocusModeLabel extends StatelessWidget {
-  const FocusModeLabel({super.key, required this.label, this.onPressed});
+  const FocusModeLabel({
+    super.key,
+    required this.label,
+    required this.accentColor,
+    this.onPressed,
+  });
 
   final String label;
+  final Color accentColor;
   final VoidCallback? onPressed;
 
   @override
@@ -22,17 +27,18 @@ class FocusModeLabel extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.accentWarm,
+                color: accentColor,
                 shape: BoxShape.circle,
               ),
-              child: SizedBox(width: 16, height: 16),
+              child: const SizedBox(width: 14, height: 14),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
               label,
               style: AppTextStyles.headline.copyWith(
+                fontSize: 19,
                 fontWeight: FontWeight.w400,
               ),
             ),

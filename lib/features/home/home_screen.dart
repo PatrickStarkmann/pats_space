@@ -1,9 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
-import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
+import 'package:pats_space/features/focus/controllers/focus_character_animator.dart';
+import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
+import 'package:pats_space/features/focus/focus_animation_catalog.dart';
+import 'package:pats_space/features/focus/models/focus_animation_spec.dart';
+import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
 import 'package:pats_space/features/home/widgets/focus_session_dots.dart';
 import 'package:pats_space/features/home/widgets/focus_timer_preview.dart';
@@ -18,230 +20,205 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const _sessionsPerRound = 4;
-  static const _animationStep = Duration(milliseconds: 1100);
-  static const _tickerStep = Duration(seconds: 1);
+  late final FocusTimerController _timerController;
+  late final FocusCharacterAnimator _characterAnimator;
+  bool _assetsPrecached = false;
 
-  TimeSettings _settings = const TimeSettings(
-    mode: FocusMode.pomodoro,
-    focusMinutes: 5,
-    shortBreakMinutes: 5,
-    longBreakMinutes: 20,
-    longBreakInterval: 4,
-  );
-  Timer? _ticker;
-  Timer? _animationTicker;
-  _FocusPhase _phase = _FocusPhase.idle;
-  int _remainingSeconds = 5 * 60;
-  int _completedSessions = 0;
-  int _animationFrame = 0;
+  @override
+  void initState() {
+    super.initState();
+    _timerController = FocusTimerController()..addListener(_syncAnimation);
+    _characterAnimator = FocusCharacterAnimator();
+  }
 
-  bool get _running =>
-      _phase == _FocusPhase.focus || _phase == _FocusPhase.breakTime;
-
-  bool get _inBreak => _phase == _FocusPhase.breakTime;
-
-  bool get _isStopwatch => _settings.mode == FocusMode.stopwatch;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _precacheAnimationAssets();
+  }
 
   @override
   void dispose() {
-    _ticker?.cancel();
-    _animationTicker?.cancel();
+    _timerController.removeListener(_syncAnimation);
+    _timerController.dispose();
+    _characterAnimator.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxHeight < 680;
-        final topSpace = compact ? AppSpacing.xl : AppSpacing.xxl * 2.25;
-        final characterGap = compact ? AppSpacing.lg : AppSpacing.xxl * 1.25;
+    return AnimatedBuilder(
+      animation: Listenable.merge([_timerController, _characterAnimator]),
+      builder: (context, child) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxHeight < 720;
+            final topSpace = (constraints.maxHeight * (compact ? 0.19 : 0.22))
+                .clamp(AppSpacing.xxl * 1.55, AppSpacing.xxl * 3.45)
+                .toDouble();
+            final characterGap = compact
+                ? AppSpacing.xxl * 1.25
+                : AppSpacing.xxl * 1.75;
 
-        return Column(
-          children: [
-            SizedBox(height: topSpace),
-            FocusModeLabel(label: _modeLabel, onPressed: _openSettings),
-            SizedBox(height: compact ? AppSpacing.sm : AppSpacing.lg),
-            FocusTimerPreview(
-              timeLabel: _formatTime(_remainingSeconds),
-              onPressed: _openSettings,
-            ),
-            SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-            FocusSessionDots(states: _dotStates),
-            SizedBox(height: characterGap),
-            PatsspaceCharacterView(
-              compact: compact,
-              assetPath: _currentCharacterAsset,
-            ),
-            SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xxl),
-            _FocusControls(
-              running: _running,
-              onSkip: _skipPhase,
-              onPlayPause: _toggleTimer,
-            ),
-            const Spacer(),
-          ],
+            return Column(
+              children: [
+                SizedBox(height: topSpace),
+                FocusModeLabel(
+                  label: _timerController.modeLabel,
+                  accentColor: _timerController.settings.accentColor.color,
+                  onPressed: _settingsAction,
+                ),
+                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.lg),
+                FocusTimerPreview(
+                  timeLabel: _formatTime(_timerController.remainingSeconds),
+                  onPressed: _settingsAction,
+                ),
+                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+                FocusSessionDots(states: _timerController.sessionStatuses),
+                SizedBox(height: characterGap),
+                PatsspaceCharacterView(
+                  compact: compact,
+                  assetPath: _currentCharacterAsset,
+                  visualScale: _currentAnimationSpec.visualScale,
+                  alignment: _currentAnimationSpec.alignment,
+                  verticalOffset: _currentAnimationSpec.verticalOffset,
+                ),
+                SizedBox(height: compact ? 0 : AppSpacing.xxs),
+                _FocusControls(
+                  active: _timerController.active,
+                  running: _timerController.running,
+                  canSkip:
+                      _timerController.phase != FocusSessionPhase.stopwatch,
+                  onSkip: _timerController.skip,
+                  onPlayPause: _timerController.toggle,
+                  onRestart: _timerController.restartCurrentSession,
+                  onCancel: _confirmCancelFocusRound,
+                ),
+                const Spacer(),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  String get _modeLabel {
-    return switch (_phase) {
-      _FocusPhase.breakTime => 'break',
-      _ => _isStopwatch ? 'stopwatch' : 'pomodoro',
-    };
-  }
+  VoidCallback get _settingsAction => _openSettings;
 
   String get _currentCharacterAsset {
-    final frames = _inBreak
-        ? AppAssets.focusPair01Break
-        : AppAssets.focusPair01Focus;
-    return frames[_animationFrame % frames.length];
+    final frames = _currentAnimationSpec.frames;
+    return frames[_characterAnimator.frameIndex % frames.length];
   }
 
-  List<FocusSessionDotState> get _dotStates {
-    return List.generate(_sessionsPerRound, (index) {
-      if (index < _completedSessions) {
-        return FocusSessionDotState.complete;
-      }
-
-      if (_running && index == _completedSessions) {
-        return FocusSessionDotState.active;
-      }
-
-      return FocusSessionDotState.empty;
-    });
+  FocusAnimationSpec get _currentAnimationSpec {
+    return _timerController.phase == FocusSessionPhase.breakTime
+        ? FocusAnimationCatalog.breakSpec(
+            _timerController.settings.animationPair,
+          )
+        : FocusAnimationCatalog.focusSpec(
+            _timerController.settings.animationPair,
+          );
   }
 
   Future<void> _openSettings() async {
     final updated = await showTimeSettingsSheet(
       context: context,
-      settings: _settings,
+      settings: _timerController.settings,
     );
 
-    if (updated == null || !mounted) {
+    if (updated == null) {
       return;
     }
 
-    setState(() {
-      _settings = updated;
-      if (_phase == _FocusPhase.idle) {
-        _remainingSeconds = _isStopwatch ? 0 : _settings.focusMinutes * 60;
-      }
-    });
-  }
-
-  void _toggleTimer() {
-    if (_running) {
-      _pauseTimer();
-      return;
-    }
-
-    _startFocus();
-  }
-
-  void _startFocus() {
-    setState(() {
-      _phase = _FocusPhase.focus;
-      if (!_isStopwatch && _completedSessions >= _sessionsPerRound) {
-        _completedSessions = 0;
-      }
-      if (_isStopwatch) {
-        _remainingSeconds = 0;
-      } else if (_remainingSeconds <= 0) {
-        _remainingSeconds = _settings.focusMinutes * 60;
-      }
-    });
-    _startTickers();
-  }
-
-  void _pauseTimer() {
-    _ticker?.cancel();
-    _animationTicker?.cancel();
-    setState(() => _phase = _FocusPhase.paused);
-  }
-
-  void _startBreak() {
-    if (_isStopwatch) {
-      _resetToIdle();
-      return;
-    }
-
-    final isLongBreak =
-        (_completedSessions + 1) % _settings.longBreakInterval == 0;
-    setState(() {
-      _phase = _FocusPhase.breakTime;
-      _remainingSeconds =
-          (isLongBreak
-              ? _settings.longBreakMinutes
-              : _settings.shortBreakMinutes) *
-          60;
-    });
-    _startTickers();
-  }
-
-  void _completeBreak() {
-    _ticker?.cancel();
-    _animationTicker?.cancel();
-    setState(() {
-      _phase = _FocusPhase.idle;
-      _completedSessions = (_completedSessions + 1).clamp(0, _sessionsPerRound);
-      _remainingSeconds = _settings.focusMinutes * 60;
-      _animationFrame = 0;
-    });
-  }
-
-  void _skipPhase() {
-    if (_phase == _FocusPhase.focus) {
-      _ticker?.cancel();
-      _animationTicker?.cancel();
-      _startBreak();
-      return;
-    }
-
-    if (_phase == _FocusPhase.breakTime) {
-      _completeBreak();
-      return;
-    }
-
-    _resetToIdle();
-  }
-
-  void _startTickers() {
-    _ticker?.cancel();
-    _animationTicker?.cancel();
-
-    _ticker = Timer.periodic(_tickerStep, (_) {
-      if (!mounted) {
+    if (_timerController.active && mounted) {
+      final shouldCancel = await _confirmSettingsCancelSession();
+      if (!shouldCancel) {
         return;
       }
+    }
 
-      if (_isStopwatch && _phase == _FocusPhase.focus) {
-        setState(() => _remainingSeconds += 1);
-        return;
-      }
+    _timerController.updateSettings(updated);
+  }
 
-      if (_remainingSeconds <= 1) {
-        if (_phase == _FocusPhase.focus) {
-          _ticker?.cancel();
-          _animationTicker?.cancel();
-          _startBreak();
-        } else if (_phase == _FocusPhase.breakTime) {
-          _completeBreak();
-        }
-        return;
-      }
+  Future<bool> _confirmSettingsCancelSession() async {
+    final result = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Focus läuft gerade'),
+          content: const Text(
+            'Wenn du die Einstellungen speicherst, wird der aktuelle Fokus abgebrochen.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Zurück'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Abbrechen & speichern'),
+            ),
+          ],
+        );
+      },
+    );
 
-      setState(() => _remainingSeconds -= 1);
-    });
+    return result ?? false;
+  }
 
-    _animationTicker = Timer.periodic(_animationStep, (_) {
-      if (mounted) {
-        setState(() => _animationFrame += 1);
-      }
-    });
+  Future<void> _confirmCancelFocusRound() async {
+    final result = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Fokus abbrechen?'),
+          content: const Text(
+            'Der aktuelle Fokuslauf wird beendet und dein Fortschritt in dieser Runde wird zurückgesetzt.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Zurück'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Fokus abbrechen'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result ?? false) {
+      _timerController.cancelFocusRound();
+    }
+  }
+
+  void _syncAnimation() {
+    if (_timerController.running) {
+      _characterAnimator.start();
+      return;
+    }
+
+    if (_timerController.active) {
+      _characterAnimator.pause();
+      return;
+    }
+
+    _characterAnimator.reset();
+  }
+
+  void _precacheAnimationAssets() {
+    if (_assetsPrecached) {
+      return;
+    }
+
+    _assetsPrecached = true;
+    for (final assetPath in FocusAnimationCatalog.allFrames) {
+      precacheImage(AssetImage(assetPath), context);
+    }
   }
 
   String _formatTime(int totalSeconds) {
@@ -249,48 +226,76 @@ class _HomeScreenState extends State<HomeScreen> {
     final seconds = totalSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
-
-  void _resetToIdle() {
-    _ticker?.cancel();
-    _animationTicker?.cancel();
-    setState(() {
-      _phase = _FocusPhase.idle;
-      _remainingSeconds = _isStopwatch ? 0 : _settings.focusMinutes * 60;
-      _animationFrame = 0;
-    });
-  }
 }
 
 class _FocusControls extends StatelessWidget {
   const _FocusControls({
+    required this.active,
     required this.running,
+    required this.canSkip,
     required this.onSkip,
     required this.onPlayPause,
+    required this.onRestart,
+    required this.onCancel,
   });
 
+  final bool active;
   final bool running;
+  final bool canSkip;
   final VoidCallback onSkip;
   final VoidCallback onPlayPause;
+  final VoidCallback onRestart;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        AppIconButton(
-          icon: CupertinoIcons.forward_end,
-          semanticLabel: 'Skip',
-          onPressed: onSkip,
-        ),
-        const SizedBox(width: AppSpacing.xl),
-        AppIconButton(
-          icon: running ? CupertinoIcons.pause : CupertinoIcons.play,
-          semanticLabel: running ? 'Pause' : 'Start',
-          onPressed: onPlayPause,
-        ),
-      ],
+    if (running) {
+      return AppIconButton(
+        icon: CupertinoIcons.pause,
+        semanticLabel: 'Pause',
+        onPressed: onPlayPause,
+      );
+    }
+
+    if (!active) {
+      return AppIconButton(
+        icon: CupertinoIcons.play,
+        semanticLabel: 'Start',
+        onPressed: onPlayPause,
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppIconButton(
+            icon: CupertinoIcons.forward_end,
+            semanticLabel: 'Skip',
+            onPressed: active && canSkip ? onSkip : null,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          AppIconButton(
+            icon: CupertinoIcons.play,
+            semanticLabel: 'Resume',
+            onPressed: onPlayPause,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          AppIconButton(
+            icon: CupertinoIcons.restart,
+            semanticLabel: 'Restart',
+            onPressed: onRestart,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          AppIconButton(
+            icon: CupertinoIcons.xmark,
+            semanticLabel: 'Cancel',
+            onPressed: onCancel,
+          ),
+        ],
+      ),
     );
   }
 }
-
-enum _FocusPhase { idle, focus, breakTime, paused }

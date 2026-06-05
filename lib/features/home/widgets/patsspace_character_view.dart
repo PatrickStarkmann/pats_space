@@ -6,24 +6,46 @@ class PatsspaceCharacterView extends StatelessWidget {
     super.key,
     required this.compact,
     required this.assetPath,
+    this.visualScale = 1,
+    this.alignment = Alignment.center,
+    this.verticalOffset = 0,
   });
 
   final bool compact;
   final String assetPath;
+  final double visualScale;
+  final Alignment alignment;
+  final double verticalOffset;
 
   @override
   Widget build(BuildContext context) {
-    final width = compact ? 260.0 : 330.0;
-    final height = compact ? 210.0 : 270.0;
+    final width = compact ? 280.0 : 355.0;
+    final height = compact ? 220.0 : 285.0;
+    final responsiveVerticalOffset = compact
+        ? verticalOffset * 0.67
+        : verticalOffset;
 
     return SizedBox(
       width: width,
       height: height,
-      child: Image.asset(
-        assetPath,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) =>
-            const _CharacterFallback(),
+      child: OverflowBox(
+        maxWidth: width * visualScale,
+        maxHeight: height * visualScale,
+        child: Transform.translate(
+          offset: Offset(0, responsiveVerticalOffset),
+          child: Transform.scale(
+            scale: visualScale,
+            alignment: alignment,
+            child: Image.asset(
+              assetPath,
+              fit: BoxFit.contain,
+              alignment: alignment,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stackTrace) =>
+                  const _CharacterFallback(),
+            ),
+          ),
+        ),
       ),
     );
   }
