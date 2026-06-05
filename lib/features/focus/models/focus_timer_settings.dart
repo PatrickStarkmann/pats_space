@@ -11,6 +11,7 @@ class FocusTimerSettings {
     required this.longBreakMinutes,
     required this.longBreakInterval,
     required this.sessionsPerRound,
+    required this.focusLabel,
     required this.accentColor,
     required this.badgeIcon,
     required this.animationPair,
@@ -22,6 +23,7 @@ class FocusTimerSettings {
   final int longBreakMinutes;
   final int longBreakInterval;
   final int sessionsPerRound;
+  final String focusLabel;
   final FocusAccentColor accentColor;
   final FocusBadgeIcon badgeIcon;
   final FocusAnimationPair animationPair;
@@ -33,6 +35,7 @@ class FocusTimerSettings {
     int? longBreakMinutes,
     int? longBreakInterval,
     int? sessionsPerRound,
+    String? focusLabel,
     FocusAccentColor? accentColor,
     FocusBadgeIcon? badgeIcon,
     FocusAnimationPair? animationPair,
@@ -44,6 +47,7 @@ class FocusTimerSettings {
       longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
       longBreakInterval: longBreakInterval ?? this.longBreakInterval,
       sessionsPerRound: sessionsPerRound ?? this.sessionsPerRound,
+      focusLabel: focusLabel ?? this.focusLabel,
       accentColor: accentColor ?? this.accentColor,
       badgeIcon: badgeIcon ?? this.badgeIcon,
       animationPair: animationPair ?? this.animationPair,

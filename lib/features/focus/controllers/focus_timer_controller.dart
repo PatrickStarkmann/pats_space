@@ -25,6 +25,7 @@ class FocusTimerController extends ChangeNotifier {
     longBreakMinutes: 20,
     longBreakInterval: 4,
     sessionsPerRound: 4,
+    focusLabel: 'pomodoro',
     accentColor: FocusAccentColor.sunshine,
     badgeIcon: FocusBadgeIcon.cat,
     animationPair: FocusAnimationPair.standard,

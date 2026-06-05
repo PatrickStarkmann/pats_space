@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_card.dart';
 
-class PomodoroSettingsCard extends StatelessWidget {
+class PomodoroSettingsCard extends StatefulWidget {
   const PomodoroSettingsCard({
     super.key,
     required this.compact,
@@ -16,6 +17,13 @@ class PomodoroSettingsCard extends StatelessWidget {
   final bool compact;
   final int focusMinutes;
   final ValueChanged<int> onChanged;
+
+  @override
+  State<PomodoroSettingsCard> createState() => _PomodoroSettingsCardState();
+}
+
+class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
+  late int _lastHapticValue = widget.focusMinutes;
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +49,10 @@ class PomodoroSettingsCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Center(
             child: Text(
-              '${focusMinutes}m',
-              style: AppTextStyles.timer.copyWith(fontSize: compact ? 56 : 68),
+              '${widget.focusMinutes}m',
+              style: AppTextStyles.timer.copyWith(
+                fontSize: widget.compact ? 56 : 68,
+              ),
             ),
           ),
           SliderTheme(
@@ -56,11 +66,18 @@ class PomodoroSettingsCard extends StatelessWidget {
               inactiveTickMarkColor: AppColors.charcoal,
             ),
             child: Slider(
-              value: focusMinutes.toDouble(),
+              value: widget.focusMinutes.toDouble(),
               min: 5,
               max: 60,
               divisions: 11,
-              onChanged: (value) => onChanged(value.round()),
+              onChanged: (value) {
+                final roundedValue = value.round();
+                if (roundedValue != _lastHapticValue) {
+                  _lastHapticValue = roundedValue;
+                  HapticFeedback.selectionClick();
+                }
+                widget.onChanged(roundedValue);
+              },
             ),
           ),
         ],

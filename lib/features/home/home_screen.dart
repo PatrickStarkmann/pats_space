@@ -53,10 +53,22 @@ class _HomeScreenState extends State<HomeScreen> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxHeight < 720;
-            final topSpace = (constraints.maxHeight * (compact ? 0.19 : 0.22))
-                .clamp(AppSpacing.xxl * 1.55, AppSpacing.xxl * 3.45)
-                .toDouble();
-            final characterGap = compact
+            final tight = constraints.maxHeight < 650;
+            final topSpace =
+                (constraints.maxHeight *
+                        (tight
+                            ? 0.16
+                            : compact
+                            ? 0.19
+                            : 0.22))
+                    .clamp(
+                      tight ? AppSpacing.xxl * 1.25 : AppSpacing.xxl * 1.55,
+                      AppSpacing.xxl * 3.45,
+                    )
+                    .toDouble();
+            final characterGap = tight
+                ? AppSpacing.xl
+                : compact
                 ? AppSpacing.xxl * 1.25
                 : AppSpacing.xxl * 1.75;
 
@@ -64,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 SizedBox(height: topSpace),
                 FocusModeLabel(
-                  label: _timerController.modeLabel,
+                  label: _focusLabel,
                   accentColor: _timerController.settings.accentColor.color,
                   onPressed: _settingsAction,
                 ),
@@ -104,6 +116,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   VoidCallback get _settingsAction => _openSettings;
+
+  String get _focusLabel {
+    final label = _timerController.settings.focusLabel.trim();
+    return label.isEmpty ? _timerController.modeLabel : label;
+  }
 
   String get _currentCharacterAsset {
     final frames = _currentAnimationSpec.frames;

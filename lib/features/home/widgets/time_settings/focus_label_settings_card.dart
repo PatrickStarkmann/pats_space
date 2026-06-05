@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -7,15 +7,17 @@ import 'package:pats_space/features/focus/models/focus_accent_color.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 
-class AppearanceSettingsCard extends StatelessWidget {
-  const AppearanceSettingsCard({
+class FocusLabelSettingsCard extends StatelessWidget {
+  const FocusLabelSettingsCard({
     super.key,
     required this.settings,
+    required this.onLabelChanged,
     required this.onAccentColorChanged,
     required this.onBadgeIconChanged,
   });
 
   final FocusTimerSettings settings;
+  final ValueChanged<String> onLabelChanged;
   final ValueChanged<FocusAccentColor> onAccentColorChanged;
   final ValueChanged<FocusBadgeIcon> onBadgeIconChanged;
 
@@ -35,7 +37,13 @@ class AppearanceSettingsCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(child: Text('Stamp', style: AppTextStyles.headline)),
+              Expanded(
+                child: _LabelEditorButton(
+                  label: settings.focusLabel,
+                  onPressed: () => _openLabelEditor(context),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               _StampTile(
                 onTap: () => onAccentColorChanged(_nextAccentColor),
                 child: _ColorStamp(color: settings.accentColor.color),
@@ -55,6 +63,51 @@ class AppearanceSettingsCard extends StatelessWidget {
     );
   }
 
+  Future<void> _openLabelEditor(BuildContext context) async {
+    final controller = TextEditingController(text: settings.focusLabel);
+    final updatedLabel = await showCupertinoDialog<String>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Tag bearbeiten'),
+          content: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: CupertinoTextField(
+              controller: controller,
+              autofocus: true,
+              clearButtonMode: OverlayVisibilityMode.editing,
+              maxLength: 24,
+              placeholder: 'z. B. Mathe',
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                Navigator.of(context).pop(controller.text);
+              },
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Abbrechen'),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Speichern'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    final trimmedLabel = updatedLabel?.trim();
+    if (trimmedLabel == null || trimmedLabel.isEmpty) {
+      return;
+    }
+
+    onLabelChanged(trimmedLabel);
+  }
+
   FocusAccentColor get _nextAccentColor {
     final values = FocusAccentColor.values;
     final index = values.indexOf(settings.accentColor);
@@ -65,6 +118,39 @@ class AppearanceSettingsCard extends StatelessWidget {
     final values = FocusBadgeIcon.values;
     final index = values.indexOf(settings.badgeIcon);
     return values[(index + 1) % values.length];
+  }
+}
+
+class _LabelEditorButton extends StatelessWidget {
+  const _LabelEditorButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onPressed,
+      child: Row(
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.headline,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          const Icon(
+            CupertinoIcons.pencil_circle_fill,
+            color: AppColors.charcoal,
+            size: 28,
+          ),
+        ],
+      ),
+    );
   }
 }
 

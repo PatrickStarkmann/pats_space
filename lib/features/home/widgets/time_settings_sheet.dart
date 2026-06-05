@@ -7,8 +7,8 @@ import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/home/widgets/time_settings/animation_pair_settings_card.dart';
-import 'package:pats_space/features/home/widgets/time_settings/appearance_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/break_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/focus_label_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/focus_mode_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/pomodoro_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_list_picker_page.dart';
@@ -83,6 +83,11 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                         _settings = _settings.copyWith(focusMinutes: value);
                       });
                     },
+                    onLabelChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(focusLabel: value);
+                      });
+                    },
                     onAccentColorChanged: (value) {
                       setState(() {
                         _settings = _settings.copyWith(accentColor: value);
@@ -147,6 +152,7 @@ class _OverviewPage extends StatelessWidget {
     required this.onCancel,
     required this.onModeChanged,
     required this.onFocusMinutesChanged,
+    required this.onLabelChanged,
     required this.onAccentColorChanged,
     required this.onBadgeIconChanged,
     required this.onAnimationPairChanged,
@@ -160,6 +166,7 @@ class _OverviewPage extends StatelessWidget {
   final VoidCallback onCancel;
   final ValueChanged<FocusMode> onModeChanged;
   final ValueChanged<int> onFocusMinutesChanged;
+  final ValueChanged<String> onLabelChanged;
   final ValueChanged<FocusAccentColor> onAccentColorChanged;
   final ValueChanged<FocusBadgeIcon> onBadgeIconChanged;
   final ValueChanged<FocusAnimationPair> onAnimationPairChanged;
@@ -186,8 +193,9 @@ class _OverviewPage extends StatelessWidget {
                   onModeChanged: onModeChanged,
                 ),
                 SizedBox(height: contentGap),
-                AppearanceSettingsCard(
+                FocusLabelSettingsCard(
                   settings: settings,
+                  onLabelChanged: onLabelChanged,
                   onAccentColorChanged: onAccentColorChanged,
                   onBadgeIconChanged: onBadgeIconChanged,
                 ),
