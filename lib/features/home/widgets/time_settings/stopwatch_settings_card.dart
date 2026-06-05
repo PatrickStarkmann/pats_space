@@ -31,7 +31,7 @@ class StopwatchSettingsCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Counts up until you stop or skip. Breaks are not started automatically.',
+            'Free focus without sessions or breaks. Pause shows your break animation; finish saves the measured focus time.',
             style: AppTextStyles.bodyMuted,
           ),
         ],

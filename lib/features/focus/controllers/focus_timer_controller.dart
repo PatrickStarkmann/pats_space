@@ -103,6 +103,19 @@ class FocusTimerController extends ChangeNotifier {
     resetToIdle();
   }
 
+  void finishStopwatch() {
+    if (_phase != FocusSessionPhase.stopwatch) {
+      return;
+    }
+
+    _ticker?.cancel();
+    if (_remainingSeconds > 0) {
+      _recordCompletedStopwatchSession();
+    }
+    _resetToIdleWithoutNotify();
+    notifyListeners();
+  }
+
   void toggle() {
     if (running) {
       _pause();
@@ -258,6 +271,28 @@ class FocusTimerController extends ChangeNotifier {
         ),
         mode: FocusMode.pomodoro,
         focusDuration: Duration(minutes: _settings.focusMinutes),
+        startedAt: startedAt,
+        completedAt: completedAt,
+        animationPair: _settings.animationPair,
+      ),
+    );
+  }
+
+  void _recordCompletedStopwatchSession() {
+    final completedAt = DateTime.now();
+    final duration = Duration(seconds: _remainingSeconds);
+    final startedAt = _focusStartedAt ?? completedAt.subtract(duration);
+
+    onFocusSessionCompleted?.call(
+      FocusSessionRecord(
+        id: completedAt.microsecondsSinceEpoch.toString(),
+        tag: FocusTag(
+          name: _settings.focusLabel,
+          accentColor: _settings.accentColor,
+          badgeIcon: _settings.badgeIcon,
+        ),
+        mode: FocusMode.stopwatch,
+        focusDuration: duration,
         startedAt: startedAt,
         completedAt: completedAt,
         animationPair: _settings.animationPair,

@@ -11,6 +11,7 @@ import 'package:pats_space/features/home/widgets/time_settings/break_settings_ca
 import 'package:pats_space/features/home/widgets/time_settings/focus_label_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/focus_mode_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/pomodoro_settings_card.dart';
+import 'package:pats_space/features/home/widgets/time_settings/stopwatch_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_list_picker_page.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_header.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_value_picker_page.dart';
@@ -207,22 +208,24 @@ class _OverviewPage extends StatelessWidget {
                     onChanged: onFocusMinutesChanged,
                   ),
                   SizedBox(height: contentGap),
+                  BreakSettingsCard(
+                    settings: settings,
+                    onSessionsPressed: () {
+                      onDetailSelected(_TimeSettingsDetail.sessions);
+                    },
+                    onLongBreakIntervalPressed: () {
+                      onDetailSelected(_TimeSettingsDetail.longBreakInterval);
+                    },
+                    onShortBreakPressed: () {
+                      onDetailSelected(_TimeSettingsDetail.shortBreak);
+                    },
+                    onLongBreakPressed: () {
+                      onDetailSelected(_TimeSettingsDetail.longBreak);
+                    },
+                  ),
+                ] else ...[
+                  const StopwatchSettingsCard(),
                 ],
-                BreakSettingsCard(
-                  settings: settings,
-                  onSessionsPressed: () {
-                    onDetailSelected(_TimeSettingsDetail.sessions);
-                  },
-                  onLongBreakIntervalPressed: () {
-                    onDetailSelected(_TimeSettingsDetail.longBreakInterval);
-                  },
-                  onShortBreakPressed: () {
-                    onDetailSelected(_TimeSettingsDetail.shortBreak);
-                  },
-                  onLongBreakPressed: () {
-                    onDetailSelected(_TimeSettingsDetail.longBreak);
-                  },
-                ),
                 SizedBox(height: contentGap),
                 AnimationPairSettingsCard(
                   selectedPair: settings.animationPair,

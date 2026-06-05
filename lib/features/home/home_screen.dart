@@ -97,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: _settingsAction,
                   ),
                   SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-                  FocusSessionDots(states: _timerController.sessionStatuses),
+                  if (!_timerController.isStopwatch)
+                    FocusSessionDots(states: _timerController.sessionStatuses),
                   SizedBox(height: characterGap),
                   PatsspaceCharacterView(
                     compact: compact,
@@ -110,11 +111,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   _FocusControls(
                     active: _timerController.active,
                     running: _timerController.running,
+                    stopwatch: _timerController.isStopwatch,
                     canSkip:
                         _timerController.phase != FocusSessionPhase.stopwatch,
                     onSkip: _timerController.skip,
                     onPlayPause: _timerController.toggle,
                     onRestart: _timerController.restartCurrentSession,
+                    onFinish: _timerController.finishStopwatch,
                     onCancel: _confirmCancelFocusRound,
                   ),
                   const Spacer(),
@@ -140,7 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   FocusAnimationSpec get _currentAnimationSpec {
-    return _timerController.phase == FocusSessionPhase.breakTime
+    final showBreakAnimation =
+        _timerController.phase == FocusSessionPhase.breakTime ||
+        (_timerController.isStopwatch &&
+            _timerController.active &&
+            !_timerController.running);
+
+    return showBreakAnimation
         ? FocusAnimationCatalog.breakSpec(
             _timerController.settings.animationPair,
           )
@@ -261,19 +270,23 @@ class _FocusControls extends StatelessWidget {
   const _FocusControls({
     required this.active,
     required this.running,
+    required this.stopwatch,
     required this.canSkip,
     required this.onSkip,
     required this.onPlayPause,
     required this.onRestart,
+    required this.onFinish,
     required this.onCancel,
   });
 
   final bool active;
   final bool running;
+  final bool stopwatch;
   final bool canSkip;
   final VoidCallback onSkip;
   final VoidCallback onPlayPause;
   final VoidCallback onRestart;
+  final VoidCallback onFinish;
   final VoidCallback onCancel;
 
   @override
@@ -300,12 +313,14 @@ class _FocusControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AppIconButton(
-            icon: CupertinoIcons.forward_end,
-            semanticLabel: 'Skip',
-            onPressed: active && canSkip ? onSkip : null,
-          ),
-          const SizedBox(width: AppSpacing.sm),
+          if (!stopwatch) ...[
+            AppIconButton(
+              icon: CupertinoIcons.forward_end,
+              semanticLabel: 'Skip',
+              onPressed: active && canSkip ? onSkip : null,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           AppIconButton(
             icon: CupertinoIcons.play,
             semanticLabel: 'Resume',
@@ -318,6 +333,14 @@ class _FocusControls extends StatelessWidget {
             onPressed: onRestart,
           ),
           const SizedBox(width: AppSpacing.sm),
+          if (stopwatch) ...[
+            AppIconButton(
+              icon: CupertinoIcons.checkmark,
+              semanticLabel: 'Finish',
+              onPressed: onFinish,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           AppIconButton(
             icon: CupertinoIcons.xmark,
             semanticLabel: 'Cancel',
