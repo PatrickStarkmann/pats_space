@@ -1,8 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
+import 'package:pats_space/features/focus/repositories/focus_history_repository.dart';
 
 class FocusHistoryController extends ChangeNotifier {
-  final List<FocusSessionRecord> _records = [];
+  FocusHistoryController({
+    FocusHistoryRepository? repository,
+    List<FocusSessionRecord> initialRecords = const [],
+  }) : _repository = repository,
+       _records = List.of(initialRecords);
+
+  final FocusHistoryRepository? _repository;
+  final List<FocusSessionRecord> _records;
 
   List<FocusSessionRecord> get records => List.unmodifiable(_records);
 
@@ -26,6 +34,7 @@ class FocusHistoryController extends ChangeNotifier {
 
   void addRecord(FocusSessionRecord record) {
     _records.insert(0, record);
+    _repository?.saveRecords(_records);
     notifyListeners();
   }
 
@@ -35,6 +44,7 @@ class FocusHistoryController extends ChangeNotifier {
     }
 
     _records.clear();
+    _repository?.clearRecords();
     notifyListeners();
   }
 }

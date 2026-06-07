@@ -7,6 +7,8 @@ import 'package:pats_space/features/focus/controllers/focus_timer_controller.dar
 import 'package:pats_space/features/focus/focus_animation_catalog.dart';
 import 'package:pats_space/features/focus/models/focus_animation_spec.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
+import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
+import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
 import 'package:pats_space/features/home/widgets/focus_session_dots.dart';
 import 'package:pats_space/features/home/widgets/focus_timer_preview.dart';
@@ -14,9 +16,16 @@ import 'package:pats_space/features/home/widgets/patsspace_character_view.dart';
 import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.historyController});
+  const HomeScreen({
+    super.key,
+    required this.historyController,
+    required this.initialSettings,
+    required this.settingsRepository,
+  });
 
   final FocusHistoryController historyController;
+  final FocusTimerSettings initialSettings;
+  final FocusSettingsRepository settingsRepository;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -31,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _timerController = FocusTimerController(
+      initialSettings: widget.initialSettings,
       onFocusSessionCompleted: widget.historyController.addRecord,
     )..addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
@@ -176,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _timerController.updateSettings(updated);
+    widget.settingsRepository.saveSettings(updated);
   }
 
   Future<bool> _confirmSettingsCancelSession() async {
