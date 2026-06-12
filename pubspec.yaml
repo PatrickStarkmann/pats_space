@@ -28,3 +28,7 @@ flutter:
     - assets/images/focus_pairs/pair_04/
     - assets/images/focus_pairs/pair_05/
     - assets/images/focus_pairs/pair_06/
+    - assets/images/garden/backgrounds/
+    - assets/images/garden/pots/default/
+    - assets/images/garden/plants/default/stages/
+    - assets/images/garden/ui/

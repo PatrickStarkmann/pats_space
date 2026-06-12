@@ -50,6 +50,20 @@ class AppAssets {
   static const focusPair06Break02 =
       'assets/images/focus_pairs/pair_06/break_2.png';
 
+  static const gardenBackgroundMain =
+      'assets/images/garden/backgrounds/garden_main.png';
+  static const gardenPotDefault = 'assets/images/garden/pots/default/pot.png';
+  static const gardenPlantSeed =
+      'assets/images/garden/plants/default/stages/seed.png';
+  static const gardenPlantSprout =
+      'assets/images/garden/plants/default/stages/sprout.png';
+  static const gardenPlantBud =
+      'assets/images/garden/plants/default/stages/bud.png';
+  static const gardenPlantBloom =
+      'assets/images/garden/plants/default/stages/bloom.png';
+  static const gardenPlantDry =
+      'assets/images/garden/plants/default/stages/dry.png';
+
   static const characterFocus = focusPair01Focus01;
 
   static const focusPair01Focus = [focusPair01Focus01, focusPair01Focus02];
