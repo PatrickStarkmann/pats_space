@@ -70,9 +70,52 @@ class GardenController extends ChangeNotifier {
     );
   }
 
+  void removeSelectedPlant() {
+    final index = _state.selectedPotIndex;
+    if (index == null) {
+      return;
+    }
+
+    final updatedPots = [..._state.pots]..[index] = const GardenPot.empty();
+
+    _setState(_state.copyWith(pots: updatedPots, selectedPotIndex: index));
+  }
+
   GardenPot _updatedPotAfterPrimaryAction(GardenPot pot) {
     if (pot.stage == GardenGrowthStage.empty) {
-      return pot.copyWith(stage: GardenGrowthStage.seed);
+      return pot.copyWith(
+        stage: GardenGrowthStage.seed,
+        waterProgress: 0,
+        bloomCollections: 0,
+      );
+    }
+
+    if (pot.stage.hasCoins) {
+      final collections = pot.bloomCollections + 1;
+      if (collections >= 3) {
+        return pot.copyWith(
+          stage: GardenGrowthStage.dry,
+          waterProgress: 0,
+          bloomCollections: 0,
+        );
+      }
+
+      return pot.copyWith(bloomCollections: collections);
+    }
+
+    if (pot.stage.needsWater) {
+      final waterProgress = pot.waterProgress + 1;
+      if (waterProgress < pot.waterRequired) {
+        return pot.copyWith(waterProgress: waterProgress);
+      }
+
+      return pot.copyWith(
+        stage: pot.stage.next,
+        waterProgress: 0,
+        bloomCollections: pot.stage == GardenGrowthStage.dry
+            ? 0
+            : pot.bloomCollections,
+      );
     }
 
     return pot.copyWith(stage: pot.stage.next);

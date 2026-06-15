@@ -51,6 +51,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   pot: selectedPot,
                   onPrimaryAction:
                       widget.gardenController.performSelectedPotAction,
+                  onRemovePlant: widget.gardenController.removeSelectedPlant,
                   onClose: widget.gardenController.closeSelectedPot,
                 ),
               ),

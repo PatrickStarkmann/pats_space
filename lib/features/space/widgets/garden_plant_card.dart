@@ -13,11 +13,13 @@ class GardenPlantCard extends StatefulWidget {
     super.key,
     required this.pot,
     required this.onPrimaryAction,
+    required this.onRemovePlant,
     required this.onClose,
   });
 
   final GardenPot pot;
   final VoidCallback onPrimaryAction;
+  final VoidCallback onRemovePlant;
   final VoidCallback onClose;
 
   @override
@@ -126,6 +128,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                   _PlantInfoContent(
                     pot: widget.pot,
                     onPrimaryAction: widget.onPrimaryAction,
+                    onRemovePlant: widget.onRemovePlant,
                   ),
               ],
             ),
@@ -173,18 +176,24 @@ class _PlantSelectionContent extends StatelessWidget {
 }
 
 class _PlantInfoContent extends StatelessWidget {
-  const _PlantInfoContent({required this.pot, required this.onPrimaryAction});
+  const _PlantInfoContent({
+    required this.pot,
+    required this.onPrimaryAction,
+    required this.onRemovePlant,
+  });
 
   final GardenPot pot;
   final VoidCallback onPrimaryAction;
+  final VoidCallback onRemovePlant;
 
   @override
   Widget build(BuildContext context) {
     final stage = pot.stage;
     final caption = switch (stage) {
-      GardenGrowthStage.bloom => '${pot.coinReward} coins ready',
+      GardenGrowthStage.bloom =>
+        '${pot.remainingBloomCollections} collects left',
       GardenGrowthStage.dry => 'Needs water to recover',
-      _ => 'Keep watering to bloom',
+      _ => 'Water to grow',
     };
     final buttonLabel = switch (stage) {
       GardenGrowthStage.bloom => 'Collect',
@@ -198,45 +207,102 @@ class _PlantInfoContent extends StatelessWidget {
         ? const GardenCoinIcon(size: 20)
         : null;
 
-    return Row(
+    return Stack(
       children: [
-        _PlantPreview(assetPath: stage.plantAsset),
-        const SizedBox(width: AppSpacing.lg),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(pot.plantName, style: AppTextStyles.headline),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.sage,
-                      shape: BoxShape.circle,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _PlantPreview(assetPath: stage.plantAsset),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pot.plantName, style: AppTextStyles.headline),
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.sage,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Flexible(
+                          child: Text(
+                            stage.statusLabel,
+                            style: AppTextStyles.bodyMuted,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(stage.statusLabel, style: AppTextStyles.bodyMuted),
-                ],
+                    const SizedBox(height: AppSpacing.sm),
+                    if (stage.hasCoins)
+                      _CoinRewardProgress(pot: pot)
+                    else
+                      _WaterProgress(
+                        count: pot.waterProgress,
+                        total: pot.waterRequired,
+                      ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(caption, style: AppTextStyles.caption),
+                    const SizedBox(height: AppSpacing.md),
+                    _GardenCardButton(
+                      label: buttonLabel,
+                      icon: buttonIcon,
+                      leading: buttonLeading,
+                      onTap: onPrimaryAction,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              _WaterProgress(count: stage.waterProgress),
-              const SizedBox(height: AppSpacing.sm),
-              Text(caption, style: AppTextStyles.caption),
-              const SizedBox(height: AppSpacing.md),
-              _GardenCardButton(
-                label: buttonLabel,
-                icon: buttonIcon,
-                leading: buttonLeading,
-                onTap: onPrimaryAction,
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: _RemovePlantButton(onTap: onRemovePlant),
         ),
       ],
+    );
+  }
+}
+
+class _PressableScale extends StatefulWidget {
+  const _PressableScale({required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_PressableScale> createState() => _PressableScaleState();
+}
+
+class _PressableScaleState extends State<_PressableScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _pressed ? 0.94 : 1,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -266,24 +332,83 @@ class _PlantPreview extends StatelessWidget {
 }
 
 class _WaterProgress extends StatelessWidget {
-  const _WaterProgress({required this.count});
+  const _WaterProgress({required this.count, required this.total});
 
   final int count;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleTotal = total == 0 ? 3 : total;
+
+    return Row(
+      children: [
+        Row(
+          children: List.generate(visibleTotal, (index) {
+            final filled = index < count;
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xxs),
+              child: Icon(
+                CupertinoIcons.drop,
+                size: 20,
+                color: filled ? const Color(0xFF6FAAF7) : AppColors.graySoft,
+              ),
+            );
+          }),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text('$count/$visibleTotal', style: AppTextStyles.caption),
+      ],
+    );
+  }
+}
+
+class _CoinRewardProgress extends StatelessWidget {
+  const _CoinRewardProgress({required this.pot});
+
+  final GardenPot pot;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(3, (index) {
-        final filled = index < count;
-        return Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.xs),
-          child: Icon(
-            CupertinoIcons.drop,
-            size: 22,
-            color: filled ? const Color(0xFF6FAAF7) : AppColors.graySoft,
+      children: [
+        const GardenCoinIcon(size: 24),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          '+${pot.coinReward}',
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+class _RemovePlantButton extends StatelessWidget {
+  const _RemovePlantButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Remove plant',
+      child: _PressableScale(
+        onTap: onTap,
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted.withValues(alpha: .72),
+            shape: BoxShape.circle,
           ),
-        );
-      }),
+          child: Icon(
+            CupertinoIcons.delete,
+            size: 18,
+            color: AppColors.grayWarm.withValues(alpha: .82),
+          ),
+        ),
+      ),
     );
   }
 }

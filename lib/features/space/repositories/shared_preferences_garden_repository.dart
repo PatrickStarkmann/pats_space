@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
@@ -42,7 +43,10 @@ class SharedPreferencesGardenRepository implements GardenRepository {
     final pots = _normalizedPots(decodedPots);
 
     return GardenState(
-      water: _intValue(json['water']) ?? GardenState.defaultWater,
+      water: math.max(
+        _intValue(json['water']) ?? GardenState.defaultWater,
+        GardenState.defaultWater,
+      ),
       coins: _intValue(json['coins']) ?? GardenState.defaultCoins,
       pots: pots,
     );
@@ -67,6 +71,8 @@ class SharedPreferencesGardenRepository implements GardenRepository {
           GardenGrowthStage.empty,
       plantName: json['plantName'] as String? ?? 'Daisy',
       coinReward: _intValue(json['coinReward']) ?? 5,
+      waterProgress: _intValue(json['waterProgress']) ?? 0,
+      bloomCollections: _intValue(json['bloomCollections']) ?? 0,
     );
   }
 
@@ -75,6 +81,8 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       'stage': pot.stage.name,
       'plantName': pot.plantName,
       'coinReward': pot.coinReward,
+      'waterProgress': pot.waterProgress,
+      'bloomCollections': pot.bloomCollections,
     };
   }
 

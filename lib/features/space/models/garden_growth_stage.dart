@@ -21,13 +21,13 @@ enum GardenGrowthStage {
 
   bool get hasCoins => this == GardenGrowthStage.bloom;
 
-  int get waterProgress => switch (this) {
+  int get waterRequired => switch (this) {
     GardenGrowthStage.empty => 0,
-    GardenGrowthStage.seed => 0,
-    GardenGrowthStage.sprout => 1,
-    GardenGrowthStage.bud => 2,
-    GardenGrowthStage.bloom => 3,
-    GardenGrowthStage.dry => 0,
+    GardenGrowthStage.seed => 1,
+    GardenGrowthStage.sprout => 2,
+    GardenGrowthStage.bud => 3,
+    GardenGrowthStage.bloom => 0,
+    GardenGrowthStage.dry => 1,
   };
 
   String get plantAsset => switch (this) {

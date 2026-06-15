@@ -9,7 +9,7 @@ class GardenState {
     this.selectedPotIndex,
   });
 
-  static const defaultWater = 0;
+  static const defaultWater = 1000;
   static const defaultCoins = 0;
   static const defaultPotCount = 4;
 
