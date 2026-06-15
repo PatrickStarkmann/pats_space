@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
+import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/space/repositories/garden_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,12 +66,17 @@ class SharedPreferencesGardenRepository implements GardenRepository {
   }
 
   GardenPot? _potFromJson(Map<String, dynamic> json) {
+    final plantType =
+        GardenPlantType.fromStoredName(json['plantType']) ??
+        GardenPlantType.fromStoredName(json['plantName']) ??
+        GardenPlantType.daisy;
+
     return GardenPot(
       stage:
           _enumValue(GardenGrowthStage.values, json['stage']) ??
           GardenGrowthStage.empty,
-      plantName: json['plantName'] as String? ?? 'Daisy',
-      coinReward: _intValue(json['coinReward']) ?? 5,
+      plantType: plantType,
+      coinReward: _intValue(json['coinReward']) ?? plantType.coinReward,
       waterProgress: _intValue(json['waterProgress']) ?? 0,
       bloomCollections: _intValue(json['bloomCollections']) ?? 0,
     );
@@ -79,6 +85,7 @@ class SharedPreferencesGardenRepository implements GardenRepository {
   Map<String, Object?> _potToJson(GardenPot pot) {
     return {
       'stage': pot.stage.name,
+      'plantType': pot.plantType.name,
       'plantName': pot.plantName,
       'coinReward': pot.coinReward,
       'waterProgress': pot.waterProgress,

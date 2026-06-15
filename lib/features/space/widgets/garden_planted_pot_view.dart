@@ -1,19 +1,22 @@
 import 'package:flutter/widgets.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/widgets/garden_pot_view.dart';
 
 class GardenPlantedPotView extends StatelessWidget {
   const GardenPlantedPotView({
     super.key,
-    required this.stage,
+    required this.pot,
     required this.size,
   });
 
-  final GardenGrowthStage stage;
+  final GardenPot pot;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    final stage = pot.stage;
+
     return SizedBox.square(
       dimension: size,
       child: Stack(
@@ -21,7 +24,7 @@ class GardenPlantedPotView extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         children: [
           GardenPotView(size: size),
-          if (!stage.isEmpty) _PlantStageImage(stage: stage, size: size),
+          if (!stage.isEmpty) _PlantStageImage(pot: pot, size: size),
         ],
       ),
     );
@@ -29,13 +32,14 @@ class GardenPlantedPotView extends StatelessWidget {
 }
 
 class _PlantStageImage extends StatelessWidget {
-  const _PlantStageImage({required this.stage, required this.size});
+  const _PlantStageImage({required this.pot, required this.size});
 
-  final GardenGrowthStage stage;
+  final GardenPot pot;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    final stage = pot.stage;
     final plantSize = switch (stage) {
       GardenGrowthStage.seed => size * .24,
       GardenGrowthStage.sprout => size * .58,
@@ -58,7 +62,7 @@ class _PlantStageImage extends StatelessWidget {
       width: plantSize,
       height: plantSize,
       child: Image.asset(
-        stage.plantAsset,
+        pot.plantAsset,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),

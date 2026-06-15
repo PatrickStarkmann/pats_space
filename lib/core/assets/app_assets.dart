@@ -63,6 +63,18 @@ class AppAssets {
       'assets/images/garden/plants/default/stages/bloom.png';
   static const gardenPlantDry =
       'assets/images/garden/plants/default/stages/dry.png';
+  static const gardenTulipBloom =
+      'assets/images/garden/plants/tulip/stages/tulip_bloom.png';
+  static const gardenTulipDry =
+      'assets/images/garden/plants/tulip/stages/tulip_dry.png';
+  static const gardenCloverBloom =
+      'assets/images/garden/plants/clover/stages/clover_bloom.png';
+  static const gardenCloverDry =
+      'assets/images/garden/plants/clover/stages/clover_dry.png';
+  static const gardenSunflowerBloom =
+      'assets/images/garden/plants/sunflower/stages/sunflower_bloom.png';
+  static const gardenSunflowerDry =
+      'assets/images/garden/plants/sunflower/stages/sunflower_dry.png';
 
   static const characterFocus = focusPair01Focus01;
 

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 
 void main() {
@@ -95,6 +96,49 @@ void main() {
       controller.removeSelectedPlant();
       expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
       expect(controller.state.selectedPotIndex, 0);
+    });
+
+    test('selected plant type is kept while growing', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 20),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.tulip);
+
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+      expect(controller.state.pots[0].plantType, GardenPlantType.tulip);
+
+      for (var i = 0; i < 6; i += 1) {
+        controller.performSelectedPotAction();
+      }
+
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
+      expect(controller.state.pots[0].plantType, GardenPlantType.tulip);
+    });
+
+    test('clover skips bud and needs more water as a sprout', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 20),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.clover);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+
+      controller.performSelectedPotAction();
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+
+      for (var i = 0; i < 4; i += 1) {
+        controller.performSelectedPotAction();
+      }
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+      expect(controller.state.pots[0].waterProgress, 4);
+
+      controller.performSelectedPotAction();
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
     });
   });
 }

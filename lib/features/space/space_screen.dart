@@ -28,7 +28,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
         return Stack(
           children: [
             GardenStage(
-              potStages: garden.potStages,
+              pots: garden.pots,
               onPotSelected: widget.gardenController.selectPot,
               onPotAction: widget.gardenController.selectPot,
             ),
@@ -51,6 +51,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   pot: selectedPot,
                   onPrimaryAction:
                       widget.gardenController.performSelectedPotAction,
+                  onPlantSelected: widget.gardenController.plantSelectedPot,
                   onRemovePlant: widget.gardenController.removeSelectedPlant,
                   onClose: widget.gardenController.closeSelectedPot,
                 ),

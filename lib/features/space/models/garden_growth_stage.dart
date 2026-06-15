@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:pats_space/core/assets/app_assets.dart';
 
 enum GardenGrowthStage {
   empty,
@@ -28,15 +27,6 @@ enum GardenGrowthStage {
     GardenGrowthStage.bud => 3,
     GardenGrowthStage.bloom => 0,
     GardenGrowthStage.dry => 1,
-  };
-
-  String get plantAsset => switch (this) {
-    GardenGrowthStage.empty => '',
-    GardenGrowthStage.seed => AppAssets.gardenPlantSeed,
-    GardenGrowthStage.sprout => AppAssets.gardenPlantSprout,
-    GardenGrowthStage.bud => AppAssets.gardenPlantBud,
-    GardenGrowthStage.bloom => AppAssets.gardenPlantBloom,
-    GardenGrowthStage.dry => AppAssets.gardenPlantDry,
   };
 
   String get statusLabel => switch (this) {

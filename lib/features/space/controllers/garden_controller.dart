@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
+import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/space/repositories/garden_repository.dart';
 
@@ -70,6 +71,29 @@ class GardenController extends ChangeNotifier {
     );
   }
 
+  void plantSelectedPot(GardenPlantType plantType) {
+    final index = _state.selectedPotIndex;
+    if (index == null) {
+      return;
+    }
+
+    final pot = _state.pots[index];
+    if (!pot.stage.isEmpty) {
+      return;
+    }
+
+    final updatedPots = [..._state.pots]
+      ..[index] = GardenPot(
+        stage: GardenGrowthStage.seed,
+        plantType: plantType,
+        coinReward: plantType.coinReward,
+        waterProgress: 0,
+        bloomCollections: 0,
+      );
+
+    _setState(_state.copyWith(pots: updatedPots, selectedPotIndex: index));
+  }
+
   void removeSelectedPlant() {
     final index = _state.selectedPotIndex;
     if (index == null) {
@@ -85,6 +109,7 @@ class GardenController extends ChangeNotifier {
     if (pot.stage == GardenGrowthStage.empty) {
       return pot.copyWith(
         stage: GardenGrowthStage.seed,
+        coinReward: pot.plantType.coinReward,
         waterProgress: 0,
         bloomCollections: 0,
       );
@@ -110,7 +135,7 @@ class GardenController extends ChangeNotifier {
       }
 
       return pot.copyWith(
-        stage: pot.stage.next,
+        stage: pot.nextStage,
         waterProgress: 0,
         bloomCollections: pot.stage == GardenGrowthStage.dry
             ? 0
@@ -118,7 +143,7 @@ class GardenController extends ChangeNotifier {
       );
     }
 
-    return pot.copyWith(stage: pot.stage.next);
+    return pot.copyWith(stage: pot.nextStage);
   }
 
   int _waterAfterPrimaryAction(GardenPot pot) {

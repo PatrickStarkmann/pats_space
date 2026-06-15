@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_pot_slot.dart';
 import 'package:pats_space/features/space/widgets/garden_action_bubble.dart';
 import 'package:pats_space/features/space/widgets/garden_background.dart';
@@ -11,12 +12,12 @@ import 'package:pats_space/features/space/widgets/garden_planted_pot_view.dart';
 class GardenStage extends StatelessWidget {
   const GardenStage({
     super.key,
-    required this.potStages,
+    required this.pots,
     required this.onPotSelected,
     required this.onPotAction,
   });
 
-  final List<GardenGrowthStage> potStages;
+  final List<GardenPot> pots;
   final ValueChanged<int> onPotSelected;
   final ValueChanged<int> onPotAction;
 
@@ -52,7 +53,7 @@ class GardenStage extends StatelessWidget {
             for (var index = 0; index < _potSlots.length; index += 1)
               _PositionedPot(
                 slot: _potSlots[index],
-                stage: potStages[index],
+                pot: pots[index],
                 stageSize: stageSize,
                 usableGardenHeight: usableGardenHeight,
                 potSize: shortestSide * _potSlots[index].sizeFactor,
@@ -92,7 +93,7 @@ class _PositionedCharacter extends StatelessWidget {
 class _PositionedPot extends StatelessWidget {
   const _PositionedPot({
     required this.slot,
-    required this.stage,
+    required this.pot,
     required this.stageSize,
     required this.usableGardenHeight,
     required this.potSize,
@@ -101,7 +102,7 @@ class _PositionedPot extends StatelessWidget {
   });
 
   final GardenPotSlot slot;
-  final GardenGrowthStage stage;
+  final GardenPot pot;
   final Size stageSize;
   final double usableGardenHeight;
   final double potSize;
@@ -110,6 +111,7 @@ class _PositionedPot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final stage = pot.stage;
     final bubbleSize = potSize * .34;
     final bubbleTop = switch (stage) {
       GardenGrowthStage.empty || GardenGrowthStage.seed => potSize * .22,
@@ -131,7 +133,7 @@ class _PositionedPot extends StatelessWidget {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onTap,
-            child: GardenPlantedPotView(stage: stage, size: potSize),
+            child: GardenPlantedPotView(pot: pot, size: potSize),
           ),
           Positioned(
             top: bubbleTop,

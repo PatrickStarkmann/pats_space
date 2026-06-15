@@ -31,4 +31,7 @@ flutter:
     - assets/images/garden/backgrounds/
     - assets/images/garden/pots/default/
     - assets/images/garden/plants/default/stages/
+    - assets/images/garden/plants/tulip/stages/
+    - assets/images/garden/plants/clover/stages/
+    - assets/images/garden/plants/sunflower/stages/
     - assets/images/garden/ui/
