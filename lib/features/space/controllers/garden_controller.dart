@@ -30,6 +30,22 @@ class GardenController extends ChangeNotifier {
     _setState(_state.copyWith(clearSelectedPot: true), persist: false);
   }
 
+  void addWater(int amount) {
+    if (amount <= 0) {
+      return;
+    }
+
+    _setState(_state.copyWith(water: _state.water + amount));
+  }
+
+  void addCoins(int amount) {
+    if (amount <= 0) {
+      return;
+    }
+
+    _setState(_state.copyWith(coins: _state.coins + amount));
+  }
+
   void performSelectedPotAction() {
     final index = _state.selectedPotIndex;
     if (index == null) {
@@ -37,6 +53,10 @@ class GardenController extends ChangeNotifier {
     }
 
     final pot = _state.pots[index];
+    if (pot.stage.needsWater && _state.water <= 0) {
+      return;
+    }
+
     final updatedPot = _updatedPotAfterPrimaryAction(pot);
     final updatedPots = [..._state.pots]..[index] = updatedPot;
 

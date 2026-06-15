@@ -132,8 +132,10 @@ class _AppShellContent extends StatelessWidget {
         children: [
           HomeScreen(
             historyController: bundle.historyController,
+            gardenController: bundle.gardenController,
             initialSettings: bundle.settings,
             settingsRepository: bundle.settingsRepository,
+            onOpenSpace: () => onTabSelected(AppTab.space),
           ),
           SpaceScreen(gardenController: bundle.gardenController),
           StatsScreen(historyController: bundle.historyController),

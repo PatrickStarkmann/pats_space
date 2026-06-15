@@ -16,6 +16,7 @@ class FocusTimerController extends ChangeNotifier {
     FocusTimerSettings initialSettings = defaultSettings,
     this.tickStep = const Duration(seconds: 1),
     this.onFocusSessionCompleted,
+    this.onFocusRoundCompleted,
   }) : _settings = initialSettings,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
@@ -36,6 +37,7 @@ class FocusTimerController extends ChangeNotifier {
 
   final Duration tickStep;
   final ValueChanged<FocusSessionRecord>? onFocusSessionCompleted;
+  final VoidCallback? onFocusRoundCompleted;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
@@ -54,6 +56,19 @@ class FocusTimerController extends ChangeNotifier {
   bool get active => _phase != FocusSessionPhase.idle;
   bool get running => active && !_paused;
   bool get isStopwatch => _settings.mode == FocusMode.stopwatch;
+
+  Duration get elapsedFocusDuration {
+    return switch (_phase) {
+      FocusSessionPhase.focus => Duration(
+        seconds: (_settings.focusMinutes * 60 - _remainingSeconds).clamp(
+          0,
+          _settings.focusMinutes * 60,
+        ),
+      ),
+      FocusSessionPhase.stopwatch => Duration(seconds: _remainingSeconds),
+      FocusSessionPhase.breakTime || FocusSessionPhase.idle => Duration.zero,
+    };
+  }
 
   String get modeLabel {
     return switch (_phase) {
@@ -215,14 +230,21 @@ class FocusTimerController extends ChangeNotifier {
 
   void _completeBreak() {
     _ticker?.cancel();
-    _phase = FocusSessionPhase.idle;
-    _paused = false;
     _completedSessions = (_completedSessions + 1).clamp(
       0,
       _settings.sessionsPerRound,
     );
+
+    if (_completedSessions < _settings.sessionsPerRound) {
+      _startFocus();
+      return;
+    }
+
+    _phase = FocusSessionPhase.idle;
+    _paused = false;
     _remainingSeconds = _settings.focusMinutes * 60;
     notifyListeners();
+    onFocusRoundCompleted?.call();
   }
 
   void _startTicker() {
