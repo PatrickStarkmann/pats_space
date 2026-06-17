@@ -14,6 +14,8 @@ enum GardenPlantType {
     GardenPlantType.sunflower,
   ];
 
+  static const initiallyUnlocked = {GardenPlantType.daisy};
+
   String get displayName => switch (this) {
     GardenPlantType.daisy => 'Daisy',
     GardenPlantType.tulip => 'Tulip',
@@ -21,19 +23,70 @@ enum GardenPlantType {
     GardenPlantType.sunflower => 'Sunflower',
   };
 
-  int get coinReward => switch (this) {
-    GardenPlantType.daisy => 5,
-    GardenPlantType.tulip => 8,
-    GardenPlantType.clover => 5,
-    GardenPlantType.sunflower => 14,
+  GardenPlantType? get nextUnlock => switch (this) {
+    GardenPlantType.daisy => GardenPlantType.tulip,
+    GardenPlantType.tulip => GardenPlantType.clover,
+    GardenPlantType.clover => GardenPlantType.sunflower,
+    GardenPlantType.sunflower => null,
   };
 
-  Duration get coinDropInterval => switch (this) {
-    GardenPlantType.daisy => const Duration(hours: 8),
-    GardenPlantType.tulip => const Duration(hours: 10),
-    GardenPlantType.clover => const Duration(hours: 8),
-    GardenPlantType.sunflower => const Duration(hours: 12),
+  GardenPlantType? get unlockRequirement => switch (this) {
+    GardenPlantType.daisy => null,
+    GardenPlantType.tulip => GardenPlantType.daisy,
+    GardenPlantType.clover => GardenPlantType.tulip,
+    GardenPlantType.sunflower => GardenPlantType.clover,
   };
+
+  String get unlockRequirementLabel {
+    final requirement = unlockRequirement;
+    if (requirement == null) {
+      return 'Unlocked';
+    }
+
+    return 'Bloom ${requirement.displayName}';
+  }
+
+  GardenPlantBalance get balance => switch (this) {
+    GardenPlantType.daisy => const GardenPlantBalance(
+      coinReward: 5,
+      coinDropInterval: Duration(hours: 8),
+      plantCost: 1,
+      seedWater: 3,
+      sproutWater: 5,
+      budWater: 8,
+      dryWater: 4,
+    ),
+    GardenPlantType.tulip => const GardenPlantBalance(
+      coinReward: 8,
+      coinDropInterval: Duration(hours: 10),
+      plantCost: 2,
+      seedWater: 5,
+      sproutWater: 8,
+      budWater: 13,
+      dryWater: 5,
+    ),
+    GardenPlantType.clover => const GardenPlantBalance(
+      coinReward: 5,
+      coinDropInterval: Duration(hours: 8),
+      plantCost: 2,
+      seedWater: 6,
+      sproutWater: 12,
+      dryWater: 6,
+    ),
+    GardenPlantType.sunflower => const GardenPlantBalance(
+      coinReward: 14,
+      coinDropInterval: Duration(hours: 12),
+      plantCost: 3,
+      seedWater: 7,
+      sproutWater: 12,
+      budWater: 18,
+      dryWater: 7,
+    ),
+  };
+
+  int get coinReward => balance.coinReward;
+
+  Duration get coinDropInterval => balance.coinDropInterval;
 
   String get coinDropIntervalLabel => switch (this) {
     GardenPlantType.daisy => '8h',
@@ -42,12 +95,7 @@ enum GardenPlantType {
     GardenPlantType.sunflower => '12h',
   };
 
-  int get plantCost => switch (this) {
-    GardenPlantType.daisy => 1,
-    GardenPlantType.tulip => 2,
-    GardenPlantType.clover => 2,
-    GardenPlantType.sunflower => 3,
-  };
+  int get plantCost => balance.plantCost;
 
   String get specialLabel => switch (this) {
     GardenPlantType.daisy => 'Starter',
@@ -64,26 +112,7 @@ enum GardenPlantType {
   };
 
   int waterRequiredFor(GardenGrowthStage stage) {
-    return switch ((this, stage)) {
-      (_, GardenGrowthStage.empty) => 0,
-      (GardenPlantType.daisy, GardenGrowthStage.seed) => 5,
-      (GardenPlantType.daisy, GardenGrowthStage.sprout) => 8,
-      (GardenPlantType.daisy, GardenGrowthStage.bud) => 12,
-      (GardenPlantType.daisy, GardenGrowthStage.dry) => 5,
-      (GardenPlantType.tulip, GardenGrowthStage.seed) => 6,
-      (GardenPlantType.tulip, GardenGrowthStage.sprout) => 10,
-      (GardenPlantType.tulip, GardenGrowthStage.bud) => 15,
-      (GardenPlantType.tulip, GardenGrowthStage.dry) => 6,
-      (GardenPlantType.clover, GardenGrowthStage.seed) => 7,
-      (GardenPlantType.clover, GardenGrowthStage.sprout) => 14,
-      (GardenPlantType.clover, GardenGrowthStage.dry) => 7,
-      (GardenPlantType.sunflower, GardenGrowthStage.seed) => 8,
-      (GardenPlantType.sunflower, GardenGrowthStage.sprout) => 14,
-      (GardenPlantType.sunflower, GardenGrowthStage.bud) => 20,
-      (GardenPlantType.sunflower, GardenGrowthStage.dry) => 8,
-      (_, GardenGrowthStage.bloom) => 0,
-      (_, _) => 0,
-    };
+    return balance.waterRequiredFor(stage);
   }
 
   GardenGrowthStage nextStageAfter(GardenGrowthStage stage) {
@@ -143,6 +172,39 @@ enum GardenPlantType {
       'clover' => GardenPlantType.clover,
       'sunflower' => GardenPlantType.sunflower,
       _ => null,
+    };
+  }
+}
+
+class GardenPlantBalance {
+  const GardenPlantBalance({
+    required this.coinReward,
+    required this.coinDropInterval,
+    required this.plantCost,
+    required this.seedWater,
+    required this.sproutWater,
+    this.budWater = 0,
+    required this.dryWater,
+  });
+
+  final int coinReward;
+  final Duration coinDropInterval;
+  final int plantCost;
+  final int seedWater;
+  final int sproutWater;
+  final int budWater;
+  final int dryWater;
+
+  int get waterToBloom => seedWater + sproutWater + budWater;
+  int get totalWaterToFirstBloom => plantCost + waterToBloom;
+
+  int waterRequiredFor(GardenGrowthStage stage) {
+    return switch (stage) {
+      GardenGrowthStage.seed => seedWater,
+      GardenGrowthStage.sprout => sproutWater,
+      GardenGrowthStage.bud => budWater,
+      GardenGrowthStage.dry => dryWater,
+      GardenGrowthStage.empty || GardenGrowthStage.bloom => 0,
     };
   }
 }

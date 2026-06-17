@@ -17,6 +17,7 @@ class GardenPlantCard extends StatefulWidget {
     super.key,
     required this.pot,
     required this.water,
+    required this.unlockedPlantTypes,
     required this.onPrimaryAction,
     required this.onPlantSelected,
     required this.onRemovePlant,
@@ -25,6 +26,7 @@ class GardenPlantCard extends StatefulWidget {
 
   final GardenPot pot;
   final int water;
+  final Set<GardenPlantType> unlockedPlantTypes;
   final VoidCallback onPrimaryAction;
   final ValueChanged<GardenPlantType> onPlantSelected;
   final VoidCallback onRemovePlant;
@@ -130,6 +132,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                 if (widget.pot.isEmpty)
                   _PlantSelectionContent(
                     water: widget.water,
+                    unlockedPlantTypes: widget.unlockedPlantTypes,
                     onPlantSelected: widget.onPlantSelected,
                   )
                 else
@@ -150,10 +153,12 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
 class _PlantSelectionContent extends StatefulWidget {
   const _PlantSelectionContent({
     required this.water,
+    required this.unlockedPlantTypes,
     required this.onPlantSelected,
   });
 
   final int water;
+  final Set<GardenPlantType> unlockedPlantTypes;
   final ValueChanged<GardenPlantType> onPlantSelected;
 
   @override
@@ -202,12 +207,14 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
             },
             itemBuilder: (context, index) {
               final plantType = GardenPlantType.plantable[index];
+              final unlocked = widget.unlockedPlantTypes.contains(plantType);
 
               return _PlantCarouselCard(
                 controller: _pageController,
                 index: index,
                 plantType: plantType,
                 selected: plantType == _selectedPlantType,
+                unlocked: unlocked,
                 onTap: () {
                   if (index != _lastHapticIndex) {
                     _lastHapticIndex = index;
@@ -224,11 +231,17 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _PlantPickerStats(plantType: _selectedPlantType),
+        _PlantPickerStats(
+          plantType: _selectedPlantType,
+          unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
+        ),
         const SizedBox(height: AppSpacing.md),
         _PlantPickerPrimaryButton(
           plantType: _selectedPlantType,
-          enabled: widget.water >= _selectedPlantType.plantCost,
+          unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
+          enabled:
+              widget.unlockedPlantTypes.contains(_selectedPlantType) &&
+              widget.water >= _selectedPlantType.plantCost,
           onTap: () {
             HapticFeedback.lightImpact();
             widget.onPlantSelected(_selectedPlantType);
@@ -245,6 +258,7 @@ class _PlantCarouselCard extends StatelessWidget {
     required this.index,
     required this.plantType,
     required this.selected,
+    required this.unlocked,
     required this.onTap,
   });
 
@@ -252,6 +266,7 @@ class _PlantCarouselCard extends StatelessWidget {
   final int index;
   final GardenPlantType plantType;
   final bool selected;
+  final bool unlocked;
   final VoidCallback onTap;
 
   @override
@@ -274,7 +289,7 @@ class _PlantCarouselCard extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: selected,
-        label: plantType.displayName,
+        label: unlocked ? plantType.displayName : 'Mystery plant',
         child: _PressableScale(
           onTap: onTap,
           child: AnimatedContainer(
@@ -289,15 +304,19 @@ class _PlantCarouselCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: selected
                   ? AppColors.surface
-                  : AppColors.surfaceMuted.withValues(alpha: .56),
+                  : unlocked
+                  ? AppColors.surfaceMuted.withValues(alpha: .56)
+                  : AppColors.surfaceMuted.withValues(alpha: .72),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: selected
+                color: !unlocked
+                    ? AppColors.graySoft.withValues(alpha: .7)
+                    : selected
                     ? AppColors.sage
                     : AppColors.graySoft.withValues(alpha: .34),
                 width: selected ? 2 : 1,
               ),
-              boxShadow: selected
+              boxShadow: selected && unlocked
                   ? [
                       BoxShadow(
                         color: AppColors.charcoal.withValues(alpha: .08),
@@ -320,10 +339,12 @@ class _PlantCarouselCard extends StatelessWidget {
                   right: AppSpacing.sm,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 160),
-                    opacity: selected ? 1 : 0,
-                    child: const Icon(
-                      CupertinoIcons.checkmark_alt_circle_fill,
-                      color: AppColors.sage,
+                    opacity: selected || !unlocked ? 1 : 0,
+                    child: Icon(
+                      unlocked
+                          ? CupertinoIcons.checkmark_alt_circle_fill
+                          : CupertinoIcons.lock_fill,
+                      color: unlocked ? AppColors.sage : AppColors.grayWarm,
                       size: 22,
                     ),
                   ),
@@ -341,23 +362,30 @@ class _PlantCarouselCard extends StatelessWidget {
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 220),
                           switchInCurve: Curves.easeOutBack,
-                          child: Image.asset(
-                            plantType.previewAsset,
-                            key: ValueKey(plantType),
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
+                          child: unlocked
+                              ? Image.asset(
+                                  plantType.previewAsset,
+                                  key: ValueKey(plantType),
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                )
+                              : const _MysteryPlantMark(
+                                  key: ValueKey('mystery-plant'),
+                                ),
+                        ),
+                      ),
+                      if (unlocked) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          plantType.displayName,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.charcoal,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        plantType.displayName,
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -370,43 +398,132 @@ class _PlantCarouselCard extends StatelessWidget {
   }
 }
 
+class _MysteryPlantMark extends StatelessWidget {
+  const _MysteryPlantMark({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .78),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.graySoft.withValues(alpha: .7),
+            width: 1.4,
+          ),
+        ),
+        child: SizedBox.square(
+          dimension: 78,
+          child: Center(
+            child: Text(
+              '?',
+              style: AppTextStyles.headline.copyWith(
+                color: AppColors.grayWarm,
+                fontSize: 44,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PlantPickerStats extends StatelessWidget {
-  const _PlantPickerStats({required this.plantType});
+  const _PlantPickerStats({required this.plantType, required this.unlocked});
 
   final GardenPlantType plantType;
+  final bool unlocked;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
       child: Row(
-        key: ValueKey(plantType),
+        key: ValueKey((plantType, unlocked)),
         children: [
-          _PickerStatChip(
-            leading: const GardenCoinIcon(size: 22),
-            label: '+${plantType.coinReward}',
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          _PickerStatChip(
-            leading: const Icon(
-              CupertinoIcons.timer,
-              size: 18,
-              color: AppColors.grayWarm,
+          if (unlocked) ...[
+            _PickerStatChip(
+              leading: const GardenCoinIcon(size: 22),
+              label: '+${plantType.coinReward}',
             ),
-            label: '/${plantType.coinDropIntervalLabel}',
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: _PickerStatChip(
+            const SizedBox(width: AppSpacing.xs),
+            _PickerStatChip(
               leading: const Icon(
-                CupertinoIcons.sparkles,
+                CupertinoIcons.timer,
                 size: 18,
-                color: AppColors.sage,
+                color: AppColors.grayWarm,
               ),
-              label: plantType.specialLabel,
+              label: '/${plantType.coinDropIntervalLabel}',
             ),
-          ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _PickerStatChip(
+                leading: const Icon(
+                  CupertinoIcons.sparkles,
+                  size: 18,
+                  color: AppColors.sage,
+                ),
+                label: plantType.specialLabel,
+              ),
+            ),
+          ] else
+            Expanded(
+              child: _UnlockHint(
+                leading: const Icon(
+                  CupertinoIcons.lock_fill,
+                  size: 18,
+                  color: AppColors.grayWarm,
+                ),
+                label: 'Unlock: ${plantType.unlockRequirementLabel}',
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _UnlockHint extends StatelessWidget {
+  const _UnlockHint({required this.leading, required this.label});
+
+  final Widget leading;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .72),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .42)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            leading,
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.charcoal,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -468,11 +585,13 @@ class _PickerStatChip extends StatelessWidget {
 class _PlantPickerPrimaryButton extends StatelessWidget {
   const _PlantPickerPrimaryButton({
     required this.plantType,
+    required this.unlocked,
     required this.enabled,
     required this.onTap,
   });
 
   final GardenPlantType plantType;
+  final bool unlocked;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -509,16 +628,22 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                enabled ? CupertinoIcons.drop_fill : CupertinoIcons.drop,
+                unlocked
+                    ? enabled
+                          ? CupertinoIcons.drop_fill
+                          : CupertinoIcons.drop
+                    : CupertinoIcons.lock_fill,
                 size: 20,
                 color: AppColors.surface,
               ),
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
-                  enabled
-                      ? 'Plant ${plantType.displayName} · ${plantType.plantCost} water'
-                      : 'Need ${plantType.plantCost} water',
+                  unlocked
+                      ? enabled
+                            ? 'Plant ${plantType.displayName} · ${plantType.plantCost} water'
+                            : 'Need ${plantType.plantCost} water'
+                      : 'Locked',
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.w700,

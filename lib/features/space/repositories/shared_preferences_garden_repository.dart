@@ -49,6 +49,7 @@ class SharedPreferencesGardenRepository implements GardenRepository {
         GardenState.defaultWater,
       ),
       coins: _intValue(json['coins']) ?? GardenState.defaultCoins,
+      unlockedPlantTypes: _plantTypesFromJson(json['unlockedPlantTypes']),
       pots: pots,
     );
   }
@@ -60,6 +61,9 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       jsonEncode({
         'water': state.water,
         'coins': state.coins,
+        'unlockedPlantTypes': state.unlockedPlantTypes
+            .map((plantType) => plantType.name)
+            .toList(),
         'pots': state.pots.map(_potToJson).toList(),
       }),
     );
@@ -103,6 +107,18 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       normalized.add(const GardenPot.empty());
     }
     return normalized;
+  }
+
+  Set<GardenPlantType> _plantTypesFromJson(Object? json) {
+    if (json is! List) {
+      return GardenPlantType.initiallyUnlocked;
+    }
+
+    final plantTypes = json
+        .map(GardenPlantType.fromStoredName)
+        .whereType<GardenPlantType>()
+        .toSet();
+    return {...GardenPlantType.initiallyUnlocked, ...plantTypes};
   }
 
   T? _enumValue<T extends Enum>(List<T> values, Object? name) {

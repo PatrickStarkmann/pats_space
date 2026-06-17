@@ -110,12 +110,14 @@ class GardenController extends ChangeNotifier {
 
     final updatedPot = _updatedPotAfterPrimaryAction(pot, DateTime.now());
     final updatedPots = [..._state.pots]..[index] = updatedPot;
+    final unlockedPlantTypes = _unlockedPlantTypesAfterAction(pot, updatedPot);
 
     _setState(
       _state.copyWith(
         water: _waterAfterPrimaryAction(pot),
         coins: _coinsAfterPrimaryAction(pot),
         pots: updatedPots,
+        unlockedPlantTypes: unlockedPlantTypes,
         selectedPotIndex: keepSelected ? index : null,
         clearSelectedPot: !keepSelected,
       ),
@@ -134,6 +136,10 @@ class GardenController extends ChangeNotifier {
     }
 
     if (_state.water < plantType.plantCost) {
+      return;
+    }
+
+    if (!_state.unlockedPlantTypes.contains(plantType)) {
       return;
     }
 
@@ -256,6 +262,22 @@ class GardenController extends ChangeNotifier {
     return baseReward;
   }
 
+  Set<GardenPlantType> _unlockedPlantTypesAfterAction(
+    GardenPot oldPot,
+    GardenPot updatedPot,
+  ) {
+    if (!updatedPot.stage.hasCoins || oldPot.stage.hasCoins) {
+      return _state.unlockedPlantTypes;
+    }
+
+    final nextUnlock = updatedPot.plantType.nextUnlock;
+    if (nextUnlock == null || _state.unlockedPlantTypes.contains(nextUnlock)) {
+      return _state.unlockedPlantTypes;
+    }
+
+    return {..._state.unlockedPlantTypes, nextUnlock};
+  }
+
   void _refreshBloomCharges() {
     final refreshedState = _stateWithBloomCharges(_state, DateTime.now());
     if (!_sameGardenState(refreshedState, _state)) {
@@ -334,6 +356,7 @@ class GardenController extends ChangeNotifier {
     if (a.water != b.water ||
         a.coins != b.coins ||
         a.selectedPotIndex != b.selectedPotIndex ||
+        !setEquals(a.unlockedPlantTypes, b.unlockedPlantTypes) ||
         a.pots.length != b.pots.length) {
       return false;
     }

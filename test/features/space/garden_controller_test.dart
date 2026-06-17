@@ -7,6 +7,13 @@ import 'package:pats_space/features/space/models/garden_state.dart';
 
 void main() {
   group('GardenController', () {
+    test('plant balance scales starter to premium plants', () {
+      expect(GardenPlantType.daisy.balance.totalWaterToFirstBloom, 17);
+      expect(GardenPlantType.clover.balance.totalWaterToFirstBloom, 20);
+      expect(GardenPlantType.tulip.balance.totalWaterToFirstBloom, 28);
+      expect(GardenPlantType.sunflower.balance.totalWaterToFirstBloom, 40);
+    });
+
     test('daisy needs more water for each growth stage', () {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(water: 100),
@@ -18,23 +25,23 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
       expect(controller.state.water, 99);
 
-      _performActions(controller, 4);
+      _performActions(controller, 2);
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+      expect(controller.state.pots[0].waterProgress, 2);
+
+      _performActions(controller, 1);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+
+      _performActions(controller, 4);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
       expect(controller.state.pots[0].waterProgress, 4);
 
       _performActions(controller, 1);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
 
       _performActions(controller, 7);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
       expect(controller.state.pots[0].waterProgress, 7);
-
-      _performActions(controller, 1);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
-
-      _performActions(controller, 11);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
-      expect(controller.state.pots[0].waterProgress, 11);
 
       _performActions(controller, 1);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
@@ -114,7 +121,7 @@ void main() {
       controller.performSelectedPotAction();
       expect(controller.state.pots[0].stage, GardenGrowthStage.dry);
 
-      _performActions(controller, 5);
+      _performActions(controller, 4);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
     });
 
@@ -135,7 +142,10 @@ void main() {
 
     test('pot action opens empty pot and waters planted pot directly', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 20),
+        initialState: GardenState.initial().copyWith(
+          water: 20,
+          unlockedPlantTypes: _allPlantsUnlocked,
+        ),
       );
       addTearDown(controller.dispose);
 
@@ -155,7 +165,10 @@ void main() {
 
     test('selected plant type is kept while growing', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 50),
+        initialState: GardenState.initial().copyWith(
+          water: 50,
+          unlockedPlantTypes: _allPlantsUnlocked,
+        ),
       );
       addTearDown(controller.dispose);
 
@@ -165,7 +178,7 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
       expect(controller.state.pots[0].plantType, GardenPlantType.tulip);
 
-      _performActions(controller, 31);
+      _performActions(controller, 26);
 
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
       expect(controller.state.pots[0].plantType, GardenPlantType.tulip);
@@ -173,7 +186,10 @@ void main() {
 
     test('clover skips bud and needs more water as a sprout', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 40),
+        initialState: GardenState.initial().copyWith(
+          water: 40,
+          unlockedPlantTypes: _allPlantsUnlocked,
+        ),
       );
       addTearDown(controller.dispose);
 
@@ -181,15 +197,54 @@ void main() {
       controller.plantSelectedPot(GardenPlantType.clover);
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
 
-      _performActions(controller, 7);
+      _performActions(controller, 6);
       expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
 
-      _performActions(controller, 13);
+      _performActions(controller, 11);
       expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
-      expect(controller.state.pots[0].waterProgress, 13);
+      expect(controller.state.pots[0].waterProgress, 11);
 
       _performActions(controller, 1);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
+    });
+
+    test('blooming a plant unlocks the next plant', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 40),
+      );
+      addTearDown(controller.dispose);
+
+      expect(
+        controller.state.unlockedPlantTypes,
+        contains(GardenPlantType.daisy),
+      );
+      expect(
+        controller.state.unlockedPlantTypes,
+        isNot(contains(GardenPlantType.tulip)),
+      );
+
+      controller.selectPot(0);
+      controller.performSelectedPotAction();
+      _performActions(controller, 16);
+
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
+      expect(
+        controller.state.unlockedPlantTypes,
+        contains(GardenPlantType.tulip),
+      );
+    });
+
+    test('locked plants cannot be planted', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 40),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.tulip);
+
+      expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
+      expect(controller.state.water, 40);
     });
 
     test('bloom charges refill every eight hours without stacking', () {
@@ -283,6 +338,9 @@ void _performActions(GardenController controller, int count) {
     controller.performSelectedPotAction();
   }
 }
+
+Set<GardenPlantType> get _allPlantsUnlocked =>
+    GardenPlantType.plantable.toSet();
 
 GardenPot _bloomingPot({
   required int charges,

@@ -88,6 +88,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 child: GardenPlantCard(
                   pot: selectedPot,
                   water: garden.water,
+                  unlockedPlantTypes: garden.unlockedPlantTypes,
                   onPrimaryAction:
                       widget.gardenController.performSelectedPotAction,
                   onPlantSelected: widget.gardenController.plantSelectedPot,
