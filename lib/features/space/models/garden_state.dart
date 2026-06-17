@@ -14,7 +14,7 @@ class GardenState {
          ...unlockedPlantTypes,
        });
 
-  static const defaultWater = 30;
+  static const defaultWater = 1000;
   static const defaultCoins = 0;
   static const defaultPotCount = 4;
 
