@@ -79,6 +79,8 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       coinReward: _intValue(json['coinReward']) ?? plantType.coinReward,
       waterProgress: _intValue(json['waterProgress']) ?? 0,
       bloomCollections: _intValue(json['bloomCollections']) ?? 0,
+      bloomCharges: _intValue(json['bloomCharges']) ?? 0,
+      lastBloomChargeAtMillis: _intValue(json['lastBloomChargeAtMillis']),
     );
   }
 
@@ -90,6 +92,8 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       'coinReward': pot.coinReward,
       'waterProgress': pot.waterProgress,
       'bloomCollections': pot.bloomCollections,
+      'bloomCharges': pot.bloomCharges,
+      'lastBloomChargeAtMillis': pot.lastBloomChargeAtMillis,
     };
   }
 

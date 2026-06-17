@@ -1,47 +1,137 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
-import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 
 class GardenActionBubble extends StatelessWidget {
   const GardenActionBubble({
     super.key,
-    required this.stage,
+    required this.pot,
+    required this.enabled,
     required this.size,
     required this.onTap,
+    this.onLongPressStart,
+    this.onLongPressEnd,
   });
 
-  final GardenGrowthStage stage;
+  final GardenPot pot;
+  final bool enabled;
   final double size;
   final VoidCallback onTap;
+  final VoidCallback? onLongPressStart;
+  final VoidCallback? onLongPressEnd;
 
   @override
   Widget build(BuildContext context) {
+    final stage = pot.stage;
     final color = stage.needsWater
-        ? const Color(0xFF6FAAF7)
+        ? const Color(0xFF6FAAF7).withValues(alpha: enabled ? 1 : .34)
         : AppColors.grayWarm;
+    final hitSize = size * 1.55;
+    final progress = pot.waterRequired == 0
+        ? 0.0
+        : (pot.waterProgress / pot.waterRequired).clamp(0.0, 1.0);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: SizedBox.square(
-        dimension: size,
-        child: CustomPaint(
-          painter: _GardenBubblePainter(
-            borderColor: stage.isEmpty
-                ? AppColors.grayWarm
-                : AppColors.graySoft,
-            fillColor: AppColors.surface.withValues(alpha: .9),
-            dashed: stage.isEmpty,
-          ),
+      onLongPressStart: onLongPressStart == null
+          ? null
+          : (_) => onLongPressStart?.call(),
+      onLongPressEnd: onLongPressEnd == null
+          ? null
+          : (_) => onLongPressEnd?.call(),
+      onLongPressCancel: onLongPressEnd,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 160),
+        opacity: enabled || stage.isEmpty ? 1 : .52,
+        child: SizedBox.square(
+          dimension: hitSize,
           child: Center(
-            child: stage.hasCoins
-                ? GardenCoinIcon(size: size * .52)
-                : Icon(stage.actionIcon, size: size * .44, color: color),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (stage.needsWater)
+                  SizedBox.square(
+                    dimension: size * 1.18,
+                    child: CustomPaint(
+                      painter: _BubbleProgressRingPainter(
+                        progress: progress,
+                        enabled: enabled,
+                      ),
+                    ),
+                  ),
+                SizedBox.square(
+                  dimension: size,
+                  child: CustomPaint(
+                    painter: _GardenBubblePainter(
+                      borderColor: stage.isEmpty
+                          ? AppColors.grayWarm
+                          : AppColors.graySoft,
+                      fillColor: AppColors.surface.withValues(alpha: .9),
+                      dashed: stage.isEmpty,
+                    ),
+                    child: Center(
+                      child: stage.hasCoins
+                          ? GardenCoinIcon(size: size * .52)
+                          : Icon(
+                              stage.actionIcon,
+                              size: size * .44,
+                              color: color,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+}
+
+class _BubbleProgressRingPainter extends CustomPainter {
+  const _BubbleProgressRingPainter({
+    required this.progress,
+    required this.enabled,
+  });
+
+  final double progress;
+  final bool enabled;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final strokeWidth = size.shortestSide * .055;
+    final track = Paint()
+      ..color = AppColors.graySoft.withValues(alpha: .38)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final progressPaint = Paint()
+      ..color = const Color(0xFF6FAAF7).withValues(alpha: enabled ? 1 : .34)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final inset = strokeWidth / 2;
+    final arcRect = rect.deflate(inset);
+    canvas.drawArc(arcRect, 0, math.pi * 2, false, track);
+    canvas.drawArc(
+      arcRect,
+      -math.pi / 2,
+      math.pi * 2 * progress,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleProgressRingPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.enabled != enabled;
   }
 }
 

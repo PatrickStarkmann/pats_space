@@ -21,24 +21,68 @@ enum GardenPlantType {
     GardenPlantType.sunflower => 'Sunflower',
   };
 
-  int get coinReward => 5;
+  int get coinReward => switch (this) {
+    GardenPlantType.daisy => 5,
+    GardenPlantType.tulip => 8,
+    GardenPlantType.clover => 5,
+    GardenPlantType.sunflower => 14,
+  };
+
+  Duration get coinDropInterval => switch (this) {
+    GardenPlantType.daisy => const Duration(hours: 8),
+    GardenPlantType.tulip => const Duration(hours: 10),
+    GardenPlantType.clover => const Duration(hours: 8),
+    GardenPlantType.sunflower => const Duration(hours: 12),
+  };
+
+  String get coinDropIntervalLabel => switch (this) {
+    GardenPlantType.daisy => '8h',
+    GardenPlantType.tulip => '10h',
+    GardenPlantType.clover => '8h',
+    GardenPlantType.sunflower => '12h',
+  };
+
+  int get plantCost => switch (this) {
+    GardenPlantType.daisy => 1,
+    GardenPlantType.tulip => 2,
+    GardenPlantType.clover => 2,
+    GardenPlantType.sunflower => 3,
+  };
 
   String get specialLabel => switch (this) {
-    GardenPlantType.daisy => 'Balanced starter',
-    GardenPlantType.tulip => 'Elegant bloom',
-    GardenPlantType.clover => 'Lucky harvest',
-    GardenPlantType.sunflower => 'Big bloom',
+    GardenPlantType.daisy => 'Starter',
+    GardenPlantType.tulip => 'Bonus',
+    GardenPlantType.clover => 'Lucky',
+    GardenPlantType.sunflower => 'Jackpot',
+  };
+
+  String get specialDescription => switch (this) {
+    GardenPlantType.daisy => '',
+    GardenPlantType.tulip => 'More coins, slower drops',
+    GardenPlantType.clover => '20% chance for double coins',
+    GardenPlantType.sunflower => 'Biggest payout, slowest drop',
   };
 
   int waterRequiredFor(GardenGrowthStage stage) {
     return switch ((this, stage)) {
-      (GardenPlantType.clover, GardenGrowthStage.sprout) => 5,
       (_, GardenGrowthStage.empty) => 0,
-      (_, GardenGrowthStage.seed) => 1,
-      (_, GardenGrowthStage.sprout) => 2,
-      (_, GardenGrowthStage.bud) => 3,
+      (GardenPlantType.daisy, GardenGrowthStage.seed) => 5,
+      (GardenPlantType.daisy, GardenGrowthStage.sprout) => 8,
+      (GardenPlantType.daisy, GardenGrowthStage.bud) => 12,
+      (GardenPlantType.daisy, GardenGrowthStage.dry) => 5,
+      (GardenPlantType.tulip, GardenGrowthStage.seed) => 6,
+      (GardenPlantType.tulip, GardenGrowthStage.sprout) => 10,
+      (GardenPlantType.tulip, GardenGrowthStage.bud) => 15,
+      (GardenPlantType.tulip, GardenGrowthStage.dry) => 6,
+      (GardenPlantType.clover, GardenGrowthStage.seed) => 7,
+      (GardenPlantType.clover, GardenGrowthStage.sprout) => 14,
+      (GardenPlantType.clover, GardenGrowthStage.dry) => 7,
+      (GardenPlantType.sunflower, GardenGrowthStage.seed) => 8,
+      (GardenPlantType.sunflower, GardenGrowthStage.sprout) => 14,
+      (GardenPlantType.sunflower, GardenGrowthStage.bud) => 20,
+      (GardenPlantType.sunflower, GardenGrowthStage.dry) => 8,
       (_, GardenGrowthStage.bloom) => 0,
-      (_, GardenGrowthStage.dry) => 1,
+      (_, _) => 0,
     };
   }
 

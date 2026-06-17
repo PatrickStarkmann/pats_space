@@ -8,6 +8,8 @@ class GardenPot {
     required this.coinReward,
     required this.waterProgress,
     required this.bloomCollections,
+    required this.bloomCharges,
+    required this.lastBloomChargeAtMillis,
   });
 
   const GardenPot.empty()
@@ -15,13 +17,17 @@ class GardenPot {
       plantType = GardenPlantType.daisy,
       coinReward = 5,
       waterProgress = 0,
-      bloomCollections = 0;
+      bloomCollections = 0,
+      bloomCharges = 0,
+      lastBloomChargeAtMillis = null;
 
   final GardenGrowthStage stage;
   final GardenPlantType plantType;
   final int coinReward;
   final int waterProgress;
   final int bloomCollections;
+  final int bloomCharges;
+  final int? lastBloomChargeAtMillis;
 
   bool get isEmpty => stage.isEmpty;
   String get plantName => plantType.displayName;
@@ -31,7 +37,25 @@ class GardenPot {
   int get remainingWater =>
       (waterRequired - waterProgress).clamp(0, waterRequired);
   bool get isReadyToGrow => stage.needsWater && remainingWater == 0;
+  bool get hasCollectableCoins => stage.hasCoins && bloomCharges > 0;
   int get remainingBloomCollections => (3 - bloomCollections).clamp(0, 3);
+
+  Duration remainingCoinDropTime(Duration interval, DateTime now) {
+    if (!stage.hasCoins || hasCollectableCoins) {
+      return Duration.zero;
+    }
+
+    final lastChargeAt = lastBloomChargeAtMillis;
+    if (lastChargeAt == null) {
+      return Duration.zero;
+    }
+
+    final elapsed = now.difference(
+      DateTime.fromMillisecondsSinceEpoch(lastChargeAt),
+    );
+    final remaining = interval - elapsed;
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 
   GardenPot copyWith({
     GardenGrowthStage? stage,
@@ -39,6 +63,9 @@ class GardenPot {
     int? coinReward,
     int? waterProgress,
     int? bloomCollections,
+    int? bloomCharges,
+    int? lastBloomChargeAtMillis,
+    bool clearLastBloomChargeAt = false,
   }) {
     final resolvedPlantType = plantType ?? this.plantType;
 
@@ -50,6 +77,10 @@ class GardenPot {
           (plantType == null ? this.coinReward : resolvedPlantType.coinReward),
       waterProgress: waterProgress ?? this.waterProgress,
       bloomCollections: bloomCollections ?? this.bloomCollections,
+      bloomCharges: bloomCharges ?? this.bloomCharges,
+      lastBloomChargeAtMillis: clearLastBloomChargeAt
+          ? null
+          : lastBloomChargeAtMillis ?? this.lastBloomChargeAtMillis,
     );
   }
 }

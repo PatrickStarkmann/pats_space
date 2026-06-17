@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -13,6 +16,7 @@ class GardenPlantCard extends StatefulWidget {
   const GardenPlantCard({
     super.key,
     required this.pot,
+    required this.water,
     required this.onPrimaryAction,
     required this.onPlantSelected,
     required this.onRemovePlant,
@@ -20,6 +24,7 @@ class GardenPlantCard extends StatefulWidget {
   });
 
   final GardenPot pot;
+  final int water;
   final VoidCallback onPrimaryAction;
   final ValueChanged<GardenPlantType> onPlantSelected;
   final VoidCallback onRemovePlant;
@@ -124,6 +129,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                 const SizedBox(height: AppSpacing.sm),
                 if (widget.pot.isEmpty)
                   _PlantSelectionContent(
+                    water: widget.water,
                     onPlantSelected: widget.onPlantSelected,
                   )
                 else
@@ -142,8 +148,12 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
 }
 
 class _PlantSelectionContent extends StatefulWidget {
-  const _PlantSelectionContent({required this.onPlantSelected});
+  const _PlantSelectionContent({
+    required this.water,
+    required this.onPlantSelected,
+  });
 
+  final int water;
   final ValueChanged<GardenPlantType> onPlantSelected;
 
   @override
@@ -218,6 +228,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
         const SizedBox(height: AppSpacing.md),
         _PlantPickerPrimaryButton(
           plantType: _selectedPlantType,
+          enabled: widget.water >= _selectedPlantType.plantCost,
           onTap: () {
             HapticFeedback.lightImpact();
             widget.onPlantSelected(_selectedPlantType);
@@ -368,73 +379,88 @@ class _PlantPickerStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
-      child: DecoratedBox(
+      child: Row(
         key: ValueKey(plantType),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceMuted.withValues(alpha: .46),
-          borderRadius: BorderRadius.circular(AppRadii.md),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+        children: [
+          _PickerStatChip(
+            leading: const GardenCoinIcon(size: 22),
+            label: '+${plantType.coinReward}',
           ),
-          child: Row(
-            children: [
-              _PickerStatItem(
-                leading: const GardenCoinIcon(size: 22),
-                label: '+${plantType.coinReward} coins',
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Container(
-                width: 1,
-                height: 24,
-                color: AppColors.graySoft.withValues(alpha: .54),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _PickerStatItem(
-                  leading: const Icon(
-                    CupertinoIcons.sparkles,
-                    size: 20,
-                    color: AppColors.sage,
-                  ),
-                  label: plantType.specialLabel,
-                ),
-              ),
-            ],
+          const SizedBox(width: AppSpacing.xs),
+          _PickerStatChip(
+            leading: const Icon(
+              CupertinoIcons.timer,
+              size: 18,
+              color: AppColors.grayWarm,
+            ),
+            label: '/${plantType.coinDropIntervalLabel}',
           ),
-        ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: _PickerStatChip(
+              leading: const Icon(
+                CupertinoIcons.sparkles,
+                size: 18,
+                color: AppColors.sage,
+              ),
+              label: plantType.specialLabel,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _PickerStatItem extends StatelessWidget {
-  const _PickerStatItem({required this.leading, required this.label});
+class _PickerStatChip extends StatelessWidget {
+  const _PickerStatChip({required this.leading, required this.label});
 
   final Widget leading;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        leading,
-        const SizedBox(width: AppSpacing.xs),
-        Flexible(
-          child: Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.charcoal,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .94),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(
+          color: AppColors.graySoft.withValues(alpha: .58),
+          width: 1,
         ),
-      ],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .06),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            leading,
+            const SizedBox(width: AppSpacing.xs),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.charcoal,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -442,33 +468,38 @@ class _PickerStatItem extends StatelessWidget {
 class _PlantPickerPrimaryButton extends StatelessWidget {
   const _PlantPickerPrimaryButton({
     required this.plantType,
+    required this.enabled,
     required this.onTap,
   });
 
   final GardenPlantType plantType;
+  final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
+      enabled: enabled,
       label: 'Plant ${plantType.displayName}',
       child: _PressableScale(
-        onTap: onTap,
+        onTap: enabled ? onTap : HapticFeedback.selectionClick,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: AppColors.charcoal,
+            color: enabled ? AppColors.charcoal : AppColors.graySoft,
             borderRadius: BorderRadius.circular(AppRadii.pill),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.charcoal.withValues(alpha: .18),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.charcoal.withValues(alpha: .18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : null,
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -477,15 +508,17 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                CupertinoIcons.plus,
+              Icon(
+                enabled ? CupertinoIcons.drop_fill : CupertinoIcons.drop,
                 size: 20,
                 color: AppColors.surface,
               ),
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
-                  'Plant ${plantType.displayName}',
+                  enabled
+                      ? 'Plant ${plantType.displayName} · ${plantType.plantCost} water'
+                      : 'Need ${plantType.plantCost} water',
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.w700,
@@ -502,7 +535,7 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
   }
 }
 
-class _PlantInfoContent extends StatelessWidget {
+class _PlantInfoContent extends StatefulWidget {
   const _PlantInfoContent({
     required this.pot,
     required this.onPrimaryAction,
@@ -514,23 +547,111 @@ class _PlantInfoContent extends StatelessWidget {
   final VoidCallback onRemovePlant;
 
   @override
+  State<_PlantInfoContent> createState() => _PlantInfoContentState();
+}
+
+class _PlantInfoContentState extends State<_PlantInfoContent>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _actionFeedbackController;
+  Timer? _cooldownTimer;
+  bool _showGrowthBurst = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _actionFeedbackController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    );
+    _syncCooldownTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlantInfoContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldPot = oldWidget.pot;
+    final pot = widget.pot;
+    final changed =
+        oldPot.stage != pot.stage ||
+        oldPot.waterProgress != pot.waterProgress ||
+        oldPot.bloomCollections != pot.bloomCollections;
+
+    if (!changed) {
+      _syncCooldownTimer();
+      return;
+    }
+
+    _showGrowthBurst = oldPot.stage != pot.stage || pot.stage.hasCoins;
+    _syncCooldownTimer();
+    _actionFeedbackController.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    _actionFeedbackController.dispose();
+    super.dispose();
+  }
+
+  void _syncCooldownTimer() {
+    final needsCountdown =
+        widget.pot.stage.hasCoins && !widget.pot.hasCollectableCoins;
+    if (!needsCountdown) {
+      _cooldownTimer?.cancel();
+      _cooldownTimer = null;
+      return;
+    }
+
+    if (_cooldownTimer != null) {
+      return;
+    }
+
+    _cooldownTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _performPrimaryAction() {
+    final pot = widget.pot;
+    if (pot.stage.hasCoins && !pot.hasCollectableCoins) {
+      HapticFeedback.selectionClick();
+      return;
+    }
+
+    if (pot.stage.hasCoins || pot.isReadyToGrow) {
+      HapticFeedback.mediumImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
+    widget.onPrimaryAction();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final pot = widget.pot;
     final stage = pot.stage;
+    final nextDropLabel = _nextDropLabel(pot);
     final caption = switch (stage) {
       GardenGrowthStage.bloom =>
-        '${pot.remainingBloomCollections} collects left',
+        pot.hasCollectableCoins
+            ? 'Ready to harvest · ${pot.remainingBloomCollections} harvests left'
+            : 'Next drop in $nextDropLabel',
       GardenGrowthStage.dry => 'Needs water to recover',
       _ => 'Water to grow',
     };
     final buttonLabel = switch (stage) {
-      GardenGrowthStage.bloom => 'Collect',
+      GardenGrowthStage.bloom =>
+        pot.hasCollectableCoins ? 'Collect' : 'Waiting',
       _ => 'Water',
     };
     final buttonIcon = switch (stage) {
-      GardenGrowthStage.bloom => null,
+      GardenGrowthStage.bloom =>
+        pot.hasCollectableCoins ? null : CupertinoIcons.clock,
       _ => CupertinoIcons.drop,
     };
-    final buttonLeading = stage.hasCoins
+    final buttonLeading = stage.hasCoins && pot.hasCollectableCoins
         ? const GardenCoinIcon(size: 20)
         : null;
 
@@ -539,7 +660,11 @@ class _PlantInfoContent extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _PlantPreview(assetPath: pot.plantAsset),
+            _ReactivePlantPreview(
+              assetPath: pot.plantAsset,
+              controller: _actionFeedbackController,
+              showGrowthBurst: _showGrowthBurst,
+            ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Padding(
@@ -570,20 +695,26 @@ class _PlantInfoContent extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     if (stage.hasCoins)
-                      _CoinRewardProgress(pot: pot)
+                      _BloomInfoBlock(pot: pot)
                     else
-                      _WaterProgress(
-                        count: pot.waterProgress,
-                        total: pot.waterRequired,
+                      _ProgressBlock(
+                        label: stage.isDry
+                            ? 'Recovery progress'
+                            : 'Growth progress',
+                        child: _WaterProgress(
+                          count: pot.waterProgress,
+                          total: pot.waterRequired,
+                        ),
                       ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(caption, style: AppTextStyles.caption),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.sm),
                     _GardenCardButton(
                       label: buttonLabel,
                       icon: buttonIcon,
                       leading: buttonLeading,
-                      onTap: onPrimaryAction,
+                      secondary: true,
+                      onTap: _performPrimaryAction,
                     ),
                   ],
                 ),
@@ -594,10 +725,28 @@ class _PlantInfoContent extends StatelessWidget {
         Positioned(
           top: 0,
           right: 0,
-          child: _RemovePlantButton(onTap: onRemovePlant),
+          child: _RemovePlantButton(onTap: widget.onRemovePlant),
         ),
       ],
     );
+  }
+
+  String _nextDropLabel(GardenPot pot) {
+    final remaining = pot.remainingCoinDropTime(
+      pot.plantType.coinDropInterval,
+      DateTime.now(),
+    );
+    if (remaining == Duration.zero) {
+      return 'soon';
+    }
+
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes.remainder(60);
+    if (hours > 0) {
+      return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+    }
+
+    return '${math.max(1, minutes)}m';
   }
 }
 
@@ -658,6 +807,123 @@ class _PlantPreview extends StatelessWidget {
   }
 }
 
+class _ReactivePlantPreview extends StatelessWidget {
+  const _ReactivePlantPreview({
+    required this.assetPath,
+    required this.controller,
+    required this.showGrowthBurst,
+  });
+
+  final String assetPath;
+  final Animation<double> controller;
+  final bool showGrowthBurst;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final value = controller.value;
+        final bounce = value < .5 ? value / .5 : (1 - value) / .5;
+        final scale = 1 + bounce * .08;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(scale: scale, child: child),
+            if (value > 0)
+              _ActionFeedbackBurst(
+                progress: value,
+                showGrowthBurst: showGrowthBurst,
+              ),
+          ],
+        );
+      },
+      child: _PlantPreview(assetPath: assetPath),
+    );
+  }
+}
+
+class _ActionFeedbackBurst extends StatelessWidget {
+  const _ActionFeedbackBurst({
+    required this.progress,
+    required this.showGrowthBurst,
+  });
+
+  final double progress;
+  final bool showGrowthBurst;
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = progress < .2
+        ? progress / .2
+        : (1 - progress).clamp(0.0, 1.0);
+    final y = -28 * Curves.easeOutCubic.transform(progress);
+
+    return IgnorePointer(
+      child: Opacity(
+        opacity: opacity,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _BurstIcon(
+              icon: showGrowthBurst
+                  ? CupertinoIcons.sparkles
+                  : CupertinoIcons.drop_fill,
+              color: showGrowthBurst
+                  ? AppColors.accentWarm
+                  : const Color(0xFF6FAAF7),
+              offset: Offset(-34, y - 18),
+              size: showGrowthBurst ? 24 : 20,
+            ),
+            _BurstIcon(
+              icon: showGrowthBurst
+                  ? CupertinoIcons.sparkles
+                  : CupertinoIcons.drop_fill,
+              color: showGrowthBurst ? AppColors.sage : const Color(0xFF8BC5FF),
+              offset: Offset(32, y - 6),
+              size: showGrowthBurst ? 18 : 16,
+            ),
+            _BurstIcon(
+              icon: showGrowthBurst
+                  ? CupertinoIcons.sparkles
+                  : CupertinoIcons.drop_fill,
+              color: showGrowthBurst
+                  ? AppColors.accentWarm
+                  : const Color(0xFFB9DFFF),
+              offset: Offset(4, y - 36),
+              size: showGrowthBurst ? 14 : 13,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BurstIcon extends StatelessWidget {
+  const _BurstIcon({
+    required this.icon,
+    required this.color,
+    required this.offset,
+    required this.size,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Offset offset;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: offset,
+      child: Icon(icon, color: color, size: size),
+    );
+  }
+}
+
 class _WaterProgress extends StatelessWidget {
   const _WaterProgress({required this.count, required this.total});
 
@@ -667,45 +933,156 @@ class _WaterProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visibleTotal = total == 0 ? 3 : total;
+    final progress = visibleTotal == 0
+        ? 0.0
+        : (count / visibleTotal).clamp(0.0, 1.0);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: List.generate(visibleTotal, (index) {
-            final filled = index < count;
-            final isLast = index == visibleTotal - 1;
-            return Padding(
-              padding: EdgeInsets.only(right: isLast ? 0 : AppSpacing.xxs),
-              child: Icon(
-                CupertinoIcons.drop,
-                size: 20,
-                color: filled ? const Color(0xFF6FAAF7) : AppColors.graySoft,
-              ),
-            );
-          }),
+          children: [
+            const Icon(
+              CupertinoIcons.drop_fill,
+              size: 18,
+              color: Color(0xFF6FAAF7),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text('$count/$visibleTotal', style: AppTextStyles.caption),
+          ],
         ),
-        const SizedBox(width: AppSpacing.xs),
-        Text('$count/$visibleTotal', style: AppTextStyles.caption),
+        const SizedBox(height: AppSpacing.xs),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          child: SizedBox(
+            height: 6,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.graySoft.withValues(alpha: .42),
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(end: progress),
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: SizedBox(
+                            width: constraints.maxWidth * value,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: const DecoratedBox(
+                        decoration: BoxDecoration(color: Color(0xFF6FAAF7)),
+                        child: SizedBox.expand(),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
-class _CoinRewardProgress extends StatelessWidget {
-  const _CoinRewardProgress({required this.pot});
+class _ProgressBlock extends StatelessWidget {
+  const _ProgressBlock({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.grayWarm.withValues(alpha: .78),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        child,
+      ],
+    );
+  }
+}
+
+class _BloomInfoBlock extends StatelessWidget {
+  const _BloomInfoBlock({required this.pot});
 
   final GardenPot pot;
 
   @override
   Widget build(BuildContext context) {
+    final plantType = pot.plantType;
+    final specialDescription = plantType.specialDescription;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _BloomInfoRow(
+          leading: const GardenCoinIcon(size: 22),
+          text:
+              '+${plantType.coinReward} every ${plantType.coinDropIntervalLabel}',
+          emphasis: true,
+        ),
+        if (specialDescription.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xxs),
+          _BloomInfoRow(
+            leading: const Icon(
+              CupertinoIcons.sparkles,
+              size: 17,
+              color: AppColors.sage,
+            ),
+            text: specialDescription,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _BloomInfoRow extends StatelessWidget {
+  const _BloomInfoRow({
+    required this.leading,
+    required this.text,
+    this.emphasis = false,
+  });
+
+  final Widget leading;
+  final String text;
+  final bool emphasis;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        const GardenCoinIcon(size: 24),
+        leading,
         const SizedBox(width: AppSpacing.xs),
-        Text(
-          '+${pot.coinReward}',
-          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+        Flexible(
+          child: Text(
+            text,
+            style: AppTextStyles.caption.copyWith(
+              color: emphasis ? AppColors.charcoal : AppColors.grayWarm,
+              fontWeight: emphasis ? FontWeight.w800 : FontWeight.w700,
+              fontSize: 12,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -748,27 +1125,40 @@ class _GardenCardButton extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.leading,
+    this.secondary = false,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
   final Widget? leading;
+  final bool secondary;
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = secondary ? AppColors.grayWarm : const Color(0xFF5D9EEA);
+    final background = secondary
+        ? AppColors.surfaceMuted.withValues(alpha: .58)
+        : const Color(0xFFEAF7FF);
+    final textStyle = secondary
+        ? AppTextStyles.caption.copyWith(
+            color: AppColors.charcoal,
+            fontWeight: FontWeight.w700,
+          )
+        : AppTextStyles.body;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF7FF),
+          color: background,
           borderRadius: BorderRadius.circular(AppRadii.pill),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.sm,
+          padding: EdgeInsets.symmetric(
+            horizontal: secondary ? AppSpacing.md : AppSpacing.lg,
+            vertical: secondary ? AppSpacing.xs : AppSpacing.sm,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -776,9 +1166,9 @@ class _GardenCardButton extends StatelessWidget {
               if (leading != null)
                 leading!
               else if (icon != null)
-                Icon(icon, size: 20, color: const Color(0xFF5D9EEA)),
+                Icon(icon, size: secondary ? 17 : 20, color: iconColor),
               const SizedBox(width: AppSpacing.xs),
-              Text(label, style: AppTextStyles.body),
+              Text(label, style: textStyle),
             ],
           ),
         ),
