@@ -3,9 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
+import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
+import 'package:pats_space/features/space/models/garden_decoration.dart';
+import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 import 'package:pats_space/features/space/widgets/garden_plant_card.dart';
@@ -29,6 +32,10 @@ class _SpaceScreenState extends State<SpaceScreen> {
   late Set<GardenPlantType> _knownUnlockedPlantTypes;
   int _nextCoinFlightId = 0;
   int _nextPlantUnlockRevealId = 0;
+  bool _arrangingDecorations = false;
+  GardenDecoration? _selectedDecoration;
+  int? _selectedArrangedPotIndex;
+  final Map<int, GardenDecorationPlacement> _draftPotPlacements = {};
 
   @override
   void initState() {
@@ -60,6 +67,8 @@ class _SpaceScreenState extends State<SpaceScreen> {
   }
 
   void _handleGardenChanged() {
+    _handleDecorationArrangementRequest();
+
     final unlockedPlantTypes = widget.gardenController.state.unlockedPlantTypes;
     final newlyUnlocked = GardenPlantType.plantable
         .where(
@@ -90,6 +99,30 @@ class _SpaceScreenState extends State<SpaceScreen> {
             ),
           );
         }
+      });
+    });
+  }
+
+  void _handleDecorationArrangementRequest() {
+    final decoration = widget.gardenController
+        .consumeDecorationArrangementRequest();
+    if (decoration == null || !mounted) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !widget.gardenController.state.placedDecorations.contains(
+            decoration,
+          )) {
+        return;
+      }
+
+      setState(() {
+        _arrangingDecorations = true;
+        _selectedDecoration = decoration;
+        _selectedArrangedPotIndex = null;
+        _draftPotPlacements.clear();
       });
     });
   }
@@ -130,6 +163,43 @@ class _SpaceScreenState extends State<SpaceScreen> {
     });
   }
 
+  Future<void> _confirmCleanUpGarden() async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Clean up garden?'),
+          content: const Text(
+            'This stores placed decor back in your inventory and moves pots to their default spots. Your plants stay planted.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clean up'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    widget.gardenController.cleanUpGarden();
+    setState(() {
+      _selectedDecoration = null;
+      _selectedArrangedPotIndex = null;
+      _draftPotPlacements.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -137,6 +207,10 @@ class _SpaceScreenState extends State<SpaceScreen> {
       builder: (context, _) {
         final garden = widget.gardenController.state;
         final selectedPot = garden.selectedPot;
+        final visiblePotPlacements = {
+          ...garden.potPlacements,
+          ..._draftPotPlacements,
+        };
 
         return Stack(
           children: [
@@ -144,19 +218,144 @@ class _SpaceScreenState extends State<SpaceScreen> {
               pots: garden.pots,
               water: garden.water,
               coins: garden.coins,
+              decorations: garden.placedDecorations,
+              decorationPlacements: garden.decorationPlacements,
+              potPlacements: visiblePotPlacements,
+              arrangingDecorations: _arrangingDecorations,
+              selectedDecoration: _selectedDecoration,
+              selectedArrangedPotIndex: _selectedArrangedPotIndex,
               onPotSelected: widget.gardenController.selectPot,
               onPotAction: widget.gardenController.performPotAction,
               onCoinCollected: _launchCoinFlight,
+              onDecorationSelected: (decoration) {
+                setState(() {
+                  _selectedDecoration = decoration;
+                  _selectedArrangedPotIndex = null;
+                });
+              },
+              onDecorationPlacementChanged: (decoration, placement) {
+                widget.gardenController.updateDecorationPlacement(
+                  decoration,
+                  alignmentX: placement.alignmentX,
+                  alignmentY: placement.alignmentY,
+                  scale: placement.scale,
+                  inFront: placement.inFront,
+                );
+              },
+              onPotArrangeSelected: (index) {
+                setState(() {
+                  _selectedArrangedPotIndex = index;
+                  _selectedDecoration = null;
+                });
+              },
+              onPotMoved: (index, alignmentX, alignmentY) {
+                setState(() {
+                  _draftPotPlacements[index] = GardenDecorationPlacement(
+                    alignmentX: alignmentX.clamp(.08, .92).toDouble(),
+                    alignmentY: alignmentY.clamp(.55, .98).toDouble(),
+                  );
+                });
+              },
+              onPotMoveEnded: (index, alignmentX, alignmentY) {
+                setState(() {
+                  _draftPotPlacements.remove(index);
+                });
+                widget.gardenController.movePot(
+                  index,
+                  alignmentX: alignmentX,
+                  alignmentY: alignmentY,
+                );
+              },
             ),
-            Positioned(
-              top: 48,
-              right: AppSpacing.xl,
-              child: GardenResourceCounter(
-                water: garden.water,
-                coins: garden.coins,
+            if (garden.ownedDecorations.isNotEmpty || garden.pots.isNotEmpty)
+              Positioned(
+                top: 48,
+                left: AppSpacing.xl,
+                child: Row(
+                  children: [
+                    _ArrangeDecorButton(
+                      arranging: _arrangingDecorations,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _arrangingDecorations = !_arrangingDecorations;
+                          if (!_arrangingDecorations) {
+                            _selectedDecoration = null;
+                            _selectedArrangedPotIndex = null;
+                            _draftPotPlacements.clear();
+                          }
+                        });
+                      },
+                    ),
+                    if (_arrangingDecorations) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      _CleanUpGardenButton(onTap: _confirmCleanUpGarden),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            if (selectedPot != null)
+            if (_arrangingDecorations && _selectedDecoration != null)
+              Positioned(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                bottom:
+                    MediaQuery.paddingOf(context).bottom +
+                    _bottomNavigationClearance +
+                    AppSpacing.sm,
+                child: _DecorationArrangePanel(
+                  maxScale: 1.75,
+                  placement:
+                      garden.decorationPlacements[_selectedDecoration!] ??
+                      const GardenDecorationPlacement(
+                        alignmentX: .5,
+                        alignmentY: .7,
+                      ),
+                  onScaleChanged: (scale) {
+                    final decoration = _selectedDecoration;
+                    if (decoration == null) {
+                      return;
+                    }
+                    widget.gardenController.updateDecorationPlacement(
+                      decoration,
+                      scale: scale,
+                    );
+                  },
+                  onLayerTap: () {
+                    final decoration = _selectedDecoration;
+                    if (decoration == null) {
+                      return;
+                    }
+                    final current = garden.decorationPlacements[decoration];
+                    HapticFeedback.selectionClick();
+                    widget.gardenController.updateDecorationPlacement(
+                      decoration,
+                      inFront: !(current?.inFront ?? false),
+                    );
+                  },
+                  onRemoveTap: () {
+                    final decoration = _selectedDecoration;
+                    if (decoration == null) {
+                      return;
+                    }
+                    HapticFeedback.mediumImpact();
+                    widget.gardenController.removeDecoration(decoration);
+                    setState(() {
+                      _selectedDecoration = null;
+                    });
+                  },
+                ),
+              ),
+            if (_arrangingDecorations && _selectedArrangedPotIndex != null)
+              Positioned(
+                left: AppSpacing.xl,
+                right: AppSpacing.xl,
+                bottom:
+                    MediaQuery.paddingOf(context).bottom +
+                    _bottomNavigationClearance +
+                    AppSpacing.sm,
+                child: const _PotArrangeHint(),
+              ),
+            if (selectedPot != null && !_arrangingDecorations)
               Positioned(
                 left: 0,
                 right: 0,
@@ -167,13 +366,23 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   pot: selectedPot,
                   water: garden.water,
                   unlockedPlantTypes: garden.unlockedPlantTypes,
+                  ownedPotStyles: garden.ownedPotStyles,
                   onPrimaryAction:
                       widget.gardenController.performSelectedPotAction,
                   onPlantSelected: widget.gardenController.plantSelectedPot,
+                  onPotStyleSelected: widget.gardenController.styleSelectedPot,
                   onRemovePlant: widget.gardenController.removeSelectedPlant,
                   onClose: widget.gardenController.closeSelectedPot,
                 ),
               ),
+            Positioned(
+              top: 48,
+              right: AppSpacing.xl,
+              child: GardenResourceCounter(
+                water: garden.water,
+                coins: garden.coins,
+              ),
+            ),
             Positioned.fill(
               child: IgnorePointer(
                 child: LayoutBuilder(
@@ -208,6 +417,259 @@ class _SpaceScreenState extends State<SpaceScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class _DecorationArrangePanel extends StatelessWidget {
+  const _DecorationArrangePanel({
+    required this.maxScale,
+    required this.placement,
+    required this.onScaleChanged,
+    required this.onLayerTap,
+    required this.onRemoveTap,
+  });
+
+  final double maxScale;
+  final GardenDecorationPlacement placement;
+  final ValueChanged<double> onScaleChanged;
+  final VoidCallback onLayerTap;
+  final VoidCallback onRemoveTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .94),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .5)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            const Icon(CupertinoIcons.resize, size: 19, color: AppColors.sage),
+            Expanded(
+              child: CupertinoSlider(
+                value: placement.scale.clamp(.65, maxScale).toDouble(),
+                min: .65,
+                max: maxScale,
+                activeColor: AppColors.sage,
+                thumbColor: AppColors.surface,
+                onChanged: onScaleChanged,
+              ),
+            ),
+            _PanelIconButton(
+              icon: placement.inFront
+                  ? CupertinoIcons.square_stack_3d_up_fill
+                  : CupertinoIcons.square_stack_3d_down_right,
+              label: placement.inFront ? 'Front' : 'Back',
+              onTap: onLayerTap,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            _PanelIconButton(
+              icon: CupertinoIcons.archivebox,
+              label: 'Store',
+              destructive: true,
+              onTap: onRemoveTap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PotArrangeHint extends StatelessWidget {
+  const _PotArrangeHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .06),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(CupertinoIcons.move, size: 17),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'Drag pot to place it',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.charcoal,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelIconButton extends StatelessWidget {
+  const _PanelIconButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    const destructiveColor = Color(0xFFD76A5D);
+    final color = destructive ? destructiveColor : AppColors.charcoal;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: destructive
+              ? destructiveColor.withValues(alpha: .08)
+              : AppColors.graySoft.withValues(alpha: .28),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 17, color: color),
+              const SizedBox(width: AppSpacing.xxs),
+              Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ArrangeDecorButton extends StatelessWidget {
+  const _ArrangeDecorButton({required this.arranging, required this.onTap});
+
+  final bool arranging;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .9),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .06),
+              blurRadius: 14,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                arranging ? CupertinoIcons.checkmark_alt : CupertinoIcons.move,
+                size: 17,
+                color: AppColors.charcoal,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                arranging ? 'Done' : 'Arrange',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.charcoal,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CleanUpGardenButton extends StatelessWidget {
+  const _CleanUpGardenButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .9),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .06),
+              blurRadius: 14,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(9),
+          child: const Icon(
+            CupertinoIcons.sparkles,
+            size: 19,
+            color: AppColors.charcoal,
+          ),
+        ),
+      ),
     );
   }
 }

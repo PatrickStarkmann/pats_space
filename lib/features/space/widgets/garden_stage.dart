@@ -8,6 +8,8 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_decoration.dart';
+import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_pot_slot.dart';
 import 'package:pats_space/features/space/widgets/garden_action_bubble.dart';
@@ -24,25 +26,53 @@ class GardenStage extends StatelessWidget {
     required this.pots,
     required this.water,
     required this.coins,
+    required this.decorations,
+    required this.decorationPlacements,
+    required this.potPlacements,
+    required this.arrangingDecorations,
+    required this.selectedDecoration,
+    required this.selectedArrangedPotIndex,
     required this.onPotSelected,
     required this.onPotAction,
     required this.onCoinCollected,
+    required this.onDecorationSelected,
+    required this.onDecorationPlacementChanged,
+    required this.onPotArrangeSelected,
+    required this.onPotMoved,
+    required this.onPotMoveEnded,
   });
 
   final List<GardenPot> pots;
   final int water;
   final int coins;
+  final Set<GardenDecoration> decorations;
+  final Map<GardenDecoration, GardenDecorationPlacement> decorationPlacements;
+  final Map<int, GardenDecorationPlacement> potPlacements;
+  final bool arrangingDecorations;
+  final GardenDecoration? selectedDecoration;
+  final int? selectedArrangedPotIndex;
   final ValueChanged<int> onPotSelected;
   final ValueChanged<int> onPotAction;
   final CoinCollectedCallback onCoinCollected;
+  final ValueChanged<GardenDecoration> onDecorationSelected;
+  final void Function(
+    GardenDecoration decoration,
+    GardenDecorationPlacement placement,
+  )
+  onDecorationPlacementChanged;
+  final ValueChanged<int> onPotArrangeSelected;
+  final void Function(int index, double alignmentX, double alignmentY)
+  onPotMoved;
+  final void Function(int index, double alignmentX, double alignmentY)
+  onPotMoveEnded;
 
   static const _navigationClearance = 112.0;
 
   static const _potSlots = [
-    GardenPotSlot(alignmentX: .17, alignmentY: .88, sizeFactor: .28),
-    GardenPotSlot(alignmentX: .39, alignmentY: .93, sizeFactor: .28),
-    GardenPotSlot(alignmentX: .61, alignmentY: .88, sizeFactor: .28),
-    GardenPotSlot(alignmentX: .83, alignmentY: .93, sizeFactor: .28),
+    GardenPotSlot(alignmentX: .16, alignmentY: .9, sizeFactor: .28),
+    GardenPotSlot(alignmentX: .38, alignmentY: .96, sizeFactor: .28),
+    GardenPotSlot(alignmentX: .62, alignmentY: .9, sizeFactor: .28),
+    GardenPotSlot(alignmentX: .84, alignmentY: .96, sizeFactor: .28),
   ];
 
   @override
@@ -55,34 +85,280 @@ class GardenStage extends StatelessWidget {
             stageSize.height -
             MediaQuery.paddingOf(context).bottom -
             _navigationClearance;
+        final potRenderOrder = List<int>.generate(
+          math.min(pots.length, _potSlots.length),
+          (index) => index,
+        );
+        if (!arrangingDecorations) {
+          potRenderOrder.sort((a, b) {
+            final aSlot = _potSlots[a];
+            final bSlot = _potSlots[b];
+            final aY = potPlacements[a]?.alignmentY ?? aSlot.alignmentY;
+            final bY = potPlacements[b]?.alignmentY ?? bSlot.alignmentY;
+            final yCompare = aY.compareTo(bY);
+            if (yCompare != 0) {
+              return yCompare;
+            }
+
+            return aSlot.sizeFactor.compareTo(bSlot.sizeFactor);
+          });
+        }
+        if (arrangingDecorations && selectedArrangedPotIndex != null) {
+          potRenderOrder
+            ..remove(selectedArrangedPotIndex)
+            ..add(selectedArrangedPotIndex!);
+        }
+
+        final decorationRenderOrder = decorations.toList()
+          ..sort((a, b) => a.index.compareTo(b.index));
+        final visibleDecorationRenderOrder = decorationRenderOrder
+            .where(
+              (decoration) =>
+                  decoration != GardenDecoration.hangingPlantFrame &&
+                  decoration != GardenDecoration.hangingPot,
+            )
+            .toList();
+        final backDecorations = visibleDecorationRenderOrder.where((
+          decoration,
+        ) {
+          return !(decorationPlacements[decoration]?.inFront ?? false);
+        });
+        final frontDecorations = visibleDecorationRenderOrder.where((
+          decoration,
+        ) {
+          return decorationPlacements[decoration]?.inFront ?? false;
+        });
 
         return Stack(
           clipBehavior: Clip.none,
           children: [
             const Positioned.fill(child: GardenBackground()),
+            for (final decoration in backDecorations)
+              _PositionedDecoration(
+                decoration: decoration,
+                placement: decorationPlacements[decoration],
+                stageSize: stageSize,
+                usableGardenHeight: usableGardenHeight,
+                interactive: false,
+                selected: false,
+                showImage: true,
+                onSelected: () => onDecorationSelected(decoration),
+                onPlacementChanged: (placement) =>
+                    onDecorationPlacementChanged(decoration, placement),
+              ),
             _PositionedCharacter(
               stageSize: stageSize,
               usableGardenHeight: usableGardenHeight,
               characterSize: shortestSide * .62,
             ),
-            for (var index = 0; index < _potSlots.length; index += 1)
+            for (final index in potRenderOrder)
               _PositionedPot(
+                key: ValueKey('garden-pot-$index'),
                 slot: _potSlots[index],
+                placement: potPlacements[index],
                 pot: pots[index],
                 water: water,
                 coins: coins,
                 stageSize: stageSize,
                 usableGardenHeight: usableGardenHeight,
                 potSize: shortestSide * _potSlots[index].sizeFactor,
-                onTap: () => onPotSelected(index),
+                arranging: arrangingDecorations,
+                selected: selectedArrangedPotIndex == index,
+                onTap: () => arrangingDecorations
+                    ? onPotArrangeSelected(index)
+                    : onPotSelected(index),
+                onMoved: (alignmentX, alignmentY) =>
+                    onPotMoved(index, alignmentX, alignmentY),
+                onMoveEnded: (alignmentX, alignmentY) =>
+                    onPotMoveEnded(index, alignmentX, alignmentY),
                 onActionTap: () => onPotAction(index),
                 onCoinCollected: onCoinCollected,
               ),
+            for (final decoration in frontDecorations)
+              _PositionedDecoration(
+                decoration: decoration,
+                placement: decorationPlacements[decoration],
+                stageSize: stageSize,
+                usableGardenHeight: usableGardenHeight,
+                interactive: false,
+                selected: false,
+                showImage: true,
+                onSelected: () => onDecorationSelected(decoration),
+                onPlacementChanged: (placement) =>
+                    onDecorationPlacementChanged(decoration, placement),
+              ),
+            if (arrangingDecorations)
+              for (final decoration in visibleDecorationRenderOrder)
+                _PositionedDecoration(
+                  decoration: decoration,
+                  placement: decorationPlacements[decoration],
+                  stageSize: stageSize,
+                  usableGardenHeight: usableGardenHeight,
+                  interactive: true,
+                  selected: selectedDecoration == decoration,
+                  showImage: false,
+                  onSelected: () => onDecorationSelected(decoration),
+                  onPlacementChanged: (placement) =>
+                      onDecorationPlacementChanged(decoration, placement),
+                ),
           ],
         );
       },
     );
   }
+}
+
+class _PositionedDecoration extends StatefulWidget {
+  const _PositionedDecoration({
+    required this.decoration,
+    required this.placement,
+    required this.stageSize,
+    required this.usableGardenHeight,
+    required this.interactive,
+    required this.selected,
+    required this.showImage,
+    required this.onSelected,
+    required this.onPlacementChanged,
+  });
+
+  final GardenDecoration decoration;
+  final GardenDecorationPlacement? placement;
+  final Size stageSize;
+  final double usableGardenHeight;
+  final bool interactive;
+  final bool selected;
+  final bool showImage;
+  final VoidCallback onSelected;
+  final ValueChanged<GardenDecorationPlacement> onPlacementChanged;
+
+  @override
+  State<_PositionedDecoration> createState() => _PositionedDecorationState();
+}
+
+class _PositionedDecorationState extends State<_PositionedDecoration> {
+  GardenDecorationPlacement? _dragStartPlacement;
+  Offset _dragDelta = Offset.zero;
+
+  @override
+  Widget build(BuildContext context) {
+    final shortestSide = math.min(
+      widget.stageSize.width,
+      widget.stageSize.height,
+    );
+    final spec = switch (widget.decoration) {
+      GardenDecoration.bench => const _DecorationSpec(
+        alignmentX: .16,
+        alignmentY: .69,
+        sizeFactor: .18,
+      ),
+      GardenDecoration.lantern => const _DecorationSpec(
+        alignmentX: .9,
+        alignmentY: .66,
+        sizeFactor: .12,
+      ),
+      GardenDecoration.wateringCan => const _DecorationSpec(
+        alignmentX: .48,
+        alignmentY: .76,
+        sizeFactor: .11,
+      ),
+      GardenDecoration.hangingPlantFrame => const _DecorationSpec(
+        alignmentX: .5,
+        alignmentY: .48,
+        sizeFactor: .92,
+      ),
+      GardenDecoration.hangingPot => const _DecorationSpec(
+        alignmentX: .5,
+        alignmentY: .53,
+        sizeFactor: .14,
+      ),
+    };
+    final resolvedPlacement =
+        widget.placement ??
+        GardenDecorationPlacement(
+          alignmentX: spec.alignmentX,
+          alignmentY: spec.alignmentY,
+        );
+    final size = shortestSide * spec.sizeFactor * resolvedPlacement.scale;
+
+    return Positioned(
+      left: widget.stageSize.width * resolvedPlacement.alignmentX - size / 2,
+      top: widget.usableGardenHeight * resolvedPlacement.alignmentY - size / 2,
+      width: size,
+      height: size,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.interactive
+            ? () {
+                widget.onSelected();
+                widget.onPlacementChanged(resolvedPlacement);
+              }
+            : null,
+        onPanStart: widget.interactive
+            ? (_) {
+                widget.onSelected();
+                widget.onPlacementChanged(resolvedPlacement);
+                _dragStartPlacement = resolvedPlacement;
+                _dragDelta = Offset.zero;
+              }
+            : null,
+        onPanUpdate: widget.interactive
+            ? (details) {
+                final start = _dragStartPlacement ?? resolvedPlacement;
+                _dragDelta += details.delta;
+                final nextX =
+                    start.alignmentX + _dragDelta.dx / widget.stageSize.width;
+                final nextY =
+                    start.alignmentY +
+                    _dragDelta.dy / widget.usableGardenHeight;
+
+                widget.onPlacementChanged(
+                  start.copyWith(alignmentX: nextX, alignmentY: nextY),
+                );
+              }
+            : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          padding: widget.interactive
+              ? const EdgeInsets.all(3)
+              : EdgeInsets.zero,
+          decoration: BoxDecoration(
+            color: widget.interactive && widget.selected
+                ? AppColors.sageSoft.withValues(alpha: .18)
+                : AppColors.transparent,
+            border: widget.interactive
+                ? Border.all(
+                    color: widget.selected
+                        ? AppColors.sage
+                        : AppColors.sage.withValues(alpha: .34),
+                    width: widget.selected ? 1.8 : 1,
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+          ),
+          child: widget.showImage
+              ? Image.asset(
+                  widget.decoration.assetPath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                )
+              : const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+}
+
+class _DecorationSpec {
+  const _DecorationSpec({
+    required this.alignmentX,
+    required this.alignmentY,
+    required this.sizeFactor,
+  });
+
+  final double alignmentX;
+  final double alignmentY;
+  final double sizeFactor;
 }
 
 class _PositionedCharacter extends StatelessWidget {
@@ -110,26 +386,37 @@ class _PositionedCharacter extends StatelessWidget {
 
 class _PositionedPot extends StatefulWidget {
   const _PositionedPot({
+    super.key,
     required this.slot,
+    required this.placement,
     required this.pot,
     required this.water,
     required this.coins,
     required this.stageSize,
     required this.usableGardenHeight,
     required this.potSize,
+    required this.arranging,
+    required this.selected,
     required this.onTap,
+    required this.onMoved,
+    required this.onMoveEnded,
     required this.onActionTap,
     required this.onCoinCollected,
   });
 
   final GardenPotSlot slot;
+  final GardenDecorationPlacement? placement;
   final GardenPot pot;
   final int water;
   final int coins;
   final Size stageSize;
   final double usableGardenHeight;
   final double potSize;
+  final bool arranging;
+  final bool selected;
   final VoidCallback onTap;
+  final void Function(double alignmentX, double alignmentY) onMoved;
+  final void Function(double alignmentX, double alignmentY) onMoveEnded;
   final VoidCallback onActionTap;
   final CoinCollectedCallback onCoinCollected;
 
@@ -145,6 +432,9 @@ class _PositionedPotState extends State<_PositionedPot>
   Timer? _wateringTimer;
   _PotFeedbackKind _feedbackKind = _PotFeedbackKind.water;
   String? _bubbleProgressText;
+  GardenDecorationPlacement? _dragStartPlacement;
+  GardenDecorationPlacement? _lastDragPlacement;
+  Offset _dragDelta = Offset.zero;
 
   @override
   void initState() {
@@ -193,10 +483,12 @@ class _PositionedPotState extends State<_PositionedPot>
         : null;
     if (collectedCoins) {
       final rewardAmount = math.max(0, widget.coins - oldWidget.coins);
+      final resolvedX = widget.placement?.alignmentX ?? widget.slot.alignmentX;
+      final resolvedY = widget.placement?.alignmentY ?? widget.slot.alignmentY;
       widget.onCoinCollected(
         Offset(
-          widget.stageSize.width * widget.slot.alignmentX,
-          widget.usableGardenHeight * widget.slot.alignmentY - widget.potSize,
+          widget.stageSize.width * resolvedX,
+          widget.usableGardenHeight * resolvedY - widget.potSize,
         ),
         rewardAmount,
         rewardAmount > oldPot.plantType.coinReward,
@@ -293,6 +585,8 @@ class _PositionedPotState extends State<_PositionedPot>
     final pot = widget.pot;
     final stage = pot.stage;
     final potSize = widget.potSize;
+    final resolvedX = widget.placement?.alignmentX ?? widget.slot.alignmentX;
+    final resolvedY = widget.placement?.alignmentY ?? widget.slot.alignmentY;
     final bubbleSize = potSize * .34;
     final hitAreaTopInset = potSize * .55;
     final bubbleTop = switch (stage) {
@@ -305,47 +599,135 @@ class _PositionedPotState extends State<_PositionedPot>
     final actionEnabled = stage.hasCoins
         ? pot.hasCollectableCoins
         : !stage.needsWater || widget.water > 0;
-    final showActionBubble = !stage.hasCoins || pot.hasCollectableCoins;
+    final showActionBubble =
+        !widget.arranging && (!stage.hasCoins || pot.hasCollectableCoins);
     final isReadyForCoins = pot.hasCollectableCoins;
 
     return Positioned(
-      left: widget.stageSize.width * widget.slot.alignmentX - potSize / 2,
-      top:
-          widget.usableGardenHeight * widget.slot.alignmentY -
-          potSize -
-          hitAreaTopInset,
+      left: widget.stageSize.width * resolvedX - potSize / 2,
+      top: widget.usableGardenHeight * resolvedY - potSize - hitAreaTopInset,
       width: potSize,
       height: potSize * 1.5 + hitAreaTopInset,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onTap,
-            child: AnimatedBuilder(
-              animation: Listenable.merge([
-                _feedbackController,
-                _shakeController,
-              ]),
-              builder: (context, child) {
-                final value = _feedbackController.value;
-                final bounce = value < .5 ? value / .5 : (1 - value) / .5;
-                final shake = _shakeOffset(potSize);
-                return Transform.translate(
-                  offset: Offset(shake, 0),
-                  child: Transform.scale(scale: 1 + bounce * .06, child: child),
-                );
-              },
-              child: GardenPlantedPotView(pot: pot, size: potSize),
+          Positioned(
+            bottom: 0,
+            width: potSize,
+            height: potSize,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onTap,
+              onPanStart: widget.arranging
+                  ? (_) {
+                      widget.onTap();
+                      _dragStartPlacement = GardenDecorationPlacement(
+                        alignmentX: resolvedX,
+                        alignmentY: resolvedY,
+                      );
+                      _lastDragPlacement = _dragStartPlacement;
+                      _dragDelta = Offset.zero;
+                    }
+                  : null,
+              onPanUpdate: widget.arranging
+                  ? (details) {
+                      final start =
+                          _dragStartPlacement ??
+                          GardenDecorationPlacement(
+                            alignmentX: resolvedX,
+                            alignmentY: resolvedY,
+                          );
+                      _dragDelta += details.delta;
+                      final nextX =
+                          start.alignmentX +
+                          _dragDelta.dx / widget.stageSize.width;
+                      final nextY =
+                          start.alignmentY +
+                          _dragDelta.dy / widget.usableGardenHeight;
+                      _lastDragPlacement = GardenDecorationPlacement(
+                        alignmentX: nextX,
+                        alignmentY: nextY,
+                      );
+                      widget.onMoved(nextX, nextY);
+                    }
+                  : null,
+              onPanEnd: widget.arranging
+                  ? (_) {
+                      final placement = _lastDragPlacement;
+                      if (placement == null) {
+                        return;
+                      }
+                      widget.onMoveEnded(
+                        placement.alignmentX,
+                        placement.alignmentY,
+                      );
+                      _dragStartPlacement = null;
+                      _lastDragPlacement = null;
+                      _dragDelta = Offset.zero;
+                    }
+                  : null,
+              onPanCancel: widget.arranging
+                  ? () {
+                      _dragStartPlacement = null;
+                      _lastDragPlacement = null;
+                      _dragDelta = Offset.zero;
+                    }
+                  : null,
+              child: AnimatedBuilder(
+                animation: Listenable.merge([
+                  _feedbackController,
+                  _shakeController,
+                ]),
+                builder: (context, child) {
+                  final value = _feedbackController.value;
+                  final bounce = value < .5 ? value / .5 : (1 - value) / .5;
+                  final shake = _shakeOffset(potSize);
+                  return Transform.translate(
+                    offset: Offset(shake, 0),
+                    child: Transform.scale(
+                      scale: widget.arranging ? 1 : 1 + bounce * .06,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    GardenPlantedPotView(pot: pot, size: potSize),
+                    if (widget.arranging)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 120),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
+                              color: widget.selected
+                                  ? AppColors.sageSoft.withValues(alpha: .16)
+                                  : AppColors.transparent,
+                              border: Border.all(
+                                color: widget.selected
+                                    ? AppColors.sage
+                                    : AppColors.sage.withValues(alpha: .32),
+                                width: widget.selected ? 1.8 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(AppRadii.md),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
-          _PotFeedbackBurst(
-            controller: _feedbackController,
-            kind: _feedbackKind,
-            potSize: potSize,
-            topInset: hitAreaTopInset,
-          ),
+          if (!widget.arranging)
+            _PotFeedbackBurst(
+              controller: _feedbackController,
+              kind: _feedbackKind,
+              potSize: potSize,
+              topInset: hitAreaTopInset,
+            ),
           if (showActionBubble)
             Positioned(
               top: hitAreaTopInset + bubbleTop - bubbleSize * .28,
@@ -376,11 +758,12 @@ class _PositionedPotState extends State<_PositionedPot>
                 ),
               ),
             ),
-          _BubbleProgressToast(
-            controller: _feedbackController,
-            text: _bubbleProgressText,
-            top: hitAreaTopInset + bubbleTop - bubbleSize * .52,
-          ),
+          if (!widget.arranging)
+            _BubbleProgressToast(
+              controller: _feedbackController,
+              text: _bubbleProgressText,
+              top: hitAreaTopInset + bubbleTop - bubbleSize * .52,
+            ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
+import 'package:pats_space/features/space/models/garden_pot_style.dart';
 
 class GardenPot {
   const GardenPot({
@@ -10,6 +11,7 @@ class GardenPot {
     required this.bloomCollections,
     required this.bloomCharges,
     required this.lastBloomChargeAtMillis,
+    this.potStyle = GardenPotStyle.classic,
   });
 
   const GardenPot.empty()
@@ -19,7 +21,8 @@ class GardenPot {
       waterProgress = 0,
       bloomCollections = 0,
       bloomCharges = 0,
-      lastBloomChargeAtMillis = null;
+      lastBloomChargeAtMillis = null,
+      potStyle = GardenPotStyle.classic;
 
   final GardenGrowthStage stage;
   final GardenPlantType plantType;
@@ -28,6 +31,7 @@ class GardenPot {
   final int bloomCollections;
   final int bloomCharges;
   final int? lastBloomChargeAtMillis;
+  final GardenPotStyle potStyle;
 
   bool get isEmpty => stage.isEmpty;
   String get plantName => plantType.displayName;
@@ -65,6 +69,7 @@ class GardenPot {
     int? bloomCollections,
     int? bloomCharges,
     int? lastBloomChargeAtMillis,
+    GardenPotStyle? potStyle,
     bool clearLastBloomChargeAt = false,
   }) {
     final resolvedPlantType = plantType ?? this.plantType;
@@ -81,6 +86,7 @@ class GardenPot {
       lastBloomChargeAtMillis: clearLastBloomChargeAt
           ? null
           : lastBloomChargeAtMillis ?? this.lastBloomChargeAtMillis,
+      potStyle: potStyle ?? this.potStyle,
     );
   }
 }

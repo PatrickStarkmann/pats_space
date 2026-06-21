@@ -3,8 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_decoration.dart';
+import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
+import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/space/repositories/garden_repository.dart';
 
@@ -16,6 +19,7 @@ class GardenController extends ChangeNotifier {
   }) : _randomDouble = randomDouble ?? math.Random().nextDouble,
        _repository = repository,
        _state = initialState ?? GardenState.initial() {
+    _state = _stateWithoutRetiredItems(_state);
     _state = _stateWithBloomCharges(_state, DateTime.now());
     _bloomChargeTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       _refreshBloomCharges();
@@ -32,8 +36,11 @@ class GardenController extends ChangeNotifier {
 
   GardenState _state;
   Timer? _bloomChargeTimer;
+  GardenDecoration? _requestedDecorationArrangement;
 
   GardenState get state => _state;
+  GardenDecoration? get requestedDecorationArrangement =>
+      _requestedDecorationArrangement;
 
   @override
   void dispose() {
@@ -67,6 +74,200 @@ class GardenController extends ChangeNotifier {
     }
 
     _setState(_state.copyWith(coins: _state.coins + amount));
+  }
+
+  bool buyNextPotSlot() {
+    return false;
+  }
+
+  bool buyPotStyle(GardenPotStyle style) {
+    if (!GardenPotStyle.shopStyles.contains(style)) {
+      return false;
+    }
+
+    if (_state.ownedPotStyles.contains(style) || _state.coins < style.cost) {
+      return false;
+    }
+
+    _setState(
+      _state.copyWith(
+        coins: _state.coins - style.cost,
+        ownedPotStyles: {..._state.ownedPotStyles, style},
+        selectedPotStyle: style,
+      ),
+    );
+    return true;
+  }
+
+  bool selectPotStyle(GardenPotStyle style) {
+    if (!GardenPotStyle.shopStyles.contains(style) &&
+        style != GardenPotStyle.classic) {
+      return false;
+    }
+
+    if (!_state.ownedPotStyles.contains(style)) {
+      return false;
+    }
+
+    _setState(_state.copyWith(selectedPotStyle: style));
+    return true;
+  }
+
+  bool styleSelectedPot(GardenPotStyle style) {
+    final index = _state.selectedPotIndex;
+    if (index == null) {
+      return false;
+    }
+
+    if (!_state.ownedPotStyles.contains(style)) {
+      return false;
+    }
+
+    final updatedPots = [..._state.pots]
+      ..[index] = _state.pots[index].copyWith(potStyle: style);
+    _setState(
+      _state.copyWith(
+        pots: updatedPots,
+        selectedPotStyle: style,
+        selectedPotIndex: index,
+      ),
+    );
+    return true;
+  }
+
+  bool buyDecoration(GardenDecoration decoration) {
+    if (!GardenDecoration.shopDecorations.contains(decoration)) {
+      return false;
+    }
+
+    final requirement = decoration.requirement;
+    if (requirement != null && !_state.ownedDecorations.contains(requirement)) {
+      return false;
+    }
+
+    final owned = _state.ownedDecorations.contains(decoration);
+    final placed = _state.placedDecorations.contains(decoration);
+    if (placed || (!owned && _state.coins < decoration.cost)) {
+      return false;
+    }
+
+    _setState(
+      _state.copyWith(
+        coins: owned ? _state.coins : _state.coins - decoration.cost,
+        ownedDecorations: owned
+            ? _state.ownedDecorations
+            : {..._state.ownedDecorations, decoration},
+        placedDecorations: {..._state.placedDecorations, decoration},
+      ),
+    );
+    return true;
+  }
+
+  void requestDecorationArrangement(GardenDecoration decoration) {
+    if (!_state.placedDecorations.contains(decoration)) {
+      return;
+    }
+
+    _requestedDecorationArrangement = decoration;
+    notifyListeners();
+  }
+
+  GardenDecoration? consumeDecorationArrangementRequest() {
+    final decoration = _requestedDecorationArrangement;
+    _requestedDecorationArrangement = null;
+    return decoration;
+  }
+
+  void removeDecoration(GardenDecoration decoration) {
+    if (!_state.placedDecorations.contains(decoration)) {
+      return;
+    }
+
+    final decorations = {..._state.placedDecorations}..remove(decoration);
+    final placements = {..._state.decorationPlacements}..remove(decoration);
+
+    _setState(
+      _state.copyWith(
+        placedDecorations: decorations,
+        decorationPlacements: placements,
+      ),
+    );
+  }
+
+  void moveDecoration(
+    GardenDecoration decoration, {
+    required double alignmentX,
+    required double alignmentY,
+  }) {
+    updateDecorationPlacement(
+      decoration,
+      alignmentX: alignmentX,
+      alignmentY: alignmentY,
+    );
+  }
+
+  void updateDecorationPlacement(
+    GardenDecoration decoration, {
+    double? alignmentX,
+    double? alignmentY,
+    double? scale,
+    bool? inFront,
+  }) {
+    if (!_state.placedDecorations.contains(decoration)) {
+      return;
+    }
+
+    final current = _state.decorationPlacements[decoration];
+    const maxScale = 1.75;
+    final placements = {..._state.decorationPlacements}
+      ..[decoration] =
+          (current ??
+                  const GardenDecorationPlacement(
+                    alignmentX: .5,
+                    alignmentY: .7,
+                  ))
+              .copyWith(
+                alignmentX: alignmentX?.clamp(.08, .92).toDouble(),
+                alignmentY: alignmentY?.clamp(.34, .98).toDouble(),
+                scale: scale?.clamp(.65, maxScale).toDouble(),
+                inFront: inFront,
+              );
+
+    _setState(_state.copyWith(decorationPlacements: placements));
+  }
+
+  void cleanUpGarden() {
+    if (_state.placedDecorations.isEmpty &&
+        _state.decorationPlacements.isEmpty &&
+        _state.potPlacements.isEmpty) {
+      return;
+    }
+
+    _setState(
+      _state.copyWith(
+        placedDecorations: const {},
+        decorationPlacements: const {},
+        potPlacements: const {},
+      ),
+    );
+  }
+
+  void movePot(
+    int index, {
+    required double alignmentX,
+    required double alignmentY,
+  }) {
+    if (index < 0 || index >= _state.pots.length) {
+      return;
+    }
+
+    final placements = {..._state.potPlacements}
+      ..[index] = GardenDecorationPlacement(
+        alignmentX: alignmentX.clamp(.08, .92).toDouble(),
+        alignmentY: alignmentY.clamp(.55, .98).toDouble(),
+      );
+
+    _setState(_state.copyWith(potPlacements: placements), persist: true);
   }
 
   void performSelectedPotAction() {
@@ -152,6 +353,7 @@ class GardenController extends ChangeNotifier {
         bloomCollections: 0,
         bloomCharges: 0,
         lastBloomChargeAtMillis: null,
+        potStyle: pot.potStyle,
       );
 
     _setState(
@@ -169,7 +371,10 @@ class GardenController extends ChangeNotifier {
       return;
     }
 
-    final updatedPots = [..._state.pots]..[index] = const GardenPot.empty();
+    final updatedPots = [..._state.pots]
+      ..[index] = const GardenPot.empty().copyWith(
+        potStyle: _state.pots[index].potStyle,
+      );
 
     _setState(_state.copyWith(pots: updatedPots, selectedPotIndex: index));
   }
@@ -285,6 +490,47 @@ class GardenController extends ChangeNotifier {
     }
   }
 
+  GardenState _stateWithoutRetiredItems(GardenState state) {
+    const retiredDecorations = {
+      GardenDecoration.hangingPlantFrame,
+      GardenDecoration.hangingPot,
+    };
+    final decorations = state.ownedDecorations
+        .where((decoration) => !retiredDecorations.contains(decoration))
+        .toSet();
+    final placedDecorations = state.placedDecorations
+        .where((decoration) => !retiredDecorations.contains(decoration))
+        .where(decorations.contains)
+        .toSet();
+    final decorationPlacements =
+        Map<GardenDecoration, GardenDecorationPlacement>.from(
+          state.decorationPlacements,
+        )..removeWhere(
+          (decoration, _) => retiredDecorations.contains(decoration),
+        );
+    final pots = state.pots
+        .where((pot) => pot.potStyle != GardenPotStyle.hanging)
+        .toList();
+
+    if (setEquals(decorations, state.ownedDecorations) &&
+        setEquals(placedDecorations, state.placedDecorations) &&
+        _sameDecorationPlacements(
+          decorationPlacements,
+          state.decorationPlacements,
+        ) &&
+        pots.length == state.pots.length) {
+      return state;
+    }
+
+    return state.copyWith(
+      ownedDecorations: decorations,
+      placedDecorations: placedDecorations,
+      decorationPlacements: decorationPlacements,
+      pots: pots,
+      clearSelectedPot: state.selectedPot?.potStyle == GardenPotStyle.hanging,
+    );
+  }
+
   GardenState _stateWithBloomCharges(GardenState state, DateTime now) {
     var changed = false;
     final refreshedPots = <GardenPot>[];
@@ -357,6 +603,15 @@ class GardenController extends ChangeNotifier {
         a.coins != b.coins ||
         a.selectedPotIndex != b.selectedPotIndex ||
         !setEquals(a.unlockedPlantTypes, b.unlockedPlantTypes) ||
+        !setEquals(a.ownedPotStyles, b.ownedPotStyles) ||
+        a.selectedPotStyle != b.selectedPotStyle ||
+        !setEquals(a.ownedDecorations, b.ownedDecorations) ||
+        !setEquals(a.placedDecorations, b.placedDecorations) ||
+        !_sameDecorationPlacements(
+          a.decorationPlacements,
+          b.decorationPlacements,
+        ) ||
+        !_sameIntPlacements(a.potPlacements, b.potPlacements) ||
         a.pots.length != b.pots.length) {
       return false;
     }
@@ -377,7 +632,54 @@ class GardenController extends ChangeNotifier {
         a.waterProgress == b.waterProgress &&
         a.bloomCollections == b.bloomCollections &&
         a.bloomCharges == b.bloomCharges &&
-        a.lastBloomChargeAtMillis == b.lastBloomChargeAtMillis;
+        a.lastBloomChargeAtMillis == b.lastBloomChargeAtMillis &&
+        a.potStyle == b.potStyle;
+  }
+
+  bool _sameDecorationPlacements(
+    Map<GardenDecoration, GardenDecorationPlacement> a,
+    Map<GardenDecoration, GardenDecorationPlacement> b,
+  ) {
+    if (a.length != b.length) {
+      return false;
+    }
+
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !_samePlacement(entry.value, other)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _sameIntPlacements(
+    Map<int, GardenDecorationPlacement> a,
+    Map<int, GardenDecorationPlacement> b,
+  ) {
+    if (a.length != b.length) {
+      return false;
+    }
+
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !_samePlacement(entry.value, other)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _samePlacement(
+    GardenDecorationPlacement a,
+    GardenDecorationPlacement b,
+  ) {
+    return a.alignmentX == b.alignmentX &&
+        a.alignmentY == b.alignmentY &&
+        a.scale == b.scale &&
+        a.inFront == b.inFront;
   }
 
   void _setState(GardenState state, {bool persist = true}) {

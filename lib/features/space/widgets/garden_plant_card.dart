@@ -10,6 +10,7 @@ import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
+import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 
 class GardenPlantCard extends StatefulWidget {
@@ -18,8 +19,10 @@ class GardenPlantCard extends StatefulWidget {
     required this.pot,
     required this.water,
     required this.unlockedPlantTypes,
+    required this.ownedPotStyles,
     required this.onPrimaryAction,
     required this.onPlantSelected,
+    required this.onPotStyleSelected,
     required this.onRemovePlant,
     required this.onClose,
   });
@@ -27,8 +30,10 @@ class GardenPlantCard extends StatefulWidget {
   final GardenPot pot;
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
+  final Set<GardenPotStyle> ownedPotStyles;
   final VoidCallback onPrimaryAction;
   final ValueChanged<GardenPlantType> onPlantSelected;
+  final ValueChanged<GardenPotStyle> onPotStyleSelected;
   final VoidCallback onRemovePlant;
   final VoidCallback onClose;
 
@@ -131,14 +136,19 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                 const SizedBox(height: AppSpacing.sm),
                 if (widget.pot.isEmpty)
                   _PlantSelectionContent(
+                    pot: widget.pot,
                     water: widget.water,
                     unlockedPlantTypes: widget.unlockedPlantTypes,
+                    ownedPotStyles: widget.ownedPotStyles,
                     onPlantSelected: widget.onPlantSelected,
+                    onPotStyleSelected: widget.onPotStyleSelected,
                   )
                 else
                   _PlantInfoContent(
                     pot: widget.pot,
+                    ownedPotStyles: widget.ownedPotStyles,
                     onPrimaryAction: widget.onPrimaryAction,
+                    onPotStyleSelected: widget.onPotStyleSelected,
                     onRemovePlant: widget.onRemovePlant,
                   ),
               ],
@@ -152,14 +162,20 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
 
 class _PlantSelectionContent extends StatefulWidget {
   const _PlantSelectionContent({
+    required this.pot,
     required this.water,
     required this.unlockedPlantTypes,
+    required this.ownedPotStyles,
     required this.onPlantSelected,
+    required this.onPotStyleSelected,
   });
 
+  final GardenPot pot;
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
+  final Set<GardenPotStyle> ownedPotStyles;
   final ValueChanged<GardenPlantType> onPlantSelected;
+  final ValueChanged<GardenPotStyle> onPotStyleSelected;
 
   @override
   State<_PlantSelectionContent> createState() => _PlantSelectionContentState();
@@ -234,6 +250,12 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
         _PlantPickerStats(
           plantType: _selectedPlantType,
           unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _PotStyleSelector(
+          selectedStyle: widget.pot.potStyle,
+          ownedStyles: widget.ownedPotStyles,
+          onStyleSelected: widget.onPotStyleSelected,
         ),
         const SizedBox(height: AppSpacing.md),
         _PlantPickerPrimaryButton(
@@ -660,15 +682,129 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
   }
 }
 
+class _PotStyleSelector extends StatelessWidget {
+  const _PotStyleSelector({
+    required this.selectedStyle,
+    required this.ownedStyles,
+    required this.onStyleSelected,
+  });
+
+  final GardenPotStyle selectedStyle;
+  final Set<GardenPotStyle> ownedStyles;
+  final ValueChanged<GardenPotStyle> onStyleSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final styles = [
+      GardenPotStyle.classic,
+      ...GardenPotStyle.shopStyles.where(ownedStyles.contains),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Pot skin',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.grayWarm,
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        SizedBox(
+          height: 62,
+          child: ListView.separated(
+            clipBehavior: Clip.none,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: styles.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.xs),
+            itemBuilder: (context, index) {
+              final style = styles[index];
+              return _PotStyleChip(
+                style: style,
+                selected: style == selectedStyle,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onStyleSelected(style);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PotStyleChip extends StatelessWidget {
+  const _PotStyleChip({
+    required this.style,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final GardenPotStyle style;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: style.displayName,
+      child: _PressableScale(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          width: 58,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.sageSoft : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(
+              color: selected
+                  ? AppColors.sage
+                  : AppColors.graySoft.withValues(alpha: .5),
+              width: selected ? 1.6 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.sage.withValues(alpha: .16),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          padding: const EdgeInsets.all(7),
+          child: Image.asset(
+            style.assetPath,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PlantInfoContent extends StatefulWidget {
   const _PlantInfoContent({
     required this.pot,
+    required this.ownedPotStyles,
     required this.onPrimaryAction,
+    required this.onPotStyleSelected,
     required this.onRemovePlant,
   });
 
   final GardenPot pot;
+  final Set<GardenPotStyle> ownedPotStyles;
   final VoidCallback onPrimaryAction;
+  final ValueChanged<GardenPotStyle> onPotStyleSelected;
   final VoidCallback onRemovePlant;
 
   @override
@@ -780,77 +916,88 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
         ? const GardenCoinIcon(size: 20)
         : null;
 
-    return Stack(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        Stack(
           children: [
-            _ReactivePlantPreview(
-              assetPath: pot.plantAsset,
-              controller: _actionFeedbackController,
-              showGrowthBurst: _showGrowthBurst,
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(pot.plantName, style: AppTextStyles.headline),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _ReactivePlantPreview(
+                  assetPath: pot.plantAsset,
+                  controller: _actionFeedbackController,
+                  showGrowthBurst: _showGrowthBurst,
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.sage,
-                            shape: BoxShape.circle,
-                          ),
+                        Text(pot.plantName, style: AppTextStyles.headline),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.sage,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Flexible(
+                              child: Text(
+                                stage.statusLabel,
+                                style: AppTextStyles.bodyMuted,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Flexible(
-                          child: Text(
-                            stage.statusLabel,
-                            style: AppTextStyles.bodyMuted,
+                        const SizedBox(height: AppSpacing.sm),
+                        if (stage.hasCoins)
+                          _BloomInfoBlock(pot: pot)
+                        else
+                          _ProgressBlock(
+                            label: stage.isDry
+                                ? 'Recovery progress'
+                                : 'Growth progress',
+                            child: _WaterProgress(
+                              count: pot.waterProgress,
+                              total: pot.waterRequired,
+                            ),
                           ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(caption, style: AppTextStyles.caption),
+                        const SizedBox(height: AppSpacing.sm),
+                        _GardenCardButton(
+                          label: buttonLabel,
+                          icon: buttonIcon,
+                          leading: buttonLeading,
+                          secondary: true,
+                          onTap: _performPrimaryAction,
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (stage.hasCoins)
-                      _BloomInfoBlock(pot: pot)
-                    else
-                      _ProgressBlock(
-                        label: stage.isDry
-                            ? 'Recovery progress'
-                            : 'Growth progress',
-                        child: _WaterProgress(
-                          count: pot.waterProgress,
-                          total: pot.waterRequired,
-                        ),
-                      ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(caption, style: AppTextStyles.caption),
-                    const SizedBox(height: AppSpacing.sm),
-                    _GardenCardButton(
-                      label: buttonLabel,
-                      icon: buttonIcon,
-                      leading: buttonLeading,
-                      secondary: true,
-                      onTap: _performPrimaryAction,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: _RemovePlantButton(onTap: widget.onRemovePlant),
             ),
           ],
         ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: _RemovePlantButton(onTap: widget.onRemovePlant),
+        const SizedBox(height: AppSpacing.md),
+        _PotStyleSelector(
+          selectedStyle: pot.potStyle,
+          ownedStyles: widget.ownedPotStyles,
+          onStyleSelected: widget.onPotStyleSelected,
         ),
       ],
     );

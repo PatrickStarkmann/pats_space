@@ -30,6 +30,8 @@ flutter:
     - assets/images/focus_pairs/pair_06/
     - assets/images/garden/backgrounds/
     - assets/images/garden/pots/default/
+    - assets/images/garden/pots/
+    - assets/images/garden/decorations/
     - assets/images/garden/plants/default/stages/
     - assets/images/garden/plants/tulip/stages/
     - assets/images/garden/plants/clover/stages/

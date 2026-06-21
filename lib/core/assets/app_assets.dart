@@ -53,6 +53,18 @@ class AppAssets {
   static const gardenBackgroundMain =
       'assets/images/garden/backgrounds/garden_main.png';
   static const gardenPotDefault = 'assets/images/garden/pots/default/pot.png';
+  static const gardenPotBlue = 'assets/images/garden/pots/blue_pot.png';
+  static const gardenPotColorful = 'assets/images/garden/pots/colorful_pot.png';
+  static const gardenPotHanging = 'assets/images/garden/pots/hanging_pot.png';
+  static const gardenPotRound = 'assets/images/garden/pots/round_pot.png';
+  static const gardenPotWhite = 'assets/images/garden/pots/white_pot.png';
+  static const gardenDecorBench = 'assets/images/garden/decorations/bench.png';
+  static const gardenDecorHangingPlantFrame =
+      'assets/images/garden/decorations/hanging_plant_frame.png';
+  static const gardenDecorLantern =
+      'assets/images/garden/decorations/lantern.png';
+  static const gardenDecorWateringCan =
+      'assets/images/garden/decorations/watering_can.png';
   static const gardenPlantSeed =
       'assets/images/garden/plants/default/stages/seed.png';
   static const gardenPlantSprout =

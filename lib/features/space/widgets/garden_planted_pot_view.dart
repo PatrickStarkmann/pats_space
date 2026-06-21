@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/widgets/garden_pot_view.dart';
 
@@ -23,7 +22,7 @@ class GardenPlantedPotView extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          GardenPotView(size: size),
+          GardenPotView(size: size, assetPath: pot.potStyle.assetPath),
           if (!stage.isEmpty) _PlantStageImage(pot: pot, size: size),
         ],
       ),
@@ -40,22 +39,8 @@ class _PlantStageImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage = pot.stage;
-    final plantSize = switch (stage) {
-      GardenGrowthStage.seed => size * .24,
-      GardenGrowthStage.sprout => size * .58,
-      GardenGrowthStage.bud => size * .7,
-      GardenGrowthStage.bloom => size * .82,
-      GardenGrowthStage.dry => size * .72,
-      GardenGrowthStage.empty => 0.0,
-    };
-    final bottomOffset = switch (stage) {
-      GardenGrowthStage.seed => size * .58,
-      GardenGrowthStage.sprout => size * .58,
-      GardenGrowthStage.bud => size * .6,
-      GardenGrowthStage.bloom => size * .62,
-      GardenGrowthStage.dry => size * .6,
-      GardenGrowthStage.empty => 0.0,
-    };
+    final plantSize = size * pot.potStyle.plantSizeFactorFor(stage);
+    final bottomOffset = size * pot.potStyle.plantBottomFactorFor(stage);
 
     return Positioned(
       bottom: bottomOffset,
