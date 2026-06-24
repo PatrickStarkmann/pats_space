@@ -17,6 +17,7 @@ class GardenPlantCard extends StatefulWidget {
   const GardenPlantCard({
     super.key,
     required this.pot,
+    required this.isHangingPot,
     required this.water,
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
@@ -28,6 +29,7 @@ class GardenPlantCard extends StatefulWidget {
   });
 
   final GardenPot pot;
+  final bool isHangingPot;
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
@@ -137,6 +139,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                 if (widget.pot.isEmpty)
                   _PlantSelectionContent(
                     pot: widget.pot,
+                    isHangingPot: widget.isHangingPot,
                     water: widget.water,
                     unlockedPlantTypes: widget.unlockedPlantTypes,
                     ownedPotStyles: widget.ownedPotStyles,
@@ -146,6 +149,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                 else
                   _PlantInfoContent(
                     pot: widget.pot,
+                    isHangingPot: widget.isHangingPot,
                     ownedPotStyles: widget.ownedPotStyles,
                     onPrimaryAction: widget.onPrimaryAction,
                     onPotStyleSelected: widget.onPotStyleSelected,
@@ -163,6 +167,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
 class _PlantSelectionContent extends StatefulWidget {
   const _PlantSelectionContent({
     required this.pot,
+    required this.isHangingPot,
     required this.water,
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
@@ -171,6 +176,7 @@ class _PlantSelectionContent extends StatefulWidget {
   });
 
   final GardenPot pot;
+  final bool isHangingPot;
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
@@ -186,10 +192,31 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
   GardenPlantType _selectedPlantType = GardenPlantType.daisy;
   int _lastHapticIndex = 0;
 
+  List<GardenPlantType> get _availablePlantTypes => widget.isHangingPot
+      ? GardenPlantType.hangingPlantable
+      : GardenPlantType.groundPlantable;
+
   @override
   void initState() {
     super.initState();
+    _selectedPlantType = _availablePlantTypes.first;
     _pageController = PageController(viewportFraction: .46);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlantSelectionContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_availablePlantTypes.contains(_selectedPlantType)) {
+      return;
+    }
+
+    _selectedPlantType = _availablePlantTypes.first;
+    _lastHapticIndex = 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+    });
   }
 
   @override
@@ -200,6 +227,8 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
 
   @override
   Widget build(BuildContext context) {
+    final plantTypes = _availablePlantTypes;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -211,18 +240,18 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
             controller: _pageController,
             clipBehavior: Clip.none,
             physics: const BouncingScrollPhysics(),
-            itemCount: GardenPlantType.plantable.length,
+            itemCount: plantTypes.length,
             onPageChanged: (index) {
               if (index != _lastHapticIndex) {
                 _lastHapticIndex = index;
                 HapticFeedback.selectionClick();
               }
               setState(() {
-                _selectedPlantType = GardenPlantType.plantable[index];
+                _selectedPlantType = plantTypes[index];
               });
             },
             itemBuilder: (context, index) {
-              final plantType = GardenPlantType.plantable[index];
+              final plantType = plantTypes[index];
               final unlocked = widget.unlockedPlantTypes.contains(plantType);
 
               return _PlantCarouselCard(
@@ -251,12 +280,14 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
           plantType: _selectedPlantType,
           unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
         ),
-        const SizedBox(height: AppSpacing.md),
-        _PotStyleSelector(
-          selectedStyle: widget.pot.potStyle,
-          ownedStyles: widget.ownedPotStyles,
-          onStyleSelected: widget.onPotStyleSelected,
-        ),
+        if (!widget.isHangingPot) ...[
+          const SizedBox(height: AppSpacing.md),
+          _PotStyleSelector(
+            selectedStyle: widget.pot.potStyle,
+            ownedStyles: widget.ownedPotStyles,
+            onStyleSelected: widget.onPotStyleSelected,
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         _PlantPickerPrimaryButton(
           plantType: _selectedPlantType,
@@ -795,6 +826,7 @@ class _PotStyleChip extends StatelessWidget {
 class _PlantInfoContent extends StatefulWidget {
   const _PlantInfoContent({
     required this.pot,
+    required this.isHangingPot,
     required this.ownedPotStyles,
     required this.onPrimaryAction,
     required this.onPotStyleSelected,
@@ -802,6 +834,7 @@ class _PlantInfoContent extends StatefulWidget {
   });
 
   final GardenPot pot;
+  final bool isHangingPot;
   final Set<GardenPotStyle> ownedPotStyles;
   final VoidCallback onPrimaryAction;
   final ValueChanged<GardenPotStyle> onPotStyleSelected;
@@ -993,12 +1026,14 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        _PotStyleSelector(
-          selectedStyle: pot.potStyle,
-          ownedStyles: widget.ownedPotStyles,
-          onStyleSelected: widget.onPotStyleSelected,
-        ),
+        if (!widget.isHangingPot) ...[
+          const SizedBox(height: AppSpacing.md),
+          _PotStyleSelector(
+            selectedStyle: pot.potStyle,
+            ownedStyles: widget.ownedPotStyles,
+            onStyleSelected: widget.onPotStyleSelected,
+          ),
+        ],
       ],
     );
   }

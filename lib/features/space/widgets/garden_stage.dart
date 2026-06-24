@@ -7,11 +7,13 @@ import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
-import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
+import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_pot_slot.dart';
+import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_action_bubble.dart';
 import 'package:pats_space/features/space/widgets/garden_background.dart';
 import 'package:pats_space/features/space/widgets/garden_character_view.dart';
@@ -24,6 +26,8 @@ class GardenStage extends StatelessWidget {
   const GardenStage({
     super.key,
     required this.pots,
+    required this.area,
+    required this.backgroundAssetPath,
     required this.water,
     required this.coins,
     required this.decorations,
@@ -43,6 +47,8 @@ class GardenStage extends StatelessWidget {
   });
 
   final List<GardenPot> pots;
+  final GardenArea area;
+  final String backgroundAssetPath;
   final int water;
   final int coins;
   final Set<GardenDecoration> decorations;
@@ -68,12 +74,61 @@ class GardenStage extends StatelessWidget {
 
   static const _navigationClearance = 112.0;
 
-  static const _potSlots = [
+  static const _mainPotSlots = [
     GardenPotSlot(alignmentX: .16, alignmentY: .9, sizeFactor: .28),
     GardenPotSlot(alignmentX: .38, alignmentY: .96, sizeFactor: .28),
     GardenPotSlot(alignmentX: .62, alignmentY: .9, sizeFactor: .28),
     GardenPotSlot(alignmentX: .84, alignmentY: .96, sizeFactor: .28),
   ];
+
+  static const _secondPotSlots = [
+    GardenPotSlot(
+      alignmentX: .29,
+      alignmentY: .38,
+      sizeFactor: .285,
+      potStyleOverride: GardenPotStyle.hanging,
+    ),
+    GardenPotSlot(
+      alignmentX: .5,
+      alignmentY: .38,
+      sizeFactor: .285,
+      potStyleOverride: GardenPotStyle.hanging,
+    ),
+    GardenPotSlot(
+      alignmentX: .71,
+      alignmentY: .38,
+      sizeFactor: .285,
+      potStyleOverride: GardenPotStyle.hanging,
+    ),
+    GardenPotSlot(
+      alignmentX: .118,
+      alignmentY: .622,
+      sizeFactor: .155,
+      useNoShadowPot: true,
+    ),
+    GardenPotSlot(
+      alignmentX: .255,
+      alignmentY: .616,
+      sizeFactor: .155,
+      useNoShadowPot: true,
+    ),
+    GardenPotSlot(alignmentX: .15, alignmentY: .84, sizeFactor: .25),
+    GardenPotSlot(alignmentX: .26, alignmentY: .94, sizeFactor: .25),
+    GardenPotSlot(alignmentX: .66, alignmentY: .88, sizeFactor: .25),
+    GardenPotSlot(alignmentX: .88, alignmentY: .88, sizeFactor: .25),
+  ];
+
+  static const _secondAreaFixedPotSlots = {0, 1, 2, 3, 4};
+
+  List<GardenPotSlot> get _potSlots => switch (area) {
+    GardenArea.main => _mainPotSlots,
+    GardenArea.second => _secondPotSlots,
+  };
+
+  bool _isFixedPotSlot(int index) {
+    return area == GardenArea.second &&
+        _secondAreaFixedPotSlots.contains(index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,14 +140,15 @@ class GardenStage extends StatelessWidget {
             stageSize.height -
             MediaQuery.paddingOf(context).bottom -
             _navigationClearance;
+        final potSlots = _potSlots;
         final potRenderOrder = List<int>.generate(
-          math.min(pots.length, _potSlots.length),
+          math.min(pots.length, potSlots.length),
           (index) => index,
         );
         if (!arrangingDecorations) {
           potRenderOrder.sort((a, b) {
-            final aSlot = _potSlots[a];
-            final bSlot = _potSlots[b];
+            final aSlot = potSlots[a];
+            final bSlot = potSlots[b];
             final aY = potPlacements[a]?.alignmentY ?? aSlot.alignmentY;
             final bY = potPlacements[b]?.alignmentY ?? bSlot.alignmentY;
             final yCompare = aY.compareTo(bY);
@@ -132,7 +188,9 @@ class GardenStage extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            const Positioned.fill(child: GardenBackground()),
+            Positioned.fill(
+              child: GardenBackground(assetPath: backgroundAssetPath),
+            ),
             for (final decoration in backDecorations)
               _PositionedDecoration(
                 decoration: decoration,
@@ -149,31 +207,8 @@ class GardenStage extends StatelessWidget {
             _PositionedCharacter(
               stageSize: stageSize,
               usableGardenHeight: usableGardenHeight,
-              characterSize: shortestSide * .62,
+              characterSize: shortestSide * .56,
             ),
-            for (final index in potRenderOrder)
-              _PositionedPot(
-                key: ValueKey('garden-pot-$index'),
-                slot: _potSlots[index],
-                placement: potPlacements[index],
-                pot: pots[index],
-                water: water,
-                coins: coins,
-                stageSize: stageSize,
-                usableGardenHeight: usableGardenHeight,
-                potSize: shortestSide * _potSlots[index].sizeFactor,
-                arranging: arrangingDecorations,
-                selected: selectedArrangedPotIndex == index,
-                onTap: () => arrangingDecorations
-                    ? onPotArrangeSelected(index)
-                    : onPotSelected(index),
-                onMoved: (alignmentX, alignmentY) =>
-                    onPotMoved(index, alignmentX, alignmentY),
-                onMoveEnded: (alignmentX, alignmentY) =>
-                    onPotMoveEnded(index, alignmentX, alignmentY),
-                onActionTap: () => onPotAction(index),
-                onCoinCollected: onCoinCollected,
-              ),
             for (final decoration in frontDecorations)
               _PositionedDecoration(
                 decoration: decoration,
@@ -186,6 +221,30 @@ class GardenStage extends StatelessWidget {
                 onSelected: () => onDecorationSelected(decoration),
                 onPlacementChanged: (placement) =>
                     onDecorationPlacementChanged(decoration, placement),
+              ),
+            for (final index in potRenderOrder)
+              _PositionedPot(
+                key: ValueKey('garden-pot-$index'),
+                slot: potSlots[index],
+                placement: _isFixedPotSlot(index) ? null : potPlacements[index],
+                pot: pots[index],
+                water: water,
+                coins: coins,
+                stageSize: stageSize,
+                usableGardenHeight: usableGardenHeight,
+                potSize: shortestSide * potSlots[index].sizeFactor,
+                arranging: arrangingDecorations,
+                movable: !_isFixedPotSlot(index),
+                selected: selectedArrangedPotIndex == index,
+                onTap: () => arrangingDecorations
+                    ? onPotArrangeSelected(index)
+                    : onPotSelected(index),
+                onMoved: (alignmentX, alignmentY) =>
+                    onPotMoved(index, alignmentX, alignmentY),
+                onMoveEnded: (alignmentX, alignmentY) =>
+                    onPotMoveEnded(index, alignmentX, alignmentY),
+                onActionTap: () => onPotAction(index),
+                onCoinCollected: onCoinCollected,
               ),
             if (arrangingDecorations)
               for (final decoration in visibleDecorationRenderOrder)
@@ -251,10 +310,20 @@ class _PositionedDecorationState extends State<_PositionedDecoration> {
         alignmentY: .69,
         sizeFactor: .18,
       ),
+      GardenDecoration.fountain => const _DecorationSpec(
+        alignmentX: .84,
+        alignmentY: .72,
+        sizeFactor: .2,
+      ),
       GardenDecoration.lantern => const _DecorationSpec(
         alignmentX: .9,
         alignmentY: .66,
         sizeFactor: .12,
+      ),
+      GardenDecoration.stonePath => const _DecorationSpec(
+        alignmentX: .5,
+        alignmentY: .84,
+        sizeFactor: .3,
       ),
       GardenDecoration.wateringCan => const _DecorationSpec(
         alignmentX: .48,
@@ -396,6 +465,7 @@ class _PositionedPot extends StatefulWidget {
     required this.usableGardenHeight,
     required this.potSize,
     required this.arranging,
+    required this.movable,
     required this.selected,
     required this.onTap,
     required this.onMoved,
@@ -413,6 +483,7 @@ class _PositionedPot extends StatefulWidget {
   final double usableGardenHeight;
   final double potSize;
   final bool arranging;
+  final bool movable;
   final bool selected;
   final VoidCallback onTap;
   final void Function(double alignmentX, double alignmentY) onMoved;
@@ -589,16 +660,21 @@ class _PositionedPotState extends State<_PositionedPot>
     final resolvedY = widget.placement?.alignmentY ?? widget.slot.alignmentY;
     final bubbleSize = potSize * .34;
     final hitAreaTopInset = potSize * .55;
-    final bubbleTop = switch (stage) {
-      GardenGrowthStage.empty || GardenGrowthStage.seed => potSize * .22,
-      GardenGrowthStage.sprout => -potSize * .02,
-      GardenGrowthStage.bud => -potSize * .18,
-      GardenGrowthStage.bloom => -potSize * .3,
-      GardenGrowthStage.dry => -potSize * .22,
-    };
+    final isHangingSlot =
+        widget.slot.potStyleOverride == GardenPotStyle.hanging;
+    final bubbleTop = isHangingSlot
+        ? potSize * .02
+        : switch (stage) {
+            GardenGrowthStage.empty || GardenGrowthStage.seed => potSize * .22,
+            GardenGrowthStage.sprout => -potSize * .02,
+            GardenGrowthStage.bud => -potSize * .18,
+            GardenGrowthStage.bloom => -potSize * .3,
+            GardenGrowthStage.dry => -potSize * .22,
+          };
     final actionEnabled = stage.hasCoins
         ? pot.hasCollectableCoins
         : !stage.needsWater || widget.water > 0;
+    final canMove = widget.arranging && widget.movable;
     final showActionBubble =
         !widget.arranging && (!stage.hasCoins || pot.hasCollectableCoins);
     final isReadyForCoins = pot.hasCollectableCoins;
@@ -619,7 +695,7 @@ class _PositionedPotState extends State<_PositionedPot>
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: widget.onTap,
-              onPanStart: widget.arranging
+              onPanStart: canMove
                   ? (_) {
                       widget.onTap();
                       _dragStartPlacement = GardenDecorationPlacement(
@@ -630,7 +706,7 @@ class _PositionedPotState extends State<_PositionedPot>
                       _dragDelta = Offset.zero;
                     }
                   : null,
-              onPanUpdate: widget.arranging
+              onPanUpdate: canMove
                   ? (details) {
                       final start =
                           _dragStartPlacement ??
@@ -652,7 +728,7 @@ class _PositionedPotState extends State<_PositionedPot>
                       widget.onMoved(nextX, nextY);
                     }
                   : null,
-              onPanEnd: widget.arranging
+              onPanEnd: canMove
                   ? (_) {
                       final placement = _lastDragPlacement;
                       if (placement == null) {
@@ -667,7 +743,7 @@ class _PositionedPotState extends State<_PositionedPot>
                       _dragDelta = Offset.zero;
                     }
                   : null,
-              onPanCancel: widget.arranging
+              onPanCancel: canMove
                   ? () {
                       _dragStartPlacement = null;
                       _lastDragPlacement = null;
@@ -694,7 +770,12 @@ class _PositionedPotState extends State<_PositionedPot>
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    GardenPlantedPotView(pot: pot, size: potSize),
+                    GardenPlantedPotView(
+                      pot: pot,
+                      size: potSize,
+                      useNoShadowPot: widget.slot.useNoShadowPot,
+                      potStyleOverride: widget.slot.potStyleOverride,
+                    ),
                     if (widget.arranging)
                       Positioned.fill(
                         child: IgnorePointer(

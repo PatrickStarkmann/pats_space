@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
@@ -44,11 +45,26 @@ class SharedPreferencesGardenRepository implements GardenRepository {
     if (decodedPots.isEmpty) {
       return null;
     }
-    final pots = _normalizedPots(decodedPots);
+    final pots = _normalizedPots(decodedPots, GardenArea.main);
+    final activeArea =
+        GardenArea.fromStoredName(json['activeArea']) ?? GardenArea.main;
     final ownedDecorations = _decorationsFromJson(json['ownedDecorations']);
     final placedDecorations = json.containsKey('placedDecorations')
         ? _decorationsFromJson(json['placedDecorations'])
         : ownedDecorations;
+    final potsByArea = _potsByAreaFromJson(json['potsByArea'], pots);
+    final placedDecorationsByArea = _decorationsByAreaFromJson(
+      json['placedDecorationsByArea'],
+      placedDecorations,
+    );
+    final decorationPlacementsByArea = _decorationPlacementsByAreaFromJson(
+      json['decorationPlacementsByArea'],
+      _decorationPlacementsFromJson(json['decorationPlacements']),
+    );
+    final potPlacementsByArea = _potPlacementsByAreaFromJson(
+      json['potPlacementsByArea'],
+      _potPlacementsFromJson(json['potPlacements']),
+    );
 
     return GardenState(
       water: math.max(
@@ -59,16 +75,21 @@ class SharedPreferencesGardenRepository implements GardenRepository {
         _intValue(json['coins']) ?? GardenState.defaultCoins,
         GardenState.defaultCoins,
       ),
+      activeArea: activeArea,
       unlockedPlantTypes: _plantTypesFromJson(json['unlockedPlantTypes']),
       ownedPotStyles: _potStylesFromJson(json['ownedPotStyles']),
       selectedPotStyle: _storedGroundPotStyle(json['selectedPotStyle']),
       ownedDecorations: ownedDecorations,
       placedDecorations: placedDecorations,
+      placedDecorationsByArea: placedDecorationsByArea,
       decorationPlacements: _decorationPlacementsFromJson(
         json['decorationPlacements'],
       ),
+      decorationPlacementsByArea: decorationPlacementsByArea,
       potPlacements: _potPlacementsFromJson(json['potPlacements']),
+      potPlacementsByArea: potPlacementsByArea,
       pots: pots,
+      potsByArea: potsByArea,
     );
   }
 
@@ -79,6 +100,7 @@ class SharedPreferencesGardenRepository implements GardenRepository {
       jsonEncode({
         'water': state.water,
         'coins': state.coins,
+        'activeArea': state.activeArea.name,
         'unlockedPlantTypes': state.unlockedPlantTypes
             .map((plantType) => plantType.name)
             .toList(),
@@ -92,6 +114,12 @@ class SharedPreferencesGardenRepository implements GardenRepository {
         'placedDecorations': state.placedDecorations
             .map((decoration) => decoration.name)
             .toList(),
+        'placedDecorationsByArea': state.placedDecorationsByArea.map(
+          (area, decorations) => MapEntry(
+            area.name,
+            decorations.map((decoration) => decoration.name).toList(),
+          ),
+        ),
         'decorationPlacements': state.decorationPlacements.map(
           (decoration, placement) => MapEntry(decoration.name, {
             'x': placement.alignmentX,
@@ -100,13 +128,40 @@ class SharedPreferencesGardenRepository implements GardenRepository {
             'inFront': placement.inFront,
           }),
         ),
+        'decorationPlacementsByArea': state.decorationPlacementsByArea.map(
+          (area, placements) => MapEntry(
+            area.name,
+            placements.map(
+              (decoration, placement) => MapEntry(decoration.name, {
+                'x': placement.alignmentX,
+                'y': placement.alignmentY,
+                'scale': placement.scale,
+                'inFront': placement.inFront,
+              }),
+            ),
+          ),
+        ),
         'potPlacements': state.potPlacements.map(
           (index, placement) => MapEntry('$index', {
             'x': placement.alignmentX,
             'y': placement.alignmentY,
           }),
         ),
+        'potPlacementsByArea': state.potPlacementsByArea.map(
+          (area, placements) => MapEntry(
+            area.name,
+            placements.map(
+              (index, placement) => MapEntry('$index', {
+                'x': placement.alignmentX,
+                'y': placement.alignmentY,
+              }),
+            ),
+          ),
+        ),
         'pots': state.pots.map(_potToJson).toList(),
+        'potsByArea': state.potsByArea.map(
+          (area, pots) => MapEntry(area.name, pots.map(_potToJson).toList()),
+        ),
       }),
     );
   }
@@ -145,16 +200,44 @@ class SharedPreferencesGardenRepository implements GardenRepository {
     };
   }
 
-  List<GardenPot> _normalizedPots(List<GardenPot> pots) {
+  List<GardenPot> _normalizedPots(List<GardenPot> pots, GardenArea area) {
     final normalized = pots
         .where((pot) => pot.potStyle != GardenPotStyle.hanging)
-        .take(GardenState.maxPotCount)
+        .take(area.potCount)
         .toList();
 
-    while (normalized.length < GardenState.defaultPotCount) {
+    while (normalized.length < area.potCount) {
       normalized.add(const GardenPot.empty());
     }
     return normalized;
+  }
+
+  Map<GardenArea, List<GardenPot>> _potsByAreaFromJson(
+    Object? json,
+    List<GardenPot> legacyPots,
+  ) {
+    final potsByArea = <GardenArea, List<GardenPot>>{
+      GardenArea.main: legacyPots,
+    };
+    if (json is! Map) {
+      return potsByArea;
+    }
+
+    for (final entry in json.entries) {
+      final area = GardenArea.fromStoredName(entry.key);
+      final value = entry.value;
+      if (area == null || value is! List) {
+        continue;
+      }
+
+      final pots = value
+          .whereType<Map<String, dynamic>>()
+          .map(_potFromJson)
+          .whereType<GardenPot>()
+          .toList();
+      potsByArea[area] = _normalizedPots(pots, area);
+    }
+    return potsByArea;
   }
 
   Set<GardenPlantType> _plantTypesFromJson(Object? json) {
@@ -219,6 +302,28 @@ class SharedPreferencesGardenRepository implements GardenRepository {
         .toSet();
   }
 
+  Map<GardenArea, Set<GardenDecoration>> _decorationsByAreaFromJson(
+    Object? json,
+    Set<GardenDecoration> legacyDecorations,
+  ) {
+    final decorationsByArea = <GardenArea, Set<GardenDecoration>>{
+      GardenArea.main: legacyDecorations,
+    };
+    if (json is! Map) {
+      return decorationsByArea;
+    }
+
+    for (final entry in json.entries) {
+      final area = GardenArea.fromStoredName(entry.key);
+      if (area == null) {
+        continue;
+      }
+
+      decorationsByArea[area] = _decorationsFromJson(entry.value);
+    }
+    return decorationsByArea;
+  }
+
   Map<GardenDecoration, GardenDecorationPlacement>
   _decorationPlacementsFromJson(Object? json) {
     if (json is! Map) {
@@ -252,6 +357,30 @@ class SharedPreferencesGardenRepository implements GardenRepository {
     return placements;
   }
 
+  Map<GardenArea, Map<GardenDecoration, GardenDecorationPlacement>>
+  _decorationPlacementsByAreaFromJson(
+    Object? json,
+    Map<GardenDecoration, GardenDecorationPlacement> legacyPlacements,
+  ) {
+    final placementsByArea =
+        <GardenArea, Map<GardenDecoration, GardenDecorationPlacement>>{
+          GardenArea.main: legacyPlacements,
+        };
+    if (json is! Map) {
+      return placementsByArea;
+    }
+
+    for (final entry in json.entries) {
+      final area = GardenArea.fromStoredName(entry.key);
+      if (area == null) {
+        continue;
+      }
+
+      placementsByArea[area] = _decorationPlacementsFromJson(entry.value);
+    }
+    return placementsByArea;
+  }
+
   Map<int, GardenDecorationPlacement> _potPlacementsFromJson(Object? json) {
     if (json is! Map) {
       return {};
@@ -278,6 +407,29 @@ class SharedPreferencesGardenRepository implements GardenRepository {
     }
 
     return placements;
+  }
+
+  Map<GardenArea, Map<int, GardenDecorationPlacement>>
+  _potPlacementsByAreaFromJson(
+    Object? json,
+    Map<int, GardenDecorationPlacement> legacyPlacements,
+  ) {
+    final placementsByArea = <GardenArea, Map<int, GardenDecorationPlacement>>{
+      GardenArea.main: legacyPlacements,
+    };
+    if (json is! Map) {
+      return placementsByArea;
+    }
+
+    for (final entry in json.entries) {
+      final area = GardenArea.fromStoredName(entry.key);
+      if (area == null) {
+        continue;
+      }
+
+      placementsByArea[area] = _potPlacementsFromJson(entry.value);
+    }
+    return placementsByArea;
   }
 
   T? _enumValue<T extends Enum>(List<T> values, Object? name) {

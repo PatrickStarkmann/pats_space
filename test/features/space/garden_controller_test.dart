@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
+import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
@@ -213,6 +214,24 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
     });
 
+    test('hanging flower grows from seed to sprout to bloom', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 40),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectArea(GardenArea.second);
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.hangingFlower);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+
+      _performActions(controller, 9);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+
+      _performActions(controller, 17);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
+    });
+
     test('blooming a plant unlocks the next plant', () {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(water: 40),
@@ -354,7 +373,57 @@ void main() {
 
       expect(bought, isFalse);
       expect(controller.state.coins, 500);
-      expect(controller.state.pots, hasLength(GardenState.maxPotCount));
+      expect(controller.state.pots, hasLength(GardenArea.main.potCount));
+
+      controller.selectArea(GardenArea.second);
+
+      expect(controller.state.pots, hasLength(GardenArea.second.potCount));
+    });
+
+    test('garden areas keep separate pots', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 20),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.daisy);
+
+      controller.selectArea(GardenArea.second);
+
+      expect(controller.state.activeArea, GardenArea.second);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
+
+      controller.selectPot(5);
+      controller.plantSelectedPot(GardenPlantType.daisy);
+
+      controller.selectArea(GardenArea.main);
+
+      expect(controller.state.pots[0].plantType, GardenPlantType.daisy);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+
+      controller.selectArea(GardenArea.second);
+
+      expect(controller.state.pots[5].plantType, GardenPlantType.daisy);
+      expect(controller.state.pots[5].stage, GardenGrowthStage.seed);
+    });
+
+    test('hanging slots only accept hanging plants', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 20),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectArea(GardenArea.second);
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.daisy);
+
+      expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
+
+      controller.plantSelectedPot(GardenPlantType.hangingFlower);
+
+      expect(controller.state.pots[0].plantType, GardenPlantType.hangingFlower);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
     });
 
     test('pot styles can be bought and equipped', () {

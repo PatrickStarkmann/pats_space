@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
+import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_pot.dart';
@@ -41,6 +42,14 @@ class GardenController extends ChangeNotifier {
   GardenState get state => _state;
   GardenDecoration? get requestedDecorationArrangement =>
       _requestedDecorationArrangement;
+
+  void selectArea(GardenArea area) {
+    if (_state.activeArea == area) {
+      return;
+    }
+
+    _setState(_state.copyWith(activeArea: area, clearSelectedPot: true));
+  }
 
   @override
   void dispose() {
@@ -116,6 +125,10 @@ class GardenController extends ChangeNotifier {
   bool styleSelectedPot(GardenPotStyle style) {
     final index = _state.selectedPotIndex;
     if (index == null) {
+      return false;
+    }
+
+    if (_state.activeArea.isHangingPotSlot(index)) {
       return false;
     }
 
@@ -331,6 +344,10 @@ class GardenController extends ChangeNotifier {
       return;
     }
 
+    if (!_plantTypeAllowedInSelectedPot(plantType, index)) {
+      return;
+    }
+
     final pot = _state.pots[index];
     if (!pot.stage.isEmpty) {
       return;
@@ -377,6 +394,14 @@ class GardenController extends ChangeNotifier {
       );
 
     _setState(_state.copyWith(pots: updatedPots, selectedPotIndex: index));
+  }
+
+  bool _plantTypeAllowedInSelectedPot(GardenPlantType plantType, int index) {
+    final isHangingSlot = _state.activeArea.isHangingPotSlot(index);
+    final allowedPlants = isHangingSlot
+        ? GardenPlantType.hangingPlantable
+        : GardenPlantType.groundPlantable;
+    return allowedPlants.contains(plantType);
   }
 
   GardenPot _updatedPotAfterPrimaryAction(GardenPot pot, DateTime now) {
@@ -498,54 +523,76 @@ class GardenController extends ChangeNotifier {
     final decorations = state.ownedDecorations
         .where((decoration) => !retiredDecorations.contains(decoration))
         .toSet();
-    final placedDecorations = state.placedDecorations
-        .where((decoration) => !retiredDecorations.contains(decoration))
-        .where(decorations.contains)
-        .toSet();
-    final decorationPlacements =
-        Map<GardenDecoration, GardenDecorationPlacement>.from(
-          state.decorationPlacements,
-        )..removeWhere(
-          (decoration, _) => retiredDecorations.contains(decoration),
-        );
-    final pots = state.pots
-        .where((pot) => pot.potStyle != GardenPotStyle.hanging)
-        .toList();
+    final placedDecorationsByArea = <GardenArea, Set<GardenDecoration>>{};
+    final decorationPlacementsByArea =
+        <GardenArea, Map<GardenDecoration, GardenDecorationPlacement>>{};
+    final potsByArea = <GardenArea, List<GardenPot>>{};
+    var selectedPotWasRetired = false;
+
+    for (final area in GardenArea.values) {
+      placedDecorationsByArea[area] =
+          (state.placedDecorationsByArea[area] ?? {})
+              .where((decoration) => !retiredDecorations.contains(decoration))
+              .where(decorations.contains)
+              .toSet();
+      decorationPlacementsByArea[area] =
+          Map<GardenDecoration, GardenDecorationPlacement>.from(
+            state.decorationPlacementsByArea[area] ?? {},
+          )..removeWhere(
+            (decoration, _) => retiredDecorations.contains(decoration),
+          );
+      final areaPots = (state.potsByArea[area] ?? const <GardenPot>[])
+          .where((pot) => pot.potStyle != GardenPotStyle.hanging)
+          .toList();
+      potsByArea[area] = areaPots;
+
+      if (area == state.activeArea) {
+        selectedPotWasRetired =
+            state.selectedPot?.potStyle == GardenPotStyle.hanging;
+      }
+    }
 
     if (setEquals(decorations, state.ownedDecorations) &&
-        setEquals(placedDecorations, state.placedDecorations) &&
-        _sameDecorationPlacements(
-          decorationPlacements,
-          state.decorationPlacements,
+        _sameDecorationSetsByArea(
+          placedDecorationsByArea,
+          state.placedDecorationsByArea,
         ) &&
-        pots.length == state.pots.length) {
+        _sameDecorationPlacementsByArea(
+          decorationPlacementsByArea,
+          state.decorationPlacementsByArea,
+        ) &&
+        _samePotsByArea(potsByArea, state.potsByArea)) {
       return state;
     }
 
     return state.copyWith(
       ownedDecorations: decorations,
-      placedDecorations: placedDecorations,
-      decorationPlacements: decorationPlacements,
-      pots: pots,
-      clearSelectedPot: state.selectedPot?.potStyle == GardenPotStyle.hanging,
+      placedDecorationsByArea: placedDecorationsByArea,
+      decorationPlacementsByArea: decorationPlacementsByArea,
+      potsByArea: potsByArea,
+      clearSelectedPot: selectedPotWasRetired,
     );
   }
 
   GardenState _stateWithBloomCharges(GardenState state, DateTime now) {
     var changed = false;
-    final refreshedPots = <GardenPot>[];
+    final refreshedPotsByArea = <GardenArea, List<GardenPot>>{};
 
-    for (final pot in state.pots) {
-      final refreshedPot = _potWithBloomCharges(pot, now);
-      refreshedPots.add(refreshedPot);
-      changed = changed || !_samePot(refreshedPot, pot);
+    for (final entry in state.potsByArea.entries) {
+      final refreshedPots = <GardenPot>[];
+      for (final pot in entry.value) {
+        final refreshedPot = _potWithBloomCharges(pot, now);
+        refreshedPots.add(refreshedPot);
+        changed = changed || !_samePot(refreshedPot, pot);
+      }
+      refreshedPotsByArea[entry.key] = refreshedPots;
     }
 
     if (!changed) {
       return state;
     }
 
-    return state.copyWith(pots: refreshedPots);
+    return state.copyWith(potsByArea: refreshedPotsByArea);
   }
 
   GardenPot _potWithBloomCharges(GardenPot pot, DateTime now) {
@@ -601,24 +648,49 @@ class GardenController extends ChangeNotifier {
   bool _sameGardenState(GardenState a, GardenState b) {
     if (a.water != b.water ||
         a.coins != b.coins ||
+        a.activeArea != b.activeArea ||
         a.selectedPotIndex != b.selectedPotIndex ||
         !setEquals(a.unlockedPlantTypes, b.unlockedPlantTypes) ||
         !setEquals(a.ownedPotStyles, b.ownedPotStyles) ||
         a.selectedPotStyle != b.selectedPotStyle ||
         !setEquals(a.ownedDecorations, b.ownedDecorations) ||
-        !setEquals(a.placedDecorations, b.placedDecorations) ||
-        !_sameDecorationPlacements(
-          a.decorationPlacements,
-          b.decorationPlacements,
+        !_sameDecorationSetsByArea(
+          a.placedDecorationsByArea,
+          b.placedDecorationsByArea,
         ) ||
-        !_sameIntPlacements(a.potPlacements, b.potPlacements) ||
-        a.pots.length != b.pots.length) {
+        !_sameDecorationPlacementsByArea(
+          a.decorationPlacementsByArea,
+          b.decorationPlacementsByArea,
+        ) ||
+        !_sameIntPlacementsByArea(
+          a.potPlacementsByArea,
+          b.potPlacementsByArea,
+        ) ||
+        !_samePotsByArea(a.potsByArea, b.potsByArea)) {
       return false;
     }
 
-    for (var index = 0; index < a.pots.length; index += 1) {
-      if (!_samePot(a.pots[index], b.pots[index])) {
+    return true;
+  }
+
+  bool _samePotsByArea(
+    Map<GardenArea, List<GardenPot>> a,
+    Map<GardenArea, List<GardenPot>> b,
+  ) {
+    if (!setEquals(a.keys.toSet(), b.keys.toSet())) {
+      return false;
+    }
+
+    for (final area in a.keys) {
+      final aPots = a[area] ?? const <GardenPot>[];
+      final bPots = b[area] ?? const <GardenPot>[];
+      if (aPots.length != bPots.length) {
         return false;
+      }
+      for (var index = 0; index < aPots.length; index += 1) {
+        if (!_samePot(aPots[index], bPots[index])) {
+          return false;
+        }
       }
     }
 
@@ -654,6 +726,40 @@ class GardenController extends ChangeNotifier {
     return true;
   }
 
+  bool _sameDecorationSetsByArea(
+    Map<GardenArea, Set<GardenDecoration>> a,
+    Map<GardenArea, Set<GardenDecoration>> b,
+  ) {
+    if (!setEquals(a.keys.toSet(), b.keys.toSet())) {
+      return false;
+    }
+
+    for (final area in a.keys) {
+      if (!setEquals(a[area], b[area])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _sameDecorationPlacementsByArea(
+    Map<GardenArea, Map<GardenDecoration, GardenDecorationPlacement>> a,
+    Map<GardenArea, Map<GardenDecoration, GardenDecorationPlacement>> b,
+  ) {
+    if (!setEquals(a.keys.toSet(), b.keys.toSet())) {
+      return false;
+    }
+
+    for (final area in a.keys) {
+      if (!_sameDecorationPlacements(a[area] ?? {}, b[area] ?? {})) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   bool _sameIntPlacements(
     Map<int, GardenDecorationPlacement> a,
     Map<int, GardenDecorationPlacement> b,
@@ -665,6 +771,23 @@ class GardenController extends ChangeNotifier {
     for (final entry in a.entries) {
       final other = b[entry.key];
       if (other == null || !_samePlacement(entry.value, other)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _sameIntPlacementsByArea(
+    Map<GardenArea, Map<int, GardenDecorationPlacement>> a,
+    Map<GardenArea, Map<int, GardenDecorationPlacement>> b,
+  ) {
+    if (!setEquals(a.keys.toSet(), b.keys.toSet())) {
+      return false;
+    }
+
+    for (final area in a.keys) {
+      if (!_sameIntPlacements(a[area] ?? {}, b[area] ?? {})) {
         return false;
       }
     }

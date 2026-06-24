@@ -26,88 +26,104 @@ class ShopScreen extends StatelessWidget {
       builder: (context, _) {
         final garden = gardenController.state;
 
-        return SafeArea(
-          bottom: false,
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: 132),
-            children: [
-              _ShopHeader(coins: garden.coins),
-              const SizedBox(height: AppSpacing.xl),
-              _ShopItemSection<GardenPotStyle>(
-                title: 'Pot styles',
-                subtitle: 'Pot looks',
-                items: GardenPotStyle.shopStyles,
-                isOwned: garden.ownedPotStyles.contains,
-                isEquipped: (_) => false,
-                nameOf: (style) => style.displayName,
-                costOf: (style) => style.cost,
-                assetOf: (style) => style.assetPath,
-                actionLabel: (style) {
-                  if (garden.ownedPotStyles.contains(style)) {
-                    return 'Owned';
-                  }
-                  return null;
-                },
-                coins: garden.coins,
-                onPrimaryAction: (style) {
-                  final owned = garden.ownedPotStyles.contains(style);
-                  if (owned) {
-                    HapticFeedback.selectionClick();
-                    return;
-                  }
+        return ColoredBox(
+          color: AppColors.background,
+          child: SafeArea(
+            bottom: false,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
+              child: ListView(
+                clipBehavior: Clip.hardEdge,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: 132),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenHorizontal,
+                    ),
+                    child: _ShopHeader(coins: garden.coins),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _ShopItemSection<GardenPotStyle>(
+                    title: 'Pot styles',
+                    items: GardenPotStyle.shopStyles,
+                    isOwned: garden.ownedPotStyles.contains,
+                    isEquipped: (_) => false,
+                    nameOf: (style) => style.displayName,
+                    costOf: (style) => style.cost,
+                    assetOf: (style) => style.assetPath,
+                    actionLabel: (style) {
+                      if (garden.ownedPotStyles.contains(style)) {
+                        return 'Collected';
+                      }
+                      return null;
+                    },
+                    coins: garden.coins,
+                    onPrimaryAction: (style) {
+                      final owned = garden.ownedPotStyles.contains(style);
+                      if (owned) {
+                        HapticFeedback.selectionClick();
+                        return;
+                      }
 
-                  final success = gardenController.buyPotStyle(style);
-                  if (success) {
-                    HapticFeedback.mediumImpact();
-                  } else {
-                    HapticFeedback.selectionClick();
-                  }
-                },
+                      final success = gardenController.buyPotStyle(style);
+                      if (success) {
+                        HapticFeedback.mediumImpact();
+                      } else {
+                        HapticFeedback.selectionClick();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _ShopItemSection<GardenDecoration>(
+                    title: 'Decor',
+                    items: GardenDecoration.shopDecorations,
+                    isOwned: garden.ownedDecorations.contains,
+                    isEquipped: garden.placedDecorations.contains,
+                    isAvailable: (decoration) {
+                      final requirement = decoration.requirement;
+                      return requirement == null ||
+                          garden.ownedDecorations.contains(requirement);
+                    },
+                    unavailableLabel: (decoration) {
+                      final requirement = decoration.requirement;
+                      return requirement == null
+                          ? null
+                          : 'Need ${requirement.displayName}';
+                    },
+                    nameOf: (decoration) => decoration.displayName,
+                    costOf: (decoration) => decoration.cost,
+                    assetOf: (decoration) => decoration.assetPath,
+                    actionLabel: (decoration) {
+                      if (garden.placedDecorations.contains(decoration)) {
+                        return 'In garden';
+                      }
+                      if (garden.ownedDecorations.contains(decoration)) {
+                        return 'Place';
+                      }
+                      return null;
+                    },
+                    coins: garden.coins,
+                    onPrimaryAction: (decoration) {
+                      final success = gardenController.buyDecoration(
+                        decoration,
+                      );
+                      if (success) {
+                        HapticFeedback.mediumImpact();
+                        gardenController.requestDecorationArrangement(
+                          decoration,
+                        );
+                        onOpenSpace();
+                      } else {
+                        HapticFeedback.selectionClick();
+                      }
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              _ShopItemSection<GardenDecoration>(
-                title: 'Decor',
-                subtitle: 'Garden items',
-                items: GardenDecoration.shopDecorations,
-                isOwned: garden.ownedDecorations.contains,
-                isEquipped: garden.placedDecorations.contains,
-                isAvailable: (decoration) {
-                  final requirement = decoration.requirement;
-                  return requirement == null ||
-                      garden.ownedDecorations.contains(requirement);
-                },
-                unavailableLabel: (decoration) {
-                  final requirement = decoration.requirement;
-                  return requirement == null
-                      ? null
-                      : 'Need ${requirement.displayName}';
-                },
-                nameOf: (decoration) => decoration.displayName,
-                costOf: (decoration) => decoration.cost,
-                assetOf: (decoration) => decoration.assetPath,
-                actionLabel: (decoration) {
-                  if (garden.placedDecorations.contains(decoration)) {
-                    return 'Placed';
-                  }
-                  if (garden.ownedDecorations.contains(decoration)) {
-                    return 'Place';
-                  }
-                  return null;
-                },
-                coins: garden.coins,
-                onPrimaryAction: (decoration) {
-                  final success = gardenController.buyDecoration(decoration);
-                  if (success) {
-                    HapticFeedback.mediumImpact();
-                    gardenController.requestDecorationArrangement(decoration);
-                    onOpenSpace();
-                  } else {
-                    HapticFeedback.selectionClick();
-                  }
-                },
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -132,7 +148,7 @@ class _ShopHeader extends StatelessWidget {
               Text('Shop', style: AppTextStyles.title),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Collect pot styles and garden pieces for your space.',
+                'Collect new looks and little pieces for your garden.',
                 style: AppTextStyles.bodyMuted.copyWith(fontSize: 15),
               ),
             ],
@@ -190,33 +206,15 @@ class _CoinWallet extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.subtitle});
+  const _SectionTitle({required this.title});
 
   final String title;
-  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = this.subtitle;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: AppTextStyles.headline.copyWith(fontWeight: FontWeight.w900),
-          ),
-        ),
-        if (subtitle != null)
-          Text(
-            subtitle,
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.grayWarm,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-      ],
+    return Text(
+      title,
+      style: AppTextStyles.headline.copyWith(fontWeight: FontWeight.w900),
     );
   }
 }
@@ -224,7 +222,6 @@ class _SectionTitle extends StatelessWidget {
 class _ShopItemSection<T> extends StatelessWidget {
   const _ShopItemSection({
     required this.title,
-    required this.subtitle,
     required this.items,
     required this.isOwned,
     required this.isEquipped,
@@ -239,7 +236,6 @@ class _ShopItemSection<T> extends StatelessWidget {
   });
 
   final String title;
-  final String subtitle;
   final List<T> items;
   final bool Function(T item) isOwned;
   final bool Function(T item) isEquipped;
@@ -257,14 +253,22 @@ class _ShopItemSection<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(title: title, subtitle: subtitle),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenHorizontal,
+          ),
+          child: _SectionTitle(title: title),
+        ),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 210,
           child: ListView.separated(
-            clipBehavior: Clip.none,
+            clipBehavior: Clip.hardEdge,
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenHorizontal,
+            ),
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
@@ -334,6 +338,25 @@ class _ShopProductCard extends StatelessWidget {
             ? '$cost'
             : 'Need $cost');
 
+    final buttonColor = equipped
+        ? AppColors.sageSoft
+        : owned
+        ? AppColors.surfaceMuted.withValues(alpha: .75)
+        : !available
+        ? AppColors.surfaceMuted.withValues(alpha: .64)
+        : canBuy
+        ? AppColors.charcoal
+        : AppColors.surfaceMuted;
+    final buttonTextColor = equipped
+        ? AppColors.sagePressed
+        : owned
+        ? AppColors.charcoal
+        : !available
+        ? AppColors.grayWarm
+        : canBuy
+        ? AppColors.surface
+        : AppColors.grayWarm;
+
     return SizedBox(
       width: 146,
       child: DecoratedBox(
@@ -355,18 +378,20 @@ class _ShopProductCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Center(
+                child: SizedBox.expand(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: AppColors.sageSoft.withValues(alpha: .56),
+                      color: owned
+                          ? AppColors.sageSoft.withValues(alpha: .5)
+                          : AppColors.surfaceMuted.withValues(alpha: .42),
                       borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
-                    child: SizedBox.expand(
+                    child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(AppSpacing.sm),
                         child: Image.asset(
@@ -379,18 +404,22 @@ class _ShopProductCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                name,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.charcoal,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13,
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.charcoal,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 8),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: equipped ? HapticFeedback.selectionClick : onTap,
@@ -399,17 +428,11 @@ class _ShopProductCard extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                    vertical: 7,
+                    horizontal: AppSpacing.sm,
+                    vertical: 9,
                   ),
                   decoration: BoxDecoration(
-                    color: equipped || owned
-                        ? AppColors.sageSoft
-                        : !available
-                        ? AppColors.surfaceMuted.withValues(alpha: .64)
-                        : canBuy
-                        ? AppColors.charcoal
-                        : AppColors.surfaceMuted,
+                    color: buttonColor,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Row(
@@ -423,13 +446,7 @@ class _ShopProductCard extends StatelessWidget {
                         child: Text(
                           resolvedActionLabel,
                           style: AppTextStyles.caption.copyWith(
-                            color: equipped || owned
-                                ? AppColors.sagePressed
-                                : !available
-                                ? AppColors.grayWarm
-                                : canBuy
-                                ? AppColors.surface
-                                : AppColors.grayWarm,
+                            color: buttonTextColor,
                             fontWeight: FontWeight.w900,
                             fontSize: 12,
                           ),

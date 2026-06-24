@@ -45,6 +45,20 @@ enum GardenPotStyle {
     GardenPotStyle.white => AppAssets.gardenPotWhite,
   };
 
+  String get noShadowAssetPath => switch (this) {
+    GardenPotStyle.classic => AppAssets.gardenPotDefaultNoShadow,
+    GardenPotStyle.blue => AppAssets.gardenPotBlueNoShadow,
+    GardenPotStyle.colorful => AppAssets.gardenPotColorfulNoShadow,
+    GardenPotStyle.hanging => AppAssets.gardenPotHanging,
+    GardenPotStyle.round => AppAssets.gardenPotRoundNoShadow,
+    GardenPotStyle.white => AppAssets.gardenPotWhiteNoShadow,
+  };
+
+  double get renderOffsetYFactor => switch (this) {
+    GardenPotStyle.round => .08,
+    _ => 0,
+  };
+
   double plantSizeFactorFor(GardenGrowthStage stage) {
     final base = switch (stage) {
       GardenGrowthStage.seed => .24,
@@ -58,6 +72,7 @@ enum GardenPotStyle {
     return switch (this) {
       GardenPotStyle.round => base * .94,
       GardenPotStyle.colorful => base * .96,
+      GardenPotStyle.hanging => base * .73,
       _ => base,
     };
   }
@@ -74,6 +89,7 @@ enum GardenPotStyle {
 
     return switch (this) {
       GardenPotStyle.round => base - .13,
+      GardenPotStyle.hanging => base - .28,
       GardenPotStyle.colorful => base - .04,
       GardenPotStyle.blue => base - .02,
       GardenPotStyle.white => base - .02,

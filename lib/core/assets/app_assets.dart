@@ -52,12 +52,24 @@ class AppAssets {
 
   static const gardenBackgroundMain =
       'assets/images/garden/backgrounds/garden_main.png';
+  static const gardenBackgroundSecond =
+      'assets/images/garden/backgrounds/garden_second.png';
   static const gardenPotDefault = 'assets/images/garden/pots/default/pot.png';
+  static const gardenPotDefaultNoShadow =
+      'assets/images/garden/pots/classic_pot_no_shadow.png';
   static const gardenPotBlue = 'assets/images/garden/pots/blue_pot.png';
+  static const gardenPotBlueNoShadow =
+      'assets/images/garden/pots/blue_pot_no_shadow.png';
   static const gardenPotColorful = 'assets/images/garden/pots/colorful_pot.png';
+  static const gardenPotColorfulNoShadow =
+      'assets/images/garden/pots/colorful_pot_no_shadow.png';
   static const gardenPotHanging = 'assets/images/garden/pots/hanging_pot.png';
   static const gardenPotRound = 'assets/images/garden/pots/round_pot.png';
+  static const gardenPotRoundNoShadow =
+      'assets/images/garden/pots/round_pot_no_shadow.png';
   static const gardenPotWhite = 'assets/images/garden/pots/white_pot.png';
+  static const gardenPotWhiteNoShadow =
+      'assets/images/garden/pots/white_pot_no_shadow.png';
   static const gardenDecorBench = 'assets/images/garden/decorations/bench.png';
   static const gardenDecorHangingPlantFrame =
       'assets/images/garden/decorations/hanging_plant_frame.png';
@@ -65,6 +77,10 @@ class AppAssets {
       'assets/images/garden/decorations/lantern.png';
   static const gardenDecorWateringCan =
       'assets/images/garden/decorations/watering_can.png';
+  static const gardenDecorFountain =
+      'assets/images/garden/decorations/garden_fontaine.png';
+  static const gardenDecorStonePath =
+      'assets/images/garden/decorations/stone_path.png';
   static const gardenPlantSeed =
       'assets/images/garden/plants/default/stages/seed.png';
   static const gardenPlantSprout =
@@ -87,6 +103,10 @@ class AppAssets {
       'assets/images/garden/plants/sunflower/stages/sunflower_bloom.png';
   static const gardenSunflowerDry =
       'assets/images/garden/plants/sunflower/stages/sunflower_dry.png';
+  static const gardenHangingFlowerBloom =
+      'assets/images/garden/plants/hanging_flower/stages/hanging_flower_bloom.png';
+  static const gardenHangingFlowerDry =
+      'assets/images/garden/plants/hanging_flower/stages/hanging_flower_dry.png';
 
   static const characterFocus = focusPair01Focus01;
 

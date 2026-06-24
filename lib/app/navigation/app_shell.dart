@@ -122,7 +122,7 @@ class _AppShellContent extends StatelessWidget {
       horizontalPadding: switch (selectedTab) {
         AppTab.stats => AppSpacing.sm,
         AppTab.space => 0,
-        AppTab.shop => AppSpacing.screenHorizontal,
+        AppTab.shop => 0,
         _ => AppSpacing.screenHorizontal,
       },
       bottomNavigation: PatsspaceBottomNavBar(

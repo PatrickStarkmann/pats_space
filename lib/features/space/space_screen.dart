@@ -7,6 +7,7 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
+import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
@@ -35,6 +36,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
   bool _arrangingDecorations = false;
   GardenDecoration? _selectedDecoration;
   int? _selectedArrangedPotIndex;
+  double _areaDragDx = 0;
   final Map<int, GardenDecorationPlacement> _draftPotPlacements = {};
 
   @override
@@ -200,6 +202,46 @@ class _SpaceScreenState extends State<SpaceScreen> {
     });
   }
 
+  void _selectArea(GardenArea selectedArea) {
+    if (selectedArea == widget.gardenController.state.activeArea) {
+      return;
+    }
+
+    HapticFeedback.selectionClick();
+    widget.gardenController.selectArea(selectedArea);
+    setState(() {
+      _arrangingDecorations = false;
+      _selectedDecoration = null;
+      _selectedArrangedPotIndex = null;
+      _draftPotPlacements.clear();
+    });
+  }
+
+  void _selectAdjacentArea(int direction) {
+    final areas = GardenArea.values;
+    final currentIndex = areas.indexOf(
+      widget.gardenController.state.activeArea,
+    );
+    if (currentIndex < 0 || areas.length < 2) {
+      return;
+    }
+
+    final nextIndex = (currentIndex + direction) % areas.length;
+    _selectArea(areas[nextIndex < 0 ? nextIndex + areas.length : nextIndex]);
+  }
+
+  void _handleAreaSwipeEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    final shouldChange = _areaDragDx.abs() > 84 || velocity.abs() > 560;
+    if (!shouldChange) {
+      _areaDragDx = 0;
+      return;
+    }
+
+    _selectAdjacentArea(_areaDragDx < 0 || velocity < -560 ? 1 : -1);
+    _areaDragDx = 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -211,61 +253,91 @@ class _SpaceScreenState extends State<SpaceScreen> {
           ...garden.potPlacements,
           ..._draftPotPlacements,
         };
+        final swipeEnabled = !_arrangingDecorations && selectedPot == null;
 
         return Stack(
           children: [
-            GardenStage(
-              pots: garden.pots,
-              water: garden.water,
-              coins: garden.coins,
-              decorations: garden.placedDecorations,
-              decorationPlacements: garden.decorationPlacements,
-              potPlacements: visiblePotPlacements,
-              arrangingDecorations: _arrangingDecorations,
-              selectedDecoration: _selectedDecoration,
-              selectedArrangedPotIndex: _selectedArrangedPotIndex,
-              onPotSelected: widget.gardenController.selectPot,
-              onPotAction: widget.gardenController.performPotAction,
-              onCoinCollected: _launchCoinFlight,
-              onDecorationSelected: (decoration) {
-                setState(() {
-                  _selectedDecoration = decoration;
-                  _selectedArrangedPotIndex = null;
-                });
-              },
-              onDecorationPlacementChanged: (decoration, placement) {
-                widget.gardenController.updateDecorationPlacement(
-                  decoration,
-                  alignmentX: placement.alignmentX,
-                  alignmentY: placement.alignmentY,
-                  scale: placement.scale,
-                  inFront: placement.inFront,
-                );
-              },
-              onPotArrangeSelected: (index) {
-                setState(() {
-                  _selectedArrangedPotIndex = index;
-                  _selectedDecoration = null;
-                });
-              },
-              onPotMoved: (index, alignmentX, alignmentY) {
-                setState(() {
-                  _draftPotPlacements[index] = GardenDecorationPlacement(
-                    alignmentX: alignmentX.clamp(.08, .92).toDouble(),
-                    alignmentY: alignmentY.clamp(.55, .98).toDouble(),
-                  );
-                });
-              },
-              onPotMoveEnded: (index, alignmentX, alignmentY) {
-                setState(() {
-                  _draftPotPlacements.remove(index);
-                });
-                widget.gardenController.movePot(
-                  index,
-                  alignmentX: alignmentX,
-                  alignmentY: alignmentY,
-                );
-              },
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: swipeEnabled
+                  ? (_) {
+                      _areaDragDx = 0;
+                    }
+                  : null,
+              onHorizontalDragUpdate: swipeEnabled
+                  ? (details) {
+                      _areaDragDx += details.delta.dx;
+                    }
+                  : null,
+              onHorizontalDragEnd: swipeEnabled ? _handleAreaSwipeEnd : null,
+              onHorizontalDragCancel: swipeEnabled
+                  ? () {
+                      _areaDragDx = 0;
+                    }
+                  : null,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 170),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeOut,
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+                child: GardenStage(
+                  key: ValueKey(garden.activeArea),
+                  pots: garden.pots,
+                  area: garden.activeArea,
+                  backgroundAssetPath: garden.activeArea.assetPath,
+                  water: garden.water,
+                  coins: garden.coins,
+                  decorations: garden.placedDecorations,
+                  decorationPlacements: garden.decorationPlacements,
+                  potPlacements: visiblePotPlacements,
+                  arrangingDecorations: _arrangingDecorations,
+                  selectedDecoration: _selectedDecoration,
+                  selectedArrangedPotIndex: _selectedArrangedPotIndex,
+                  onPotSelected: widget.gardenController.selectPot,
+                  onPotAction: widget.gardenController.performPotAction,
+                  onCoinCollected: _launchCoinFlight,
+                  onDecorationSelected: (decoration) {
+                    setState(() {
+                      _selectedDecoration = decoration;
+                      _selectedArrangedPotIndex = null;
+                    });
+                  },
+                  onDecorationPlacementChanged: (decoration, placement) {
+                    widget.gardenController.updateDecorationPlacement(
+                      decoration,
+                      alignmentX: placement.alignmentX,
+                      alignmentY: placement.alignmentY,
+                      scale: placement.scale,
+                      inFront: placement.inFront,
+                    );
+                  },
+                  onPotArrangeSelected: (index) {
+                    setState(() {
+                      _selectedArrangedPotIndex = index;
+                      _selectedDecoration = null;
+                    });
+                  },
+                  onPotMoved: (index, alignmentX, alignmentY) {
+                    setState(() {
+                      _draftPotPlacements[index] = GardenDecorationPlacement(
+                        alignmentX: alignmentX.clamp(.08, .92).toDouble(),
+                        alignmentY: alignmentY.clamp(.55, .98).toDouble(),
+                      );
+                    });
+                  },
+                  onPotMoveEnded: (index, alignmentX, alignmentY) {
+                    setState(() {
+                      _draftPotPlacements.remove(index);
+                    });
+                    widget.gardenController.movePot(
+                      index,
+                      alignmentX: alignmentX,
+                      alignmentY: alignmentY,
+                    );
+                  },
+                ),
+              ),
             ),
             if (garden.ownedDecorations.isNotEmpty || garden.pots.isNotEmpty)
               Positioned(
@@ -294,6 +366,14 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   ],
                 ),
               ),
+            Positioned(
+              top: 88,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: _GardenAreaIndicator(activeArea: garden.activeArea),
+              ),
+            ),
             if (_arrangingDecorations && _selectedDecoration != null)
               Positioned(
                 left: AppSpacing.lg,
@@ -352,7 +432,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 bottom:
                     MediaQuery.paddingOf(context).bottom +
                     _bottomNavigationClearance +
-                    AppSpacing.sm,
+                    AppSpacing.xl,
                 child: const _PotArrangeHint(),
               ),
             if (selectedPot != null && !_arrangingDecorations)
@@ -364,6 +444,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                     _bottomNavigationClearance,
                 child: GardenPlantCard(
                   pot: selectedPot,
+                  isHangingPot: garden.activeArea.isHangingPotSlot(
+                    garden.selectedPotIndex ?? -1,
+                  ),
                   water: garden.water,
                   unlockedPlantTypes: garden.unlockedPlantTypes,
                   ownedPotStyles: garden.ownedPotStyles,
@@ -529,6 +612,49 @@ class _PotArrangeHint extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GardenAreaIndicator extends StatelessWidget {
+  const _GardenAreaIndicator({required this.activeArea});
+
+  final GardenArea activeArea;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .58),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          border: Border.all(color: AppColors.graySoft.withValues(alpha: .26)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final area in GardenArea.values) ...[
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: area == activeArea ? 22 : 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: area == activeArea
+                        ? AppColors.charcoal
+                        : AppColors.grayWarm.withValues(alpha: .36),
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                ),
+                if (area != GardenArea.values.last)
+                  const SizedBox(width: AppSpacing.xs),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -897,6 +1023,7 @@ String _unlockBenefitCaption(GardenPlantType plantType) {
     GardenPlantType.tulip => 'bigger drops',
     GardenPlantType.clover => 'double chance',
     GardenPlantType.sunflower => 'big payout',
+    GardenPlantType.hangingFlower => 'hanging pot',
   };
 }
 
