@@ -50,6 +50,29 @@ class AppAssets {
   static const focusPair06Break02 =
       'assets/images/focus_pairs/pair_06/break_2.png';
 
+  static const socialFocusDesk =
+      'assets/images/social_focus/furniture/desks/desk.png';
+  static const socialFocusReading01 =
+      'assets/images/social_focus/characters/reading/reading_01.png';
+  static const socialFocusReading02 =
+      'assets/images/social_focus/characters/reading/reading_02.png';
+  static const socialFocusWriting01 =
+      'assets/images/social_focus/characters/writing/writing_01.png';
+  static const socialFocusWriting02 =
+      'assets/images/social_focus/characters/writing/writing_02.png';
+  static const socialFocusCoding01 =
+      'assets/images/social_focus/characters/coding/coding_01.png';
+  static const socialFocusCoding02 =
+      'assets/images/social_focus/characters/coding/coding_02.png';
+  static const socialFocusCoding03 =
+      'assets/images/social_focus/characters/coding/coding_03.png';
+  static const socialFocusCoding04 =
+      'assets/images/social_focus/characters/coding/coding_04.png';
+  static const socialFocusSleeping01 =
+      'assets/images/social_focus/characters/sleeping/sleeping_01.png';
+  static const socialFocusSleeping02 =
+      'assets/images/social_focus/characters/sleeping/sleeping_02.png';
+
   static const gardenBackgroundMain =
       'assets/images/garden/backgrounds/garden_main.png';
   static const gardenBackgroundSecond =
@@ -133,4 +156,26 @@ class AppAssets {
   static const focusPair06Focus = [focusPair06Focus01, focusPair06Focus02];
 
   static const focusPair06Break = [focusPair06Break01, focusPair06Break02];
+
+  static const socialFocusReading = [
+    socialFocusReading01,
+    socialFocusReading02,
+  ];
+
+  static const socialFocusWriting = [
+    socialFocusWriting01,
+    socialFocusWriting02,
+  ];
+
+  static const socialFocusCoding = [
+    socialFocusCoding01,
+    socialFocusCoding02,
+    socialFocusCoding03,
+    socialFocusCoding04,
+  ];
+
+  static const socialFocusSleeping = [
+    socialFocusSleeping01,
+    socialFocusSleeping02,
+  ];
 }

@@ -28,6 +28,15 @@ flutter:
     - assets/images/focus_pairs/pair_04/
     - assets/images/focus_pairs/pair_05/
     - assets/images/focus_pairs/pair_06/
+    - assets/images/social_focus/background/
+    - assets/images/social_focus/decor/
+    - assets/images/social_focus/furniture/desks/
+    - assets/images/social_focus/characters/reading/
+    - assets/images/social_focus/characters/writing/
+    - assets/images/social_focus/characters/coding/
+    - assets/images/social_focus/characters/sleeping/
+    - assets/images/social_focus/accessories/
+    - assets/images/social_focus/placeholders/
     - assets/images/garden/backgrounds/
     - assets/images/garden/pots/default/
     - assets/images/garden/pots/
