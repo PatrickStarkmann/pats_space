@@ -13,14 +13,12 @@ class SocialFocusGroupView extends StatelessWidget {
     required this.participants,
     required this.active,
     required this.running,
-    required this.inBreak,
     required this.compact,
   });
 
   final List<SocialFocusParticipant> participants;
   final bool active;
   final bool running;
-  final bool inBreak;
   final bool compact;
 
   @override
@@ -70,7 +68,6 @@ class SocialFocusGroupView extends StatelessWidget {
                           participant: rows[rowIndex][index],
                           active: active,
                           running: running,
-                          inBreak: inBreak,
                           size: slotSize,
                           characterLift: lift,
                         ),
@@ -108,11 +105,13 @@ class SocialFocusParticipant {
     required this.name,
     required this.focusFrames,
     this.status = SocialFocusMemberStatus.idle,
+    this.usesLocalTimer = false,
   });
 
   final String name;
   final List<String> focusFrames;
   final SocialFocusMemberStatus status;
+  final bool usesLocalTimer;
 }
 
 class _SocialFocusSeat extends StatelessWidget {
@@ -120,7 +119,6 @@ class _SocialFocusSeat extends StatelessWidget {
     required this.participant,
     required this.active,
     required this.running,
-    required this.inBreak,
     required this.size,
     required this.characterLift,
   });
@@ -128,18 +126,19 @@ class _SocialFocusSeat extends StatelessWidget {
   final SocialFocusParticipant participant;
   final bool active;
   final bool running;
-  final bool inBreak;
   final double size;
   final double characterLift;
 
   @override
   Widget build(BuildContext context) {
-    final resting =
-        inBreak || participant.status == SocialFocusMemberStatus.breakTime;
+    final resting = participant.status == SocialFocusMemberStatus.breakTime;
     final frames = resting
         ? AppAssets.socialFocusSleeping
         : participant.focusFrames;
-    final animate = active && running;
+    final activeStatus = participant.status != SocialFocusMemberStatus.idle;
+    final animate = participant.usesLocalTimer
+        ? activeStatus && active && running
+        : activeStatus;
     final illustrationHeight = size + characterLift;
 
     return SizedBox(

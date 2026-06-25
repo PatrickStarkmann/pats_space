@@ -214,9 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             participants: _groupParticipants,
                             active: _timerController.active,
                             running: _timerController.running,
-                            inBreak:
-                                _timerController.phase ==
-                                FocusSessionPhase.breakTime,
                             compact: compact,
                           ),
                         )
@@ -225,9 +222,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           participants: _groupParticipants,
                           active: _timerController.active,
                           running: _timerController.running,
-                          inBreak:
-                              _timerController.phase ==
-                              FocusSessionPhase.breakTime,
                           compact: compact,
                         )
                       else
@@ -440,6 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
           name: member.name,
           focusFrames: _framesForSocialActivity(member.activity),
           status: _statusForSocialMember(member),
+          usesLocalTimer: member.id == 'me',
         ),
     ];
   }

@@ -11,6 +11,7 @@ import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
+import 'package:pats_space/features/shop/shop_screen.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 import 'package:pats_space/features/space/widgets/garden_plant_card.dart';
 import 'package:pats_space/features/space/widgets/garden_resource_counter.dart';
@@ -339,12 +340,13 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 ),
               ),
             ),
-            if (garden.ownedDecorations.isNotEmpty || garden.pots.isNotEmpty)
-              Positioned(
-                top: 48,
-                left: AppSpacing.xl,
-                child: Row(
-                  children: [
+            Positioned(
+              top: 48,
+              left: AppSpacing.xl,
+              child: Row(
+                children: [
+                  if (garden.ownedDecorations.isNotEmpty ||
+                      garden.pots.isNotEmpty) ...[
                     _ArrangeDecorButton(
                       arranging: _arrangingDecorations,
                       onTap: () {
@@ -364,8 +366,23 @@ class _SpaceScreenState extends State<SpaceScreen> {
                       _CleanUpGardenButton(onTap: _confirmCleanUpGarden),
                     ],
                   ],
-                ),
+                  if (!_arrangingDecorations) ...[
+                    if (garden.ownedDecorations.isNotEmpty ||
+                        garden.pots.isNotEmpty)
+                      const SizedBox(width: AppSpacing.xs),
+                    _SpaceShopButton(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        showShopSheet(
+                          context: context,
+                          gardenController: widget.gardenController,
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
+            ),
             Positioned(
               top: 88,
               left: 0,
@@ -738,25 +755,47 @@ class _ArrangeDecorButton extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                arranging ? CupertinoIcons.checkmark_alt : CupertinoIcons.move,
-                size: 17,
-                color: AppColors.charcoal,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                arranging ? 'Done' : 'Arrange',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.charcoal,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.all(9),
+          child: Icon(
+            arranging ? CupertinoIcons.checkmark_alt : CupertinoIcons.move,
+            size: 19,
+            color: AppColors.charcoal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpaceShopButton extends StatelessWidget {
+  const _SpaceShopButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .9),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .06),
+              blurRadius: 14,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(9),
+          child: const Icon(
+            CupertinoIcons.bag,
+            size: 19,
+            color: AppColors.charcoal,
           ),
         ),
       ),

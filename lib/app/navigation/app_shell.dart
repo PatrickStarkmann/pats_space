@@ -12,7 +12,6 @@ import 'package:pats_space/features/focus/repositories/shared_preferences_focus_
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
 import 'package:pats_space/features/home/home_screen.dart';
 import 'package:pats_space/features/settings/settings_screen.dart';
-import 'package:pats_space/features/shop/shop_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/repositories/shared_preferences_garden_repository.dart';
 import 'package:pats_space/features/space/space_screen.dart';
@@ -122,7 +121,6 @@ class _AppShellContent extends StatelessWidget {
       horizontalPadding: switch (selectedTab) {
         AppTab.stats => AppSpacing.sm,
         AppTab.space => 0,
-        AppTab.shop => 0,
         _ => AppSpacing.screenHorizontal,
       },
       bottomNavigation: PatsspaceBottomNavBar(
@@ -140,10 +138,6 @@ class _AppShellContent extends StatelessWidget {
             onOpenSpace: () => onTabSelected(AppTab.space),
           ),
           SpaceScreen(gardenController: bundle.gardenController),
-          ShopScreen(
-            gardenController: bundle.gardenController,
-            onOpenSpace: () => onTabSelected(AppTab.space),
-          ),
           StatsScreen(historyController: bundle.historyController),
           const SettingsScreen(),
         ],

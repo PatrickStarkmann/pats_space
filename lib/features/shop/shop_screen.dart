@@ -1,5 +1,6 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -9,15 +10,41 @@ import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 
+Future<void> showShopSheet({
+  required BuildContext context,
+  required GardenController gardenController,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.transparent,
+    builder: (context) {
+      return FractionallySizedBox(
+        heightFactor: .92,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+          child: ShopScreen(
+            gardenController: gardenController,
+            onClose: () => Navigator.of(context).pop(),
+            onOpenSpace: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class ShopScreen extends StatelessWidget {
   const ShopScreen({
     super.key,
     required this.gardenController,
-    required this.onOpenSpace,
+    this.onClose,
+    this.onOpenSpace,
   });
 
   final GardenController gardenController;
-  final VoidCallback onOpenSpace;
+  final VoidCallback? onClose;
+  final VoidCallback? onOpenSpace;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +70,7 @@ class ShopScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.screenHorizontal,
                     ),
-                    child: _ShopHeader(coins: garden.coins),
+                    child: _ShopHeader(coins: garden.coins, onClose: onClose),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   _ShopItemSection<GardenPotStyle>(
@@ -115,7 +142,7 @@ class ShopScreen extends StatelessWidget {
                         gardenController.requestDecorationArrangement(
                           decoration,
                         );
-                        onOpenSpace();
+                        onOpenSpace?.call();
                       } else {
                         HapticFeedback.selectionClick();
                       }
@@ -132,30 +159,51 @@ class ShopScreen extends StatelessWidget {
 }
 
 class _ShopHeader extends StatelessWidget {
-  const _ShopHeader({required this.coins});
+  const _ShopHeader({required this.coins, required this.onClose});
 
   final int coins;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Shop', style: AppTextStyles.title),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Collect new looks and little pieces for your garden.',
-                style: AppTextStyles.bodyMuted.copyWith(fontSize: 15),
+        if (onClose != null) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: CupertinoButton(
+              minimumSize: const Size(44, 44),
+              padding: EdgeInsets.zero,
+              onPressed: onClose,
+              child: const Icon(
+                CupertinoIcons.xmark,
+                color: AppColors.charcoal,
+                size: 30,
               ),
-            ],
+            ),
           ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Shop', style: AppTextStyles.title),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Collect new looks and little pieces for your garden.',
+                    style: AppTextStyles.bodyMuted.copyWith(fontSize: 15),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            _CoinWallet(coins: coins),
+          ],
         ),
-        const SizedBox(width: AppSpacing.md),
-        _CoinWallet(coins: coins),
       ],
     );
   }
