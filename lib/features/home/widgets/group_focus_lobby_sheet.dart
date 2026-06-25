@@ -44,6 +44,7 @@ class GroupFocusLobbySheet extends StatelessWidget {
 
     return SafeArea(
       top: false,
+      bottom: false,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
         child: Container(
@@ -51,7 +52,9 @@ class GroupFocusLobbySheet extends StatelessWidget {
             AppSpacing.lg,
             AppSpacing.sm,
             AppSpacing.lg,
-            mediaQuery.viewInsets.bottom + AppSpacing.lg,
+            mediaQuery.viewInsets.bottom +
+                mediaQuery.padding.bottom +
+                AppSpacing.lg,
           ),
           decoration: const BoxDecoration(
             color: Color(0xFFF5F4FA),
@@ -80,36 +83,11 @@ class GroupFocusLobbySheet extends StatelessWidget {
                       SizedBox(height: contentGap),
                       const _SectionLabel('Friends focusing now'),
                       const SizedBox(height: AppSpacing.xs),
-                      _ListGroup(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < snapshot.openRooms.length;
-                            index++
-                          )
-                            _RoomRow(
-                              room: snapshot.openRooms[index],
-                              showDivider:
-                                  index < snapshot.openRooms.length - 1,
-                            ),
-                        ],
-                      ),
+                      _RoomsList(rooms: snapshot.openRooms),
                       SizedBox(height: contentGap),
                       const _SectionLabel('Friends'),
                       const SizedBox(height: AppSpacing.xs),
-                      _ListGroup(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < snapshot.friends.length;
-                            index++
-                          )
-                            _FriendRow(
-                              friend: snapshot.friends[index],
-                              showDivider: index < snapshot.friends.length - 1,
-                            ),
-                        ],
-                      ),
+                      _FriendsList(friends: snapshot.friends),
                     ],
                   ),
                 ),
@@ -224,6 +202,65 @@ class _ListGroup extends StatelessWidget {
   }
 }
 
+class _RoomsList extends StatelessWidget {
+  const _RoomsList({required this.rooms});
+
+  final List<SocialFocusRoom> rooms;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rooms.isEmpty) {
+      return const _ListGroup(
+        children: [
+          _EmptyRow(
+            leading: Icon(CupertinoIcons.person_2),
+            title: 'No rooms right now',
+            subtitle: 'Create a room so friends can join you.',
+          ),
+        ],
+      );
+    }
+
+    return _ListGroup(
+      children: [
+        for (var index = 0; index < rooms.length; index++)
+          _RoomRow(room: rooms[index], showDivider: index < rooms.length - 1),
+      ],
+    );
+  }
+}
+
+class _FriendsList extends StatelessWidget {
+  const _FriendsList({required this.friends});
+
+  final List<SocialFocusFriend> friends;
+
+  @override
+  Widget build(BuildContext context) {
+    if (friends.isEmpty) {
+      return const _ListGroup(
+        children: [
+          _EmptyRow(
+            leading: Icon(CupertinoIcons.person),
+            title: 'No friends yet',
+            subtitle: 'Friends you add will appear here.',
+          ),
+        ],
+      );
+    }
+
+    return _ListGroup(
+      children: [
+        for (var index = 0; index < friends.length; index++)
+          _FriendRow(
+            friend: friends[index],
+            showDivider: index < friends.length - 1,
+          ),
+      ],
+    );
+  }
+}
+
 class _RoomRow extends StatelessWidget {
   const _RoomRow({required this.room, required this.showDivider});
 
@@ -232,6 +269,8 @@ class _RoomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final full = room.members.length >= room.capacity;
+
     return _ListRow(
       leading: const Icon(CupertinoIcons.person_2_fill),
       title: '${room.hostName}\'s room',
@@ -241,12 +280,17 @@ class _RoomRow extends StatelessWidget {
         children: [
           Text(room.seatsLabel, style: AppTextStyles.caption),
           const SizedBox(width: AppSpacing.xs),
-          const _ActionText('Join'),
+          full
+              ? const _StatusText('Full', enabled: false)
+              : const _ActionText('Join'),
         ],
       ),
       showDivider: showDivider,
-      onTap: () =>
-          Navigator.of(context).pop(GroupFocusLobbySelection.join(room.id)),
+      onTap: full
+          ? null
+          : () => Navigator.of(
+              context,
+            ).pop(GroupFocusLobbySelection.join(room.id)),
     );
   }
 }
@@ -279,6 +323,60 @@ class _FriendRow extends StatelessWidget {
       SocialFocusFriendStatus.focusing => 'focusing',
       SocialFocusFriendStatus.offline => 'offline',
     };
+  }
+}
+
+class _EmptyRow extends StatelessWidget {
+  const _EmptyRow({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final Widget leading;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          IconTheme(
+            data: const IconThemeData(color: AppColors.grayWarm, size: 24),
+            child: SizedBox(width: 28, child: Center(child: leading)),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.charcoal.withValues(alpha: .76),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

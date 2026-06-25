@@ -41,6 +41,62 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
         ),
       ],
     ),
+    SocialFocusRoom(
+      id: 'sam-room',
+      hostName: 'Sam',
+      statusLabel: '3 friends in room',
+      members: [
+        SocialFocusMember(
+          id: 'sam',
+          name: 'Sam',
+          activity: SocialFocusActivity.coding,
+          status: SocialFocusMemberStatus.focusing,
+        ),
+        SocialFocusMember(
+          id: 'ava',
+          name: 'Ava',
+          activity: SocialFocusActivity.reading,
+          status: SocialFocusMemberStatus.focusing,
+        ),
+        SocialFocusMember(
+          id: 'jonas',
+          name: 'Jonas',
+          activity: SocialFocusActivity.writing,
+          status: SocialFocusMemberStatus.idle,
+        ),
+      ],
+    ),
+    SocialFocusRoom(
+      id: 'full-room',
+      hostName: 'Ava',
+      statusLabel: 'full room',
+      members: [
+        SocialFocusMember(
+          id: 'ava-full',
+          name: 'Ava',
+          activity: SocialFocusActivity.reading,
+          status: SocialFocusMemberStatus.focusing,
+        ),
+        SocialFocusMember(
+          id: 'mila-full',
+          name: 'Mila',
+          activity: SocialFocusActivity.writing,
+          status: SocialFocusMemberStatus.focusing,
+        ),
+        SocialFocusMember(
+          id: 'leo-full',
+          name: 'Leo',
+          activity: SocialFocusActivity.coding,
+          status: SocialFocusMemberStatus.breakTime,
+        ),
+        SocialFocusMember(
+          id: 'nora-full',
+          name: 'Nora',
+          activity: SocialFocusActivity.reading,
+          status: SocialFocusMemberStatus.idle,
+        ),
+      ],
+    ),
   ];
 
   static const _friends = [

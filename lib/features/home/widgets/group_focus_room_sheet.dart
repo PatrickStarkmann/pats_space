@@ -33,6 +33,7 @@ class GroupFocusRoomSheet extends StatelessWidget {
 
     return SafeArea(
       top: false,
+      bottom: false,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.82),
         child: Container(
@@ -40,7 +41,9 @@ class GroupFocusRoomSheet extends StatelessWidget {
             AppSpacing.lg,
             AppSpacing.sm,
             AppSpacing.lg,
-            mediaQuery.viewInsets.bottom + AppSpacing.lg,
+            mediaQuery.viewInsets.bottom +
+                mediaQuery.padding.bottom +
+                AppSpacing.lg,
           ),
           decoration: const BoxDecoration(
             color: Color(0xFFF5F4FA),
