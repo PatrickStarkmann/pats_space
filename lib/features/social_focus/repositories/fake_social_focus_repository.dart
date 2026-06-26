@@ -5,7 +5,7 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
   static const _currentUser = SocialFocusMember(
     id: 'me',
     name: 'Patrick',
-    activity: SocialFocusActivity.coding,
+    activity: SocialFocusActivity.working,
   );
 
   static const _rooms = [
@@ -23,7 +23,7 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
         SocialFocusMember(
           id: 'leo',
           name: 'Leo',
-          activity: SocialFocusActivity.coding,
+          activity: SocialFocusActivity.working,
           status: SocialFocusMemberStatus.breakTime,
         ),
       ],
@@ -31,12 +31,12 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
     SocialFocusRoom(
       id: 'nora-room',
       hostName: 'Nora',
-      statusLabel: 'starting a pomodoro',
+      statusLabel: 'starting a study session',
       members: [
         SocialFocusMember(
           id: 'nora',
           name: 'Nora',
-          activity: SocialFocusActivity.writing,
+          activity: SocialFocusActivity.studying,
           status: SocialFocusMemberStatus.focusing,
         ),
       ],
@@ -49,7 +49,7 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
         SocialFocusMember(
           id: 'sam',
           name: 'Sam',
-          activity: SocialFocusActivity.coding,
+          activity: SocialFocusActivity.working,
           status: SocialFocusMemberStatus.focusing,
         ),
         SocialFocusMember(
@@ -61,7 +61,7 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
         SocialFocusMember(
           id: 'jonas',
           name: 'Jonas',
-          activity: SocialFocusActivity.writing,
+          activity: SocialFocusActivity.studying,
           status: SocialFocusMemberStatus.idle,
         ),
       ],
@@ -80,13 +80,13 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
         SocialFocusMember(
           id: 'mila-full',
           name: 'Mila',
-          activity: SocialFocusActivity.writing,
+          activity: SocialFocusActivity.studying,
           status: SocialFocusMemberStatus.focusing,
         ),
         SocialFocusMember(
           id: 'leo-full',
           name: 'Leo',
-          activity: SocialFocusActivity.coding,
+          activity: SocialFocusActivity.working,
           status: SocialFocusMemberStatus.breakTime,
         ),
         SocialFocusMember(

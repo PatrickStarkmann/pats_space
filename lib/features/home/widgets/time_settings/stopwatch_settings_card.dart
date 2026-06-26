@@ -31,7 +31,7 @@ class StopwatchSettingsCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Free focus without sessions or breaks. Pause shows your break animation; finish saves the measured focus time.',
+            'Start an open-ended focus session when you do not know how long you need. Pause when you step away, then finish to save the exact time.',
             style: AppTextStyles.bodyMuted,
           ),
         ],

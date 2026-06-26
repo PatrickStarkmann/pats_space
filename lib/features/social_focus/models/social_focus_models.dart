@@ -1,4 +1,4 @@
-enum SocialFocusActivity { reading, writing, coding }
+enum SocialFocusActivity { reading, studying, working }
 
 enum SocialFocusFriendStatus { online, focusing, offline }
 

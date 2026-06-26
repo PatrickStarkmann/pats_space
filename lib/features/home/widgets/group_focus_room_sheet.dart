@@ -10,21 +10,37 @@ import 'package:pats_space/features/social_focus/models/social_focus_models.dart
 Future<bool> showGroupFocusRoomSheet({
   required BuildContext context,
   required SocialFocusRoom room,
+  required ValueChanged<SocialFocusActivity> onLocalActivityChanged,
 }) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.transparent,
-    builder: (_) => GroupFocusRoomSheet(room: room),
+    builder: (_) => GroupFocusRoomSheet(
+      room: room,
+      onLocalActivityChanged: onLocalActivityChanged,
+    ),
   );
 
   return result ?? false;
 }
 
-class GroupFocusRoomSheet extends StatelessWidget {
-  const GroupFocusRoomSheet({super.key, required this.room});
+class GroupFocusRoomSheet extends StatefulWidget {
+  const GroupFocusRoomSheet({
+    super.key,
+    required this.room,
+    required this.onLocalActivityChanged,
+  });
 
   final SocialFocusRoom room;
+  final ValueChanged<SocialFocusActivity> onLocalActivityChanged;
+
+  @override
+  State<GroupFocusRoomSheet> createState() => _GroupFocusRoomSheetState();
+}
+
+class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
+  late SocialFocusRoom _room = widget.room;
 
   @override
   Widget build(BuildContext context) {
@@ -54,17 +70,20 @@ class GroupFocusRoomSheet extends StatelessWidget {
               const TimeSettingsGrabber(),
               _RoomHeader(
                 compact: compact,
-                title: '${room.hostName}\'s room',
+                title: '${_room.hostName}\'s room',
                 onClose: () => Navigator.of(context).pop(false),
               ),
-              _RoomSummary(room: room),
+              _RoomSummary(room: _room),
               const SizedBox(height: AppSpacing.lg),
               _ListGroup(
                 children: [
-                  for (var index = 0; index < room.members.length; index++)
+                  for (var index = 0; index < _room.members.length; index++)
                     _MemberRow(
-                      member: room.members[index],
-                      showDivider: index < room.members.length - 1,
+                      member: _room.members[index],
+                      showDivider: index < _room.members.length - 1,
+                      onActivityPressed: _room.members[index].id == 'me'
+                          ? () => _showActivityPicker(_room.members[index])
+                          : null,
                     ),
                 ],
               ),
@@ -75,6 +94,59 @@ class GroupFocusRoomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _showActivityPicker(SocialFocusMember member) async {
+    final selectedActivity = await showCupertinoModalPopup<SocialFocusActivity>(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text('Choose activity'),
+          actions: [
+            for (final activity in SocialFocusActivity.values)
+              CupertinoActionSheetAction(
+                onPressed: () => Navigator.of(context).pop(activity),
+                child: Text(
+                  _activityLabel(activity),
+                  style: const TextStyle(color: AppColors.charcoal),
+                ),
+              ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: const TextStyle(color: AppColors.charcoal),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedActivity == null || selectedActivity == member.activity) {
+      return;
+    }
+
+    widget.onLocalActivityChanged(selectedActivity);
+    setState(() {
+      _room = SocialFocusRoom(
+        id: _room.id,
+        hostName: _room.hostName,
+        statusLabel: _room.statusLabel,
+        capacity: _room.capacity,
+        members: [
+          for (final roomMember in _room.members)
+            roomMember.id == member.id
+                ? SocialFocusMember(
+                    id: roomMember.id,
+                    name: roomMember.name,
+                    activity: selectedActivity,
+                    status: roomMember.status,
+                  )
+                : roomMember,
+        ],
+      );
+    });
   }
 }
 
@@ -161,13 +233,20 @@ class _ListGroup extends StatelessWidget {
 }
 
 class _MemberRow extends StatelessWidget {
-  const _MemberRow({required this.member, required this.showDivider});
+  const _MemberRow({
+    required this.member,
+    required this.showDivider,
+    required this.onActivityPressed,
+  });
 
   final SocialFocusMember member;
   final bool showDivider;
+  final VoidCallback? onActivityPressed;
 
   @override
   Widget build(BuildContext context) {
+    final editable = onActivityPressed != null;
+
     return Column(
       children: [
         Padding(
@@ -189,7 +268,11 @@ class _MemberRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(_statusLabel(member), style: AppTextStyles.caption),
+              _MemberStatusButton(
+                label: _statusLabel(member, editable: editable),
+                editable: editable,
+                onPressed: onActivityPressed,
+              ),
             ],
           ),
         ),
@@ -203,21 +286,67 @@ class _MemberRow extends StatelessWidget {
     );
   }
 
-  String _statusLabel(SocialFocusMember member) {
+  String _statusLabel(SocialFocusMember member, {required bool editable}) {
+    if (editable && member.status == SocialFocusMemberStatus.idle) {
+      return '${_activityLabel(member.activity)} · not started';
+    }
+
     return switch (member.status) {
       SocialFocusMemberStatus.idle => 'not started',
       SocialFocusMemberStatus.breakTime => 'break',
       SocialFocusMemberStatus.focusing => _activityLabel(member.activity),
     };
   }
+}
 
-  String _activityLabel(SocialFocusActivity activity) {
-    return switch (activity) {
-      SocialFocusActivity.reading => 'reading',
-      SocialFocusActivity.writing => 'writing',
-      SocialFocusActivity.coding => 'coding',
-    };
+class _MemberStatusButton extends StatelessWidget {
+  const _MemberStatusButton({
+    required this.label,
+    required this.editable,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool editable;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!editable) {
+      return Text(label, style: AppTextStyles.caption);
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.charcoal,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xxs),
+          const Icon(
+            CupertinoIcons.chevron_down,
+            size: 14,
+            color: AppColors.grayWarm,
+          ),
+        ],
+      ),
+    );
   }
+}
+
+String _activityLabel(SocialFocusActivity activity) {
+  return switch (activity) {
+    SocialFocusActivity.reading => 'reading',
+    SocialFocusActivity.studying => 'studying',
+    SocialFocusActivity.working => 'working',
+  };
 }
 
 class _LeaveRow extends StatelessWidget {

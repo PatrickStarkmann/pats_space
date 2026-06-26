@@ -10,12 +10,14 @@ class MonthCalendarCard extends StatelessWidget {
     super.key,
     required this.visibleMonth,
     required this.records,
+    required this.today,
     required this.onPreviousMonth,
     required this.onNextMonth,
   });
 
   final DateTime visibleMonth;
   final List<FocusSessionRecord> records;
+  final DateTime today;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
 
@@ -92,6 +94,7 @@ class MonthCalendarCard extends StatelessWidget {
                         child: _CalendarDayCell(
                           day: dayNumber,
                           record: recordsByDay[dayNumber],
+                          isToday: _isToday(dayNumber),
                         ),
                       );
                     }),
@@ -119,13 +122,24 @@ class MonthCalendarCard extends StatelessWidget {
     }
     return groupedRecords;
   }
+
+  bool _isToday(int day) {
+    return visibleMonth.year == today.year &&
+        visibleMonth.month == today.month &&
+        day == today.day;
+  }
 }
 
 class _CalendarDayCell extends StatelessWidget {
-  const _CalendarDayCell({required this.day, required this.record});
+  const _CalendarDayCell({
+    required this.day,
+    required this.record,
+    required this.isToday,
+  });
 
   final int day;
   final FocusSessionRecord? record;
+  final bool isToday;
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +166,12 @@ class _CalendarDayCell extends StatelessWidget {
                 : AppColors.transparent,
             shape: BoxShape.circle,
             border: Border.all(
-              color: hasRecord
+              color: isToday
+                  ? AppColors.charcoal
+                  : hasRecord
                   ? record!.tag.accentColor.color
                   : const Color(0xFFE7E8EB),
-              width: 2.4,
+              width: isToday ? 3 : 2.4,
             ),
           ),
           child: SizedBox(

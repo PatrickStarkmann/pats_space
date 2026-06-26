@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/stats/models/tag_focus_segment.dart';
 
-Duration averageDailyFocusTime(List<FocusSessionRecord> records) {
-  final weekValues = weeklyFocusDurations(records, DateTime.now());
+Duration averageDailyFocusTime(
+  List<FocusSessionRecord> records,
+  DateTime date,
+) {
+  final weekValues = weeklyFocusDurations(records, date);
   final activeDays = weekValues.where((duration) => duration > Duration.zero);
   if (activeDays.isEmpty) {
     return Duration.zero;

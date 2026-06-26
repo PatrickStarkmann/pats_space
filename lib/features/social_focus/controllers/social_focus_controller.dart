@@ -41,4 +41,30 @@ class SocialFocusController extends ChangeNotifier {
     _activeRoom = null;
     notifyListeners();
   }
+
+  void updateLocalActivity(SocialFocusActivity activity) {
+    final room = _activeRoom;
+    if (room == null) {
+      return;
+    }
+
+    _activeRoom = SocialFocusRoom(
+      id: room.id,
+      hostName: room.hostName,
+      statusLabel: room.statusLabel,
+      capacity: room.capacity,
+      members: [
+        for (final member in room.members)
+          member.id == 'me'
+              ? SocialFocusMember(
+                  id: member.id,
+                  name: member.name,
+                  activity: activity,
+                  status: member.status,
+                )
+              : member,
+      ],
+    );
+    notifyListeners();
+  }
 }

@@ -18,12 +18,14 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen> {
   late DateTime _visibleMonth;
+  late DateTime _visibleWeek;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _visibleMonth = DateTime(now.year, now.month);
+    _visibleWeek = _startOfWeek(now);
   }
 
   @override
@@ -47,14 +49,17 @@ class _StatsScreenState extends State<StatsScreen> {
                 MonthCalendarCard(
                   visibleMonth: _visibleMonth,
                   records: records,
+                  today: now,
                   onPreviousMonth: _showPreviousMonth,
                   onNextMonth: _showNextMonth,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FocusLineChartCard(
                   title: 'Avg Focus Time',
-                  value: formatDuration(averageDailyFocusTime(records)),
-                  rangeTitle: formatWeekRange(now),
+                  value: formatDuration(
+                    averageDailyFocusTime(records, _visibleWeek),
+                  ),
+                  rangeTitle: formatWeekRange(_visibleWeek),
                   labels: const [
                     'Mon',
                     'Tue',
@@ -64,9 +69,9 @@ class _StatsScreenState extends State<StatsScreen> {
                     'Sat',
                     'Sun',
                   ],
-                  values: weeklyFocusHours(records, now),
-                  onPreviousRange: () {},
-                  onNextRange: () {},
+                  values: weeklyFocusHours(records, _visibleWeek),
+                  onPreviousRange: _showPreviousWeek,
+                  onNextRange: _showNextWeek,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FocusLineChartCard(
@@ -100,5 +105,22 @@ class _StatsScreenState extends State<StatsScreen> {
     setState(() {
       _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1);
     });
+  }
+
+  void _showPreviousWeek() {
+    setState(() {
+      _visibleWeek = _visibleWeek.subtract(const Duration(days: 7));
+    });
+  }
+
+  void _showNextWeek() {
+    setState(() {
+      _visibleWeek = _visibleWeek.add(const Duration(days: 7));
+    });
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return normalized.subtract(Duration(days: normalized.weekday - 1));
   }
 }

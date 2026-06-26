@@ -35,7 +35,7 @@ class SharedPreferencesFocusSettingsRepository
       longBreakMinutes: _intValue(json['longBreakMinutes']) ?? 20,
       longBreakInterval: _intValue(json['longBreakInterval']) ?? 4,
       sessionsPerRound: _intValue(json['sessionsPerRound']) ?? 4,
-      focusLabel: json['focusLabel'] as String? ?? 'pomodoro',
+      focusLabel: _focusLabelValue(json['focusLabel']),
       accentColor:
           _enumValue(FocusAccentColor.values, json['accentColor']) ??
           FocusAccentColor.sunshine,
@@ -86,5 +86,18 @@ class SharedPreferencesFocusSettingsRepository
       num() => value.toInt(),
       _ => null,
     };
+  }
+
+  String _focusLabelValue(Object? value) {
+    if (value is! String) {
+      return 'study';
+    }
+
+    final label = value.trim();
+    if (label.isEmpty || label.toLowerCase() == 'pomodoro') {
+      return 'study';
+    }
+
+    return label;
   }
 }

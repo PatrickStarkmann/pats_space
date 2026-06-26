@@ -19,19 +19,28 @@ import 'package:pats_space/features/home/widgets/time_settings/time_settings_val
 Future<FocusTimerSettings?> showTimeSettingsSheet({
   required BuildContext context,
   required FocusTimerSettings settings,
+  bool showAnimationSettings = true,
 }) {
   return showModalBottomSheet<FocusTimerSettings>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.transparent,
-    builder: (_) => TimeSettingsSheet(initialSettings: settings),
+    builder: (_) => TimeSettingsSheet(
+      initialSettings: settings,
+      showAnimationSettings: showAnimationSettings,
+    ),
   );
 }
 
 class TimeSettingsSheet extends StatefulWidget {
-  const TimeSettingsSheet({super.key, required this.initialSettings});
+  const TimeSettingsSheet({
+    super.key,
+    required this.initialSettings,
+    required this.showAnimationSettings,
+  });
 
   final FocusTimerSettings initialSettings;
+  final bool showAnimationSettings;
 
   @override
   State<TimeSettingsSheet> createState() => _TimeSettingsSheetState();
@@ -75,6 +84,7 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                     compact: compact,
                     contentGap: contentGap,
                     settings: _settings,
+                    showAnimationSettings: widget.showAnimationSettings,
                     onDone: () => Navigator.of(context).pop(_settings),
                     onCancel: () => Navigator.of(context).pop(),
                     onModeChanged: (mode) {
@@ -152,6 +162,7 @@ class _OverviewPage extends StatelessWidget {
     required this.compact,
     required this.contentGap,
     required this.settings,
+    required this.showAnimationSettings,
     required this.onDone,
     required this.onCancel,
     required this.onModeChanged,
@@ -166,6 +177,7 @@ class _OverviewPage extends StatelessWidget {
   final bool compact;
   final double contentGap;
   final FocusTimerSettings settings;
+  final bool showAnimationSettings;
   final VoidCallback onDone;
   final VoidCallback onCancel;
   final ValueChanged<FocusMode> onModeChanged;
@@ -229,11 +241,13 @@ class _OverviewPage extends StatelessWidget {
                 ] else ...[
                   const StopwatchSettingsCard(),
                 ],
-                SizedBox(height: contentGap),
-                AnimationPairSettingsCard(
-                  selectedPair: settings.animationPair,
-                  onChanged: onAnimationPairChanged,
-                ),
+                if (showAnimationSettings) ...[
+                  SizedBox(height: contentGap),
+                  AnimationPairSettingsCard(
+                    selectedPair: settings.animationPair,
+                    onChanged: onAnimationPairChanged,
+                  ),
+                ],
               ],
             ),
           ),

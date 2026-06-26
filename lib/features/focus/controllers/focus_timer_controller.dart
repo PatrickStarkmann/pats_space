@@ -29,7 +29,7 @@ class FocusTimerController extends ChangeNotifier {
     longBreakMinutes: 20,
     longBreakInterval: 4,
     sessionsPerRound: 4,
-    focusLabel: 'pomodoro',
+    focusLabel: 'study',
     accentColor: FocusAccentColor.sunshine,
     badgeIcon: FocusBadgeIcon.cat,
     animationPair: FocusAnimationPair.standard,
@@ -74,7 +74,7 @@ class FocusTimerController extends ChangeNotifier {
     return switch (_phase) {
       FocusSessionPhase.breakTime => 'break',
       FocusSessionPhase.stopwatch => 'stopwatch',
-      _ => isStopwatch ? 'stopwatch' : 'pomodoro',
+      _ => isStopwatch ? 'stopwatch' : 'study',
     };
   }
 

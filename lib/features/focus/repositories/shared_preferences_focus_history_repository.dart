@@ -67,7 +67,7 @@ class SharedPreferencesFocusHistoryRepository
           json['id'] as String? ??
           completedAt.microsecondsSinceEpoch.toString(),
       tag: FocusTag(
-        name: tagJson['name'] as String? ?? 'pomodoro',
+        name: tagJson['name'] as String? ?? 'study',
         accentColor:
             _enumValue(FocusAccentColor.values, tagJson['accentColor']) ??
             FocusAccentColor.sunshine,

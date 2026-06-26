@@ -101,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
+            final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
             final bottomNavigationInset =
                 MediaQuery.paddingOf(context).bottom + AppSpacing.xs * 2 + 44;
             final availableHeight =
@@ -113,56 +114,61 @@ class _HomeScreenState extends State<HomeScreen> {
             final singleGroup = groupMode && groupParticipantCount == 1;
             final compactGroup = groupMode && groupParticipantCount < 4;
             final mediumGroup = groupMode && groupParticipantCount == 3;
-            final topSpace =
-                (availableHeight *
-                        (singleGroup
-                            ? (tight
-                                  ? 0.08
-                                  : compact
-                                  ? 0.10
-                                  : 0.12)
+            final topSpace = keyboardVisible
+                ? AppSpacing.lg
+                : (availableHeight *
+                          (singleGroup
+                              ? (tight
+                                    ? 0.08
+                                    : compact
+                                    ? 0.10
+                                    : 0.12)
+                              : compactGroup
+                              ? (tight
+                                    ? 0.11
+                                    : compact
+                                    ? 0.14
+                                    : 0.16)
+                              : groupMode
+                              ? (tight
+                                    ? 0.06
+                                    : compact
+                                    ? 0.08
+                                    : 0.10)
+                              : tight
+                              ? 0.16
+                              : compact
+                              ? 0.19
+                              : 0.22))
+                      .clamp(
+                        singleGroup
+                            ? (tight ? AppSpacing.lg : AppSpacing.xl)
                             : compactGroup
-                            ? (tight
-                                  ? 0.11
-                                  : compact
-                                  ? 0.14
-                                  : 0.16)
+                            ? (tight ? AppSpacing.xl : AppSpacing.xxl)
                             : groupMode
-                            ? (tight
-                                  ? 0.06
-                                  : compact
-                                  ? 0.08
-                                  : 0.10)
-                            : tight
-                            ? 0.16
-                            : compact
-                            ? 0.19
-                            : 0.22))
-                    .clamp(
-                      singleGroup
-                          ? (tight ? AppSpacing.lg : AppSpacing.xl)
-                          : compactGroup
-                          ? (tight ? AppSpacing.xl : AppSpacing.xxl)
-                          : groupMode
-                          ? (tight ? AppSpacing.lg : AppSpacing.xl)
-                          : (tight
-                                ? AppSpacing.xxl * 1.25
-                                : AppSpacing.xxl * 1.55),
-                      singleGroup
-                          ? AppSpacing.xxl * 1.8
-                          : compactGroup
-                          ? AppSpacing.xxl * 2.5
-                          : groupMode
-                          ? AppSpacing.xxl * 1.7
-                          : AppSpacing.xxl * 3.45,
-                    )
-                    .toDouble();
-            final characterGap = tight
+                            ? (tight ? AppSpacing.lg : AppSpacing.xl)
+                            : (tight
+                                  ? AppSpacing.xxl * 1.25
+                                  : AppSpacing.xxl * 1.55),
+                        singleGroup
+                            ? AppSpacing.xxl * 1.8
+                            : compactGroup
+                            ? AppSpacing.xxl * 2.5
+                            : groupMode
+                            ? AppSpacing.xxl * 1.7
+                            : AppSpacing.xxl * 3.45,
+                      )
+                      .toDouble();
+            final characterGap = keyboardVisible
+                ? AppSpacing.sm
+                : tight
                 ? AppSpacing.xl
                 : compact
                 ? AppSpacing.xxl * 1.25
                 : AppSpacing.xxl * 1.75;
-            final groupCharacterGap = compactGroup
+            final groupCharacterGap = keyboardVisible
+                ? AppSpacing.sm
+                : compactGroup
                 ? singleGroup
                       ? (tight ? AppSpacing.md : AppSpacing.lg)
                       : (tight ? AppSpacing.xl : AppSpacing.xxl)
@@ -408,7 +414,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final shouldLeave = await showGroupFocusRoomSheet(
       context: context,
-      room: room,
+      room: _roomWithLiveLocalStatus(room),
+      onLocalActivityChanged: _socialFocusController.updateLocalActivity,
     );
     if (!mounted || !shouldLeave) {
       return;
@@ -453,11 +460,29 @@ class _HomeScreenState extends State<HomeScreen> {
     };
   }
 
+  SocialFocusRoom _roomWithLiveLocalStatus(SocialFocusRoom room) {
+    return SocialFocusRoom(
+      id: room.id,
+      hostName: room.hostName,
+      statusLabel: room.statusLabel,
+      capacity: room.capacity,
+      members: [
+        for (final member in room.members)
+          SocialFocusMember(
+            id: member.id,
+            name: member.name,
+            activity: member.activity,
+            status: _statusForSocialMember(member),
+          ),
+      ],
+    );
+  }
+
   List<String> _framesForSocialActivity(SocialFocusActivity activity) {
     return switch (activity) {
       SocialFocusActivity.reading => AppAssets.socialFocusReading,
-      SocialFocusActivity.writing => AppAssets.socialFocusWriting,
-      SocialFocusActivity.coding => AppAssets.socialFocusCoding,
+      SocialFocusActivity.studying => AppAssets.socialFocusWriting,
+      SocialFocusActivity.working => AppAssets.socialFocusCoding,
     };
   }
 
@@ -465,6 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final updated = await showTimeSettingsSheet(
       context: context,
       settings: _timerController.settings,
+      showAnimationSettings: _focusViewMode == _FocusViewMode.solo,
     );
 
     if (updated == null) {
