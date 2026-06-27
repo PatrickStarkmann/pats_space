@@ -49,6 +49,8 @@ class AppAssets {
       'assets/images/focus_pairs/pair_06/break_1.png';
   static const focusPair06Break02 =
       'assets/images/focus_pairs/pair_06/break_2.png';
+  static const focusStampCharacter =
+      'assets/images/focus/stamps/character/stamp_1.png';
 
   static const socialFocusDesk =
       'assets/images/social_focus/furniture/desks/desk.png';

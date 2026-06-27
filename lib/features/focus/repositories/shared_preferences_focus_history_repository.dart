@@ -71,9 +71,7 @@ class SharedPreferencesFocusHistoryRepository
         accentColor:
             _enumValue(FocusAccentColor.values, tagJson['accentColor']) ??
             FocusAccentColor.sunshine,
-        badgeIcon:
-            _enumValue(FocusBadgeIcon.values, tagJson['badgeIcon']) ??
-            FocusBadgeIcon.cat,
+        badgeIcon: _badgeIconValue(tagJson['badgeIcon']),
       ),
       mode: _enumValue(FocusMode.values, json['mode']) ?? FocusMode.pomodoro,
       focusDuration: Duration(seconds: focusDurationSeconds),
@@ -120,5 +118,13 @@ class SharedPreferencesFocusHistoryRepository
       num() => value.toInt(),
       _ => null,
     };
+  }
+
+  FocusBadgeIcon _badgeIconValue(Object? value) {
+    if (value is! String || value.isEmpty) {
+      return FocusBadgeIcon.character;
+    }
+
+    return _enumValue(FocusBadgeIcon.values, value) ?? FocusBadgeIcon.character;
   }
 }

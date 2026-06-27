@@ -42,29 +42,23 @@ class SocialFocusController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateLocalActivity(SocialFocusActivity activity) {
+  Future<void> updateLocalActivity(SocialFocusActivity activity) async {
     final room = _activeRoom;
     if (room == null) {
       return;
     }
 
-    _activeRoom = SocialFocusRoom(
-      id: room.id,
-      hostName: room.hostName,
-      statusLabel: room.statusLabel,
-      capacity: room.capacity,
-      members: [
-        for (final member in room.members)
-          member.id == 'me'
-              ? SocialFocusMember(
-                  id: member.id,
-                  name: member.name,
-                  activity: activity,
-                  status: member.status,
-                )
-              : member,
-      ],
-    );
+    _activeRoom = await _repository.updateLocalActivity(room.id, activity);
+    notifyListeners();
+  }
+
+  Future<void> updateLocalStatus(SocialFocusMemberStatus status) async {
+    final room = _activeRoom;
+    if (room == null) {
+      return;
+    }
+
+    _activeRoom = await _repository.updateLocalStatus(room.id, status);
     notifyListeners();
   }
 }

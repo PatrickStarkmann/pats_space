@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
 
@@ -151,9 +152,7 @@ class _CalendarDayCell extends StatelessWidget {
         Text(
           day.toString(),
           style: AppTextStyles.headline.copyWith(
-            color: hasRecord
-                ? record!.tag.accentColor.color
-                : AppColors.charcoal,
+            color: isToday ? CupertinoColors.systemRed : AppColors.charcoal,
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
@@ -166,28 +165,56 @@ class _CalendarDayCell extends StatelessWidget {
                 : AppColors.transparent,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isToday
-                  ? AppColors.charcoal
-                  : hasRecord
-                  ? record!.tag.accentColor.color
-                  : const Color(0xFFE7E8EB),
+              color: isToday ? AppColors.charcoal : const Color(0xFFE7E8EB),
               width: isToday ? 3 : 2.4,
             ),
           ),
           child: SizedBox(
             width: 36,
             height: 36,
-            child: hasRecord
-                ? Icon(
-                    record!.tag.badgeIcon.icon,
-                    color: AppColors.charcoal,
-                    size: 18,
-                  )
-                : null,
+            child: hasRecord ? _CalendarBadgeIcon(record: record!) : null,
           ),
         ),
       ],
     );
+  }
+}
+
+class _CalendarBadgeIcon extends StatelessWidget {
+  const _CalendarBadgeIcon({required this.record});
+
+  final FocusSessionRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final badgeIcon = record.tag.badgeIcon;
+    if (badgeIcon == FocusBadgeIcon.none) {
+      return const SizedBox.shrink();
+    }
+
+    final assetPath = badgeIcon.assetPath;
+    if (assetPath != null) {
+      return Center(
+        child: ClipOval(
+          child: SizedBox(
+            width: 31,
+            height: 31,
+            child: Transform.translate(
+              offset: const Offset(0, 6),
+              child: Image.asset(
+                assetPath,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }
 

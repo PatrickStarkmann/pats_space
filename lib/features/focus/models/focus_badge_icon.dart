@@ -1,17 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'package:pats_space/core/assets/app_assets.dart';
 
 enum FocusBadgeIcon {
-  cat,
-  leaf,
-  sparkles,
-  moon;
+  character,
+  none;
 
-  IconData get icon {
+  String? get assetPath {
     return switch (this) {
-      FocusBadgeIcon.cat => CupertinoIcons.smiley,
-      FocusBadgeIcon.leaf => CupertinoIcons.leaf_arrow_circlepath,
-      FocusBadgeIcon.sparkles => CupertinoIcons.sparkles,
-      FocusBadgeIcon.moon => CupertinoIcons.moon_stars,
+      FocusBadgeIcon.character => AppAssets.focusStampCharacter,
+      FocusBadgeIcon.none => null,
     };
   }
 }

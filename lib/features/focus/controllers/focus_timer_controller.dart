@@ -31,7 +31,7 @@ class FocusTimerController extends ChangeNotifier {
     sessionsPerRound: 4,
     focusLabel: 'study',
     accentColor: FocusAccentColor.sunshine,
-    badgeIcon: FocusBadgeIcon.cat,
+    badgeIcon: FocusBadgeIcon.character,
     animationPair: FocusAnimationPair.standard,
   );
 

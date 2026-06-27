@@ -201,17 +201,83 @@ class _IconStamp extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: accentColor.color,
+        color: badgeIcon == FocusBadgeIcon.none
+            ? AppColors.transparent
+            : accentColor.color,
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.graySoft, width: 1.5),
       ),
       child: SizedBox(
         width: 32,
         height: 32,
-        child: Center(
-          child: Icon(badgeIcon.icon, color: AppColors.charcoal, size: 18),
-        ),
+        child: Center(child: _BadgeIconImage(badgeIcon: badgeIcon)),
       ),
     );
   }
+}
+
+class _BadgeIconImage extends StatelessWidget {
+  const _BadgeIconImage({required this.badgeIcon});
+
+  final FocusBadgeIcon badgeIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final assetPath = badgeIcon.assetPath;
+    if (assetPath != null) {
+      return ClipOval(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Transform.translate(
+            offset: const Offset(0, 3),
+            child: Image.asset(
+              assetPath,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const _NoBadgeMark();
+  }
+}
+
+class _NoBadgeMark extends StatelessWidget {
+  const _NoBadgeMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size.square(22),
+      painter: _NoBadgeMarkPainter(),
+    );
+  }
+}
+
+class _NoBadgeMarkPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.charcoal.withValues(alpha: .66)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - paint.strokeWidth / 2;
+
+    canvas.drawCircle(center, radius, paint);
+    canvas.drawLine(
+      Offset(size.width * .28, size.height * .72),
+      Offset(size.width * .72, size.height * .28),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _NoBadgeMarkPainter oldDelegate) => false;
 }

@@ -10,7 +10,8 @@ import 'package:pats_space/features/social_focus/models/social_focus_models.dart
 Future<bool> showGroupFocusRoomSheet({
   required BuildContext context,
   required SocialFocusRoom room,
-  required ValueChanged<SocialFocusActivity> onLocalActivityChanged,
+  required Future<void> Function(SocialFocusActivity activity)
+  onLocalActivityChanged,
 }) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
@@ -33,7 +34,8 @@ class GroupFocusRoomSheet extends StatefulWidget {
   });
 
   final SocialFocusRoom room;
-  final ValueChanged<SocialFocusActivity> onLocalActivityChanged;
+  final Future<void> Function(SocialFocusActivity activity)
+  onLocalActivityChanged;
 
   @override
   State<GroupFocusRoomSheet> createState() => _GroupFocusRoomSheetState();
@@ -127,7 +129,11 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
       return;
     }
 
-    widget.onLocalActivityChanged(selectedActivity);
+    await widget.onLocalActivityChanged(selectedActivity);
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _room = SocialFocusRoom(
         id: _room.id,

@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Duration _pendingRewardDuration = Duration.zero;
   int _pendingWaterReward = 0;
   _FocusViewMode _focusViewMode = _FocusViewMode.solo;
+  SocialFocusMemberStatus? _lastSyncedSocialFocusStatus;
 
   @override
   void initState() {
@@ -340,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
+      _lastSyncedSocialFocusStatus = null;
       setState(() => _focusViewMode = _FocusViewMode.solo);
       return;
     }
@@ -376,6 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    _syncSocialFocusStatus();
     setState(() => _focusViewMode = _FocusViewMode.group);
   }
 
@@ -426,6 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    _lastSyncedSocialFocusStatus = null;
     setState(() => _focusViewMode = _FocusViewMode.solo);
   }
 
@@ -451,13 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return member.status;
     }
 
-    return switch (_timerController.phase) {
-      FocusSessionPhase.breakTime => SocialFocusMemberStatus.breakTime,
-      FocusSessionPhase.focus || FocusSessionPhase.stopwatch
-          when _timerController.running =>
-        SocialFocusMemberStatus.focusing,
-      _ => SocialFocusMemberStatus.idle,
-    };
+    return _localSocialFocusStatus;
   }
 
   SocialFocusRoom _roomWithLiveLocalStatus(SocialFocusRoom room) {
@@ -665,10 +663,36 @@ class _HomeScreenState extends State<HomeScreen> {
   void _syncAnimation() {
     if (_timerController.active) {
       _characterAnimator.start();
+    } else {
+      _characterAnimator.reset();
+    }
+
+    _syncSocialFocusStatus();
+  }
+
+  void _syncSocialFocusStatus() {
+    if (!_socialFocusController.hasActiveRoom) {
+      _lastSyncedSocialFocusStatus = null;
       return;
     }
 
-    _characterAnimator.reset();
+    final status = _localSocialFocusStatus;
+    if (_lastSyncedSocialFocusStatus == status) {
+      return;
+    }
+
+    _lastSyncedSocialFocusStatus = status;
+    _socialFocusController.updateLocalStatus(status);
+  }
+
+  SocialFocusMemberStatus get _localSocialFocusStatus {
+    return switch (_timerController.phase) {
+      FocusSessionPhase.breakTime => SocialFocusMemberStatus.breakTime,
+      FocusSessionPhase.focus || FocusSessionPhase.stopwatch
+          when _timerController.running =>
+        SocialFocusMemberStatus.focusing,
+      _ => SocialFocusMemberStatus.idle,
+    };
   }
 
   void _handleFocusSessionCompleted(FocusSessionRecord record) {

@@ -117,6 +117,8 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
     ),
   ];
 
+  SocialFocusRoom? _activeRoom;
+
   @override
   Future<SocialFocusLobbySnapshot> loadLobby() async {
     return const SocialFocusLobbySnapshot(openRooms: _rooms, friends: _friends);
@@ -124,12 +126,13 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<SocialFocusRoom> createOpenRoom() async {
-    return const SocialFocusRoom(
+    _activeRoom = const SocialFocusRoom(
       id: 'my-room',
       hostName: 'Patrick',
       statusLabel: 'open room',
       members: [_currentUser],
     );
+    return _activeRoom!;
   }
 
   @override
@@ -139,15 +142,72 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
       orElse: () => _rooms.first,
     );
 
-    return SocialFocusRoom(
+    _activeRoom = SocialFocusRoom(
       id: room.id,
       hostName: room.hostName,
       statusLabel: room.statusLabel,
       capacity: room.capacity,
       members: [_currentUser, ...room.members].take(room.capacity).toList(),
     );
+    return _activeRoom!;
   }
 
   @override
-  Future<void> leaveRoom(String roomId) async {}
+  Future<SocialFocusRoom> updateLocalActivity(
+    String roomId,
+    SocialFocusActivity activity,
+  ) async {
+    final room = _activeRoom;
+    if (room == null || room.id != roomId) {
+      return joinRoom(roomId);
+    }
+
+    _activeRoom = _roomWithLocalMember(room, activity: activity);
+    return _activeRoom!;
+  }
+
+  @override
+  Future<SocialFocusRoom> updateLocalStatus(
+    String roomId,
+    SocialFocusMemberStatus status,
+  ) async {
+    final room = _activeRoom;
+    if (room == null || room.id != roomId) {
+      return joinRoom(roomId);
+    }
+
+    _activeRoom = _roomWithLocalMember(room, status: status);
+    return _activeRoom!;
+  }
+
+  @override
+  Future<void> leaveRoom(String roomId) async {
+    if (_activeRoom?.id == roomId) {
+      _activeRoom = null;
+    }
+  }
+
+  SocialFocusRoom _roomWithLocalMember(
+    SocialFocusRoom room, {
+    SocialFocusActivity? activity,
+    SocialFocusMemberStatus? status,
+  }) {
+    return SocialFocusRoom(
+      id: room.id,
+      hostName: room.hostName,
+      statusLabel: room.statusLabel,
+      capacity: room.capacity,
+      members: [
+        for (final member in room.members)
+          member.id == _currentUser.id
+              ? SocialFocusMember(
+                  id: member.id,
+                  name: member.name,
+                  activity: activity ?? member.activity,
+                  status: status ?? member.status,
+                )
+              : member,
+      ],
+    );
+  }
 }
