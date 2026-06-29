@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
+
+enum AppIconButtonHaptic { none, selection, light, medium }
 
 class AppIconButton extends StatefulWidget {
   const AppIconButton({
@@ -9,12 +12,14 @@ class AppIconButton extends StatefulWidget {
     required this.onPressed,
     this.selected = false,
     this.semanticLabel,
+    this.haptic = AppIconButtonHaptic.light,
   });
 
   final IconData icon;
   final VoidCallback? onPressed;
   final bool selected;
   final String? semanticLabel;
+  final AppIconButtonHaptic haptic;
 
   @override
   State<AppIconButton> createState() => _AppIconButtonState();
@@ -42,6 +47,7 @@ class _AppIconButtonState extends State<AppIconButton> {
         onTapUp: _enabled
             ? (_) {
                 setState(() => _pressed = false);
+                _triggerHaptic();
                 widget.onPressed?.call();
               }
             : null,
@@ -62,5 +68,21 @@ class _AppIconButtonState extends State<AppIconButton> {
         ),
       ),
     );
+  }
+
+  void _triggerHaptic() {
+    switch (widget.haptic) {
+      case AppIconButtonHaptic.none:
+        return;
+      case AppIconButtonHaptic.selection:
+        AppHaptics.selection();
+        return;
+      case AppIconButtonHaptic.light:
+        AppHaptics.lightImpact();
+        return;
+      case AppIconButtonHaptic.medium:
+        AppHaptics.mediumImpact();
+        return;
+    }
   }
 }

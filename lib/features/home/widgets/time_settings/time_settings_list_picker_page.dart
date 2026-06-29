@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
@@ -79,7 +79,7 @@ class _ListPickerRow extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         if (!selected) {
-          HapticFeedback.selectionClick();
+          AppHaptics.selection();
         }
         onTap();
       },

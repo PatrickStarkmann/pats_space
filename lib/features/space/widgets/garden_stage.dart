@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -605,22 +605,24 @@ class _PositionedPotState extends State<_PositionedPot>
     }
 
     if (pot.stage.needsWater && widget.water <= 0) {
-      HapticFeedback.selectionClick();
+      AppHaptics.error();
       _triggerUnavailableShake();
       widget.onTap();
       return;
     }
 
     if (pot.stage.hasCoins && !pot.hasCollectableCoins) {
-      HapticFeedback.selectionClick();
+      AppHaptics.error();
       widget.onTap();
       return;
     }
 
-    if (pot.stage.hasCoins || pot.isReadyToGrow) {
-      HapticFeedback.mediumImpact();
+    if (pot.stage.hasCoins) {
+      AppHaptics.reward();
+    } else if (pot.isReadyToGrow) {
+      AppHaptics.mediumImpact();
     } else {
-      HapticFeedback.lightImpact();
+      AppHaptics.lightImpact();
     }
     widget.onActionTap();
   }
@@ -630,7 +632,7 @@ class _PositionedPotState extends State<_PositionedPot>
       return;
     }
 
-    HapticFeedback.selectionClick();
+    AppHaptics.selection();
     _handleActionTap();
     _wateringTimer?.cancel();
     _wateringTimer = Timer.periodic(const Duration(milliseconds: 360), (_) {

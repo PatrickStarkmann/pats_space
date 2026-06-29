@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -246,7 +246,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
             onPageChanged: (index) {
               if (index != _lastHapticIndex) {
                 _lastHapticIndex = index;
-                HapticFeedback.selectionClick();
+                AppHaptics.selection();
               }
               setState(() {
                 _selectedPlantType = plantTypes[index];
@@ -265,7 +265,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
                 onTap: () {
                   if (index != _lastHapticIndex) {
                     _lastHapticIndex = index;
-                    HapticFeedback.selectionClick();
+                    AppHaptics.selection();
                   }
                   _pageController.animateToPage(
                     index,
@@ -298,7 +298,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
               widget.unlockedPlantTypes.contains(_selectedPlantType) &&
               widget.water >= _selectedPlantType.plantCost,
           onTap: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             widget.onPlantSelected(_selectedPlantType);
           },
         ),
@@ -657,7 +657,7 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
       enabled: enabled,
       label: 'Plant ${plantType.displayName}',
       child: _PressableScale(
-        onTap: enabled ? onTap : HapticFeedback.selectionClick,
+        onTap: enabled ? onTap : AppHaptics.error,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
@@ -759,7 +759,7 @@ class _PotStyleSelector extends StatelessWidget {
                 style: style,
                 selected: style == selectedStyle,
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  AppHaptics.selection();
                   onStyleSelected(style);
                 },
               );
@@ -912,14 +912,16 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
   void _performPrimaryAction() {
     final pot = widget.pot;
     if (pot.stage.hasCoins && !pot.hasCollectableCoins) {
-      HapticFeedback.selectionClick();
+      AppHaptics.error();
       return;
     }
 
-    if (pot.stage.hasCoins || pot.isReadyToGrow) {
-      HapticFeedback.mediumImpact();
+    if (pot.stage.hasCoins) {
+      AppHaptics.reward();
+    } else if (pot.isReadyToGrow) {
+      AppHaptics.mediumImpact();
     } else {
-      HapticFeedback.lightImpact();
+      AppHaptics.lightImpact();
     }
     widget.onPrimaryAction();
   }

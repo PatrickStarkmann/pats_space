@@ -427,6 +427,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get choosePlant => 'Choose plant';
 
   @override
+  String get feedbackLab => 'Feedback Lab';
+
+  @override
+  String get feedbackLabSubtitle => 'Try haptics and button feedback';
+
+  @override
+  String get rawHaptics => 'Raw haptics';
+
+  @override
+  String get patternHaptics => 'Pattern haptics';
+
+  @override
+  String get appFeedback => 'App feedback';
+
+  @override
+  String get selectionHaptic => 'Selection';
+
+  @override
+  String get selectionHapticDescription =>
+      'Tiny tick for tabs, pickers and segmented controls';
+
+  @override
+  String get lightImpactHaptic => 'Light impact';
+
+  @override
+  String get lightImpactHapticDescription =>
+      'Soft tap for play, pause and normal buttons';
+
+  @override
+  String get mediumImpactHaptic => 'Medium impact';
+
+  @override
+  String get mediumImpactHapticDescription =>
+      'Stronger tap for skip, cancel, buy and remove';
+
+  @override
+  String get successHaptic => 'Success';
+
+  @override
+  String get successHapticDescription => 'Reward, unlock or completed focus';
+
+  @override
+  String get warningHaptic => 'Warning';
+
+  @override
+  String get warningHapticDescription =>
+      'No reward, unavailable or blocked action';
+
+  @override
+  String get heavyImpactHaptic => 'Heavy impact';
+
+  @override
+  String get heavyImpactHapticDescription => 'Single strong system impact';
+
+  @override
+  String get rewardPatternHaptic => 'Reward pattern';
+
+  @override
+  String get rewardPatternHapticDescription =>
+      'Sparkly water, coin or progress reward';
+
+  @override
+  String get purchasePatternHaptic => 'Purchase pattern';
+
+  @override
+  String get purchasePatternHapticDescription =>
+      'Short confirmation for buying or placing';
+
+  @override
+  String get unlockPatternHaptic => 'Unlock pattern';
+
+  @override
+  String get unlockPatternHapticDescription =>
+      'Bigger reveal for new plants or milestones';
+
+  @override
+  String get errorPatternHaptic => 'Error pattern';
+
+  @override
+  String get errorPatternHapticDescription =>
+      'Clear no/blocked feedback without a long vibration';
+
+  @override
+  String get primaryButtonFeedback => 'Primary button';
+
+  @override
+  String get iconButtonLightFeedback => 'Icon button light';
+
+  @override
+  String get iconButtonMediumFeedback => 'Icon button medium';
+
+  @override
   String get monthJan => 'Jan';
 
   @override

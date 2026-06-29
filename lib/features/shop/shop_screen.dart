@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -93,15 +93,15 @@ class ShopScreen extends StatelessWidget {
                     onPrimaryAction: (style) {
                       final owned = garden.ownedPotStyles.contains(style);
                       if (owned) {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.error();
                         return;
                       }
 
                       final success = gardenController.buyPotStyle(style);
                       if (success) {
-                        HapticFeedback.mediumImpact();
+                        AppHaptics.purchase();
                       } else {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.error();
                       }
                     },
                   ),
@@ -140,13 +140,13 @@ class ShopScreen extends StatelessWidget {
                         decoration,
                       );
                       if (success) {
-                        HapticFeedback.mediumImpact();
+                        AppHaptics.purchase();
                         gardenController.requestDecorationArrangement(
                           decoration,
                         );
                         onOpenSpace?.call();
                       } else {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.error();
                       }
                     },
                   ),
@@ -498,7 +498,7 @@ class _ShopProductCard extends StatelessWidget {
               const SizedBox(height: 8),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: equipped ? HapticFeedback.selectionClick : onTap,
+                onTap: equipped ? AppHaptics.error : onTap,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOutCubic,

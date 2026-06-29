@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_shadows.dart';
@@ -39,6 +40,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       onTapUp: _enabled
           ? (_) {
               setState(() => _pressed = false);
+              AppHaptics.lightImpact();
               widget.onPressed?.call();
             }
           : null,

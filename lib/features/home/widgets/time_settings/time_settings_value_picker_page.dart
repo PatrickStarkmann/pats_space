@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -73,7 +73,7 @@ class _TimeSettingsValuePickerPageState
               useMagnifier: true,
               selectionOverlay: const _PickerSelectionOverlay(),
               onSelectedItemChanged: (index) {
-                HapticFeedback.selectionClick();
+                AppHaptics.selection();
                 widget.onChanged(widget.values[index]);
               },
               children: widget.values.map((value) {

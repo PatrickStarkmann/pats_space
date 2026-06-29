@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -93,7 +93,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
         return;
       }
 
-      HapticFeedback.mediumImpact();
+      AppHaptics.unlock();
       setState(() {
         for (final plantType in newlyUnlocked) {
           _plantUnlockReveals.add(
@@ -194,7 +194,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
       return;
     }
 
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     widget.gardenController.cleanUpGarden();
     setState(() {
       _selectedDecoration = null;
@@ -208,7 +208,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
       return;
     }
 
-    HapticFeedback.selectionClick();
+    AppHaptics.selection();
     widget.gardenController.selectArea(selectedArea);
     setState(() {
       _arrangingDecorations = false;
@@ -350,7 +350,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                     _ArrangeDecorButton(
                       arranging: _arrangingDecorations,
                       onTap: () {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.selection();
                         setState(() {
                           _arrangingDecorations = !_arrangingDecorations;
                           if (!_arrangingDecorations) {
@@ -372,7 +372,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                       const SizedBox(width: AppSpacing.xs),
                     _SpaceShopButton(
                       onTap: () {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.selection();
                         showShopSheet(
                           context: context,
                           gardenController: widget.gardenController,
@@ -423,7 +423,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                       return;
                     }
                     final current = garden.decorationPlacements[decoration];
-                    HapticFeedback.selectionClick();
+                    AppHaptics.selection();
                     widget.gardenController.updateDecorationPlacement(
                       decoration,
                       inFront: !(current?.inFront ?? false),
@@ -434,7 +434,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                     if (decoration == null) {
                       return;
                     }
-                    HapticFeedback.mediumImpact();
+                    AppHaptics.mediumImpact();
                     widget.gardenController.removeDecoration(decoration);
                     setState(() {
                       _selectedDecoration = null;

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -24,12 +25,54 @@ class FocusCompletionSheet extends StatefulWidget {
   State<FocusCompletionSheet> createState() => _FocusCompletionSheetState();
 }
 
-class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
+class _FocusCompletionSheetState extends State<FocusCompletionSheet>
+    with SingleTickerProviderStateMixin {
   static const _dismissDistance = 88.0;
   static const _dismissVelocity = 520.0;
 
+  late final AnimationController _entranceController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
   double _dragOffset = 0;
   bool _isDragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, .08), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _entranceController.forward();
+      if (widget.waterReward > 0) {
+        AppHaptics.reward();
+      } else {
+        AppHaptics.warning();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +95,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
         _isDragging = false;
         final velocity = details.primaryVelocity ?? 0;
         if (_dragOffset > _dismissDistance || velocity > _dismissVelocity) {
-          widget.onContinue();
+          _continue();
           return;
         }
 
@@ -114,87 +157,124 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
                   AppSpacing.lg,
                   AppSpacing.sm,
                   AppSpacing.lg,
-                  AppSpacing.lg,
+                  AppSpacing.xl,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: widget.onContinue,
-                      child: SizedBox(
-                        height: 28,
-                        child: Center(
-                          child: Container(
-                            width: 44,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: AppColors.graySoft,
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.pill,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _continue,
+                          child: SizedBox(
+                            height: 28,
+                            child: Center(
+                              child: Container(
+                                width: 44,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: AppColors.graySoft,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.pill,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      hasReward ? l10n.wellDone : l10n.takeABreath,
-                      style: AppTextStyles.title,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      child: Text(
-                        hasReward
-                            ? l10n.rewardWaterMessage
-                            : l10n.noRewardWaterMessage,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMuted,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: [
-                        _RewardPill(
-                          icon: hasReward
-                              ? CupertinoIcons.drop_fill
-                              : CupertinoIcons.drop,
-                          label: hasReward
-                              ? l10n.waterReward(widget.waterReward)
-                              : l10n.noWater,
+                        const SizedBox(height: AppSpacing.md),
+                        _RewardHero(hasReward: hasReward),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          hasReward ? l10n.wellDone : l10n.takeABreath,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.title.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        _RewardPill(
-                          icon: CupertinoIcons.timer,
-                          label: l10n.focusedDuration(_formattedMinutes),
+                        const SizedBox(height: AppSpacing.xs),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 310),
+                          child: Text(
+                            hasReward
+                                ? l10n.rewardWaterMessage
+                                : l10n.noRewardWaterMessage,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodyMuted,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _RewardMetricCard(
+                                icon: hasReward
+                                    ? CupertinoIcons.drop_fill
+                                    : CupertinoIcons.drop,
+                                accentColor: const Color(0xFF65A9F7),
+                                value: hasReward
+                                    ? _AnimatedRewardValue(
+                                        value: widget.waterReward,
+                                        labelBuilder: l10n.waterReward,
+                                      )
+                                    : Text(
+                                        l10n.noWater,
+                                        textAlign: TextAlign.center,
+                                        style: AppTextStyles.headline.copyWith(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: _RewardMetricCard(
+                                icon: CupertinoIcons.timer,
+                                accentColor: AppColors.charcoal,
+                                value: Text(
+                                  l10n.focusedDuration(_formattedMinutes),
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.headline.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        PrimaryButton(
+                          label: l10n.continueAction,
+                          onPressed: _continue,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            AppHaptics.selection();
+                            widget.onOpenSpace();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            child: Text(
+                              l10n.goToSpace,
+                              style: AppTextStyles.bodyMuted.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                    PrimaryButton(
-                      label: l10n.continueAction,
-                      onPressed: widget.onContinue,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: widget.onOpenSpace,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        child: Text(
-                          l10n.goToSpace,
-                          style: AppTextStyles.bodyMuted,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -212,35 +292,115 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
 
     return '<1m';
   }
+
+  void _continue() {
+    AppHaptics.lightImpact();
+    widget.onContinue();
+  }
 }
 
-class _RewardPill extends StatelessWidget {
-  const _RewardPill({required this.icon, required this.label});
+class _RewardHero extends StatelessWidget {
+  const _RewardHero({required this.hasReward});
+
+  final bool hasReward;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: .92, end: 1),
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.elasticOut,
+      builder: (context, scale, child) {
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Container(
+        width: 82,
+        height: 82,
+        decoration: BoxDecoration(
+          color: hasReward
+              ? const Color(0xFFEAF4FF)
+              : AppColors.surfaceMuted.withValues(alpha: .62),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: hasReward
+                ? const Color(0xFF65A9F7).withValues(alpha: .26)
+                : AppColors.graySoft,
+            width: 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .06),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Icon(
+          hasReward ? CupertinoIcons.drop_fill : CupertinoIcons.drop,
+          color: hasReward ? const Color(0xFF65A9F7) : AppColors.grayWarm,
+          size: 38,
+        ),
+      ),
+    );
+  }
+}
+
+class _RewardMetricCard extends StatelessWidget {
+  const _RewardMetricCard({
+    required this.icon,
+    required this.accentColor,
+    required this.value,
+  });
 
   final IconData icon;
-  final String label;
+  final Color accentColor;
+  final Widget value;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted.withValues(alpha: .65),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
+        color: AppColors.surfaceMuted.withValues(alpha: .5),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .54)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Row(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF65A9F7)),
-            const SizedBox(width: AppSpacing.xs),
-            Text(label, style: AppTextStyles.caption),
+            Icon(icon, size: 22, color: accentColor),
+            const SizedBox(height: AppSpacing.xs),
+            value,
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedRewardValue extends StatelessWidget {
+  const _AnimatedRewardValue({required this.value, required this.labelBuilder});
+
+  final int value;
+  final String Function(int value) labelBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<int>(
+      tween: IntTween(begin: 0, end: value),
+      duration: const Duration(milliseconds: 760),
+      curve: Curves.easeOutCubic,
+      builder: (context, animatedValue, _) {
+        return Text(
+          labelBuilder(animatedValue),
+          textAlign: TextAlign.center,
+          style: AppTextStyles.headline.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        );
+      },
     );
   }
 }

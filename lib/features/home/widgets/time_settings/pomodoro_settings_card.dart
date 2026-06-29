@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -77,7 +77,7 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
                 final roundedValue = value.round();
                 if (roundedValue != _lastHapticValue) {
                   _lastHapticValue = roundedValue;
-                  HapticFeedback.selectionClick();
+                  AppHaptics.selection();
                 }
                 widget.onChanged(roundedValue);
               },

@@ -872,6 +872,174 @@ abstract class AppLocalizations {
   /// **'Choose plant'**
   String get choosePlant;
 
+  /// No description provided for @feedbackLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback Lab'**
+  String get feedbackLab;
+
+  /// No description provided for @feedbackLabSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try haptics and button feedback'**
+  String get feedbackLabSubtitle;
+
+  /// No description provided for @rawHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw haptics'**
+  String get rawHaptics;
+
+  /// No description provided for @patternHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Pattern haptics'**
+  String get patternHaptics;
+
+  /// No description provided for @appFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'App feedback'**
+  String get appFeedback;
+
+  /// No description provided for @selectionHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection'**
+  String get selectionHaptic;
+
+  /// No description provided for @selectionHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tiny tick for tabs, pickers and segmented controls'**
+  String get selectionHapticDescription;
+
+  /// No description provided for @lightImpactHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Light impact'**
+  String get lightImpactHaptic;
+
+  /// No description provided for @lightImpactHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft tap for play, pause and normal buttons'**
+  String get lightImpactHapticDescription;
+
+  /// No description provided for @mediumImpactHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium impact'**
+  String get mediumImpactHaptic;
+
+  /// No description provided for @mediumImpactHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Stronger tap for skip, cancel, buy and remove'**
+  String get mediumImpactHapticDescription;
+
+  /// No description provided for @successHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get successHaptic;
+
+  /// No description provided for @successHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward, unlock or completed focus'**
+  String get successHapticDescription;
+
+  /// No description provided for @warningHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get warningHaptic;
+
+  /// No description provided for @warningHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No reward, unavailable or blocked action'**
+  String get warningHapticDescription;
+
+  /// No description provided for @heavyImpactHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy impact'**
+  String get heavyImpactHaptic;
+
+  /// No description provided for @heavyImpactHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Single strong system impact'**
+  String get heavyImpactHapticDescription;
+
+  /// No description provided for @rewardPatternHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward pattern'**
+  String get rewardPatternHaptic;
+
+  /// No description provided for @rewardPatternHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparkly water, coin or progress reward'**
+  String get rewardPatternHapticDescription;
+
+  /// No description provided for @purchasePatternHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase pattern'**
+  String get purchasePatternHaptic;
+
+  /// No description provided for @purchasePatternHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Short confirmation for buying or placing'**
+  String get purchasePatternHapticDescription;
+
+  /// No description provided for @unlockPatternHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock pattern'**
+  String get unlockPatternHaptic;
+
+  /// No description provided for @unlockPatternHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Bigger reveal for new plants or milestones'**
+  String get unlockPatternHapticDescription;
+
+  /// No description provided for @errorPatternHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Error pattern'**
+  String get errorPatternHaptic;
+
+  /// No description provided for @errorPatternHapticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear no/blocked feedback without a long vibration'**
+  String get errorPatternHapticDescription;
+
+  /// No description provided for @primaryButtonFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary button'**
+  String get primaryButtonFeedback;
+
+  /// No description provided for @iconButtonLightFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon button light'**
+  String get iconButtonLightFeedback;
+
+  /// No description provided for @iconButtonMediumFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon button medium'**
+  String get iconButtonMediumFeedback;
+
   /// No description provided for @monthJan.
   ///
   /// In en, this message translates to:

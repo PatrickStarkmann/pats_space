@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -177,7 +178,10 @@ class _RoomHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: onClose,
+            onPressed: () {
+              AppHaptics.selection();
+              onClose();
+            },
             icon: const Icon(CupertinoIcons.xmark, size: 30),
           ),
           Expanded(
@@ -381,7 +385,10 @@ class _LeaveRow extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
+        onTap: () {
+          AppHaptics.mediumImpact();
+          onPressed();
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,

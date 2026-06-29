@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
@@ -41,7 +42,10 @@ class TimeSettingsHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: onCancel,
+            onPressed: () {
+              AppHaptics.selection();
+              onCancel();
+            },
             icon: const Icon(CupertinoIcons.xmark, size: 30),
           ),
           Expanded(
@@ -54,7 +58,10 @@ class TimeSettingsHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: onDone,
+            onPressed: () {
+              AppHaptics.lightImpact();
+              onDone();
+            },
             icon: const Icon(CupertinoIcons.checkmark, size: 32),
           ),
         ],
@@ -82,7 +89,10 @@ class TimeSettingsBackHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: onBack,
+            onPressed: () {
+              AppHaptics.selection();
+              onBack();
+            },
             icon: const Icon(CupertinoIcons.chevron_left, size: 32),
           ),
           Expanded(

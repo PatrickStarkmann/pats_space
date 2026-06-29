@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -122,7 +123,10 @@ class _GroupFocusHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: onCancel,
+            onPressed: () {
+              AppHaptics.selection();
+              onCancel();
+            },
             icon: const Icon(CupertinoIcons.xmark, size: 30),
           ),
           Expanded(
@@ -135,7 +139,10 @@ class _GroupFocusHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: onCreate,
+            onPressed: () {
+              AppHaptics.lightImpact();
+              onCreate();
+            },
             icon: const Icon(CupertinoIcons.plus, size: 30),
           ),
         ],

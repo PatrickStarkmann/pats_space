@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/core/widgets/app_icon_button.dart';
+import 'package:pats_space/core/widgets/primary_button.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
@@ -83,6 +86,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
+            onFeedbackLabPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (feedbackContext) => _FeedbackLabPage(
+                    onBack: () => Navigator.of(feedbackContext).maybePop(),
+                  ),
+                ),
+              );
+            },
             onAccountPressed: () {
               Navigator.of(routeContext).push(
                 _settingsRoute(
@@ -123,6 +135,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onLanguagePressed,
     required this.onSoundsPressed,
     required this.onNotificationsPressed,
+    required this.onFeedbackLabPressed,
     required this.onAccountPressed,
     required this.onOthersPressed,
   });
@@ -133,6 +146,7 @@ class _MainSettingsPage extends StatelessWidget {
   final VoidCallback onLanguagePressed;
   final VoidCallback onSoundsPressed;
   final VoidCallback onNotificationsPressed;
+  final VoidCallback onFeedbackLabPressed;
   final VoidCallback onAccountPressed;
   final VoidCallback onOthersPressed;
 
@@ -188,6 +202,14 @@ class _MainSettingsPage extends StatelessWidget {
               icon: CupertinoIcons.envelope,
               title: l10n.contactUs,
               trailing: const _Chevron(),
+            ),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: CupertinoIcons.bolt,
+              title: l10n.feedbackLab,
+              subtitle: l10n.feedbackLabSubtitle,
+              trailing: const _Chevron(),
+              onTap: onFeedbackLabPressed,
             ),
             const _SettingsDivider(),
             _SettingsRow(
@@ -336,6 +358,261 @@ class _NotificationsSettingsPage extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _FeedbackLabPage extends StatelessWidget {
+  const _FeedbackLabPage({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return _SettingsScrollView(
+      title: l10n.feedbackLab,
+      leading: _BackButton(onPressed: onBack),
+      children: [
+        _FeedbackSection(
+          title: l10n.rawHaptics,
+          children: [
+            _FeedbackTestButton(
+              title: l10n.selectionHaptic,
+              subtitle: l10n.selectionHapticDescription,
+              icon: CupertinoIcons.circle_grid_3x3,
+              onTap: AppHaptics.selection,
+            ),
+            _FeedbackTestButton(
+              title: l10n.lightImpactHaptic,
+              subtitle: l10n.lightImpactHapticDescription,
+              icon: CupertinoIcons.play,
+              onTap: AppHaptics.lightImpact,
+            ),
+            _FeedbackTestButton(
+              title: l10n.mediumImpactHaptic,
+              subtitle: l10n.mediumImpactHapticDescription,
+              icon: CupertinoIcons.forward_end,
+              onTap: AppHaptics.mediumImpact,
+            ),
+            _FeedbackTestButton(
+              title: l10n.heavyImpactHaptic,
+              subtitle: l10n.heavyImpactHapticDescription,
+              icon: CupertinoIcons.circle_fill,
+              onTap: AppHaptics.heavyImpact,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _FeedbackSection(
+          title: l10n.patternHaptics,
+          children: [
+            _FeedbackTestButton(
+              title: l10n.successHaptic,
+              subtitle: l10n.successHapticDescription,
+              icon: CupertinoIcons.checkmark_circle,
+              onTap: AppHaptics.success,
+            ),
+            _FeedbackTestButton(
+              title: l10n.warningHaptic,
+              subtitle: l10n.warningHapticDescription,
+              icon: CupertinoIcons.exclamationmark_triangle,
+              onTap: AppHaptics.warning,
+            ),
+            _FeedbackTestButton(
+              title: l10n.rewardPatternHaptic,
+              subtitle: l10n.rewardPatternHapticDescription,
+              icon: CupertinoIcons.drop_fill,
+              onTap: AppHaptics.reward,
+            ),
+            _FeedbackTestButton(
+              title: l10n.purchasePatternHaptic,
+              subtitle: l10n.purchasePatternHapticDescription,
+              icon: CupertinoIcons.bag,
+              onTap: AppHaptics.purchase,
+            ),
+            _FeedbackTestButton(
+              title: l10n.unlockPatternHaptic,
+              subtitle: l10n.unlockPatternHapticDescription,
+              icon: CupertinoIcons.sparkles,
+              onTap: AppHaptics.unlock,
+            ),
+            _FeedbackTestButton(
+              title: l10n.errorPatternHaptic,
+              subtitle: l10n.errorPatternHapticDescription,
+              icon: CupertinoIcons.xmark_octagon,
+              onTap: AppHaptics.error,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _FeedbackSection(
+          title: l10n.appFeedback,
+          children: [
+            PrimaryButton(label: l10n.primaryButtonFeedback, onPressed: () {}),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: _IconFeedbackDemo(
+                    label: l10n.iconButtonLightFeedback,
+                    icon: CupertinoIcons.play,
+                    haptic: AppIconButtonHaptic.light,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _IconFeedbackDemo(
+                    label: l10n.iconButtonMediumFeedback,
+                    icon: CupertinoIcons.xmark,
+                    haptic: AppIconButtonHaptic.medium,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FeedbackSection extends StatelessWidget {
+  const _FeedbackSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xs),
+          child: Text(
+            title,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.grayWarm,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(children: children),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeedbackTestButton extends StatelessWidget {
+  const _FeedbackTestButton({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted.withValues(alpha: .52),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.charcoal, size: 24),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.caption,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IconFeedbackDemo extends StatelessWidget {
+  const _IconFeedbackDemo({
+    required this.label,
+    required this.icon,
+    required this.haptic,
+  });
+
+  final String label;
+  final IconData icon;
+  final AppIconButtonHaptic haptic;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted.withValues(alpha: .52),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          children: [
+            AppIconButton(icon: icon, haptic: haptic, onPressed: () {}),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.charcoal,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

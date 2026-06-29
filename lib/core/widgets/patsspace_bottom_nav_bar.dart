@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:pats_space/app/navigation/app_tab.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 
@@ -40,7 +41,12 @@ class PatsspaceBottomNavBar extends StatelessWidget {
 
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => onTabSelected(tab),
+                  onTap: () {
+                    if (!selected) {
+                      AppHaptics.selection();
+                    }
+                    onTabSelected(tab);
+                  },
                   child: SizedBox(
                     width: 52,
                     height: 44,

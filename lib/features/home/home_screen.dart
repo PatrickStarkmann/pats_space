@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
@@ -906,7 +907,12 @@ class _FocusViewModeButton extends StatelessWidget {
       label: semanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
+        onTap: () {
+          if (!selected) {
+            AppHaptics.selection();
+          }
+          onPressed();
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
@@ -967,6 +973,7 @@ class _FocusControls extends StatelessWidget {
       return AppIconButton(
         icon: CupertinoIcons.pause,
         semanticLabel: 'Pause',
+        haptic: AppIconButtonHaptic.light,
         onPressed: onPlayPause,
       );
     }
@@ -975,6 +982,7 @@ class _FocusControls extends StatelessWidget {
       return AppIconButton(
         icon: CupertinoIcons.play,
         semanticLabel: 'Start',
+        haptic: AppIconButtonHaptic.light,
         onPressed: onPlayPause,
       );
     }
@@ -989,6 +997,7 @@ class _FocusControls extends StatelessWidget {
             AppIconButton(
               icon: CupertinoIcons.forward_end,
               semanticLabel: 'Skip',
+              haptic: AppIconButtonHaptic.medium,
               onPressed: active && canSkip ? onSkip : null,
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -996,12 +1005,14 @@ class _FocusControls extends StatelessWidget {
           AppIconButton(
             icon: CupertinoIcons.play,
             semanticLabel: 'Resume',
+            haptic: AppIconButtonHaptic.light,
             onPressed: onPlayPause,
           ),
           const SizedBox(width: AppSpacing.sm),
           AppIconButton(
             icon: CupertinoIcons.restart,
             semanticLabel: 'Restart',
+            haptic: AppIconButtonHaptic.medium,
             onPressed: onRestart,
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -1009,6 +1020,7 @@ class _FocusControls extends StatelessWidget {
             AppIconButton(
               icon: CupertinoIcons.checkmark,
               semanticLabel: 'Finish',
+              haptic: AppIconButtonHaptic.medium,
               onPressed: onFinish,
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -1016,6 +1028,7 @@ class _FocusControls extends StatelessWidget {
           AppIconButton(
             icon: CupertinoIcons.xmark,
             semanticLabel: 'Cancel',
+            haptic: AppIconButtonHaptic.medium,
             onPressed: onCancel,
           ),
         ],

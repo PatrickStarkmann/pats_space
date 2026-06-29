@@ -431,6 +431,100 @@ class AppLocalizationsDe extends AppLocalizations {
   String get choosePlant => 'Pflanze wählen';
 
   @override
+  String get feedbackLab => 'Feedback Lab';
+
+  @override
+  String get feedbackLabSubtitle => 'Haptik und Button-Feedback testen';
+
+  @override
+  String get rawHaptics => 'Direkte Haptik';
+
+  @override
+  String get patternHaptics => 'Pattern-Haptik';
+
+  @override
+  String get appFeedback => 'App-Feedback';
+
+  @override
+  String get selectionHaptic => 'Selection';
+
+  @override
+  String get selectionHapticDescription =>
+      'Kleiner Tick für Tabs, Picker und Segment-Umschalter';
+
+  @override
+  String get lightImpactHaptic => 'Light Impact';
+
+  @override
+  String get lightImpactHapticDescription =>
+      'Weicher Tap für Play, Pause und normale Buttons';
+
+  @override
+  String get mediumImpactHaptic => 'Medium Impact';
+
+  @override
+  String get mediumImpactHapticDescription =>
+      'Stärkerer Tap für Skip, Abbrechen, Kaufen und Entfernen';
+
+  @override
+  String get successHaptic => 'Success';
+
+  @override
+  String get successHapticDescription =>
+      'Reward, Unlock oder abgeschlossener Fokus';
+
+  @override
+  String get warningHaptic => 'Warning';
+
+  @override
+  String get warningHapticDescription =>
+      'Kein Reward, nicht verfügbar oder blockierte Aktion';
+
+  @override
+  String get heavyImpactHaptic => 'Heavy Impact';
+
+  @override
+  String get heavyImpactHapticDescription =>
+      'Ein einzelner starker System-Impuls';
+
+  @override
+  String get rewardPatternHaptic => 'Reward Pattern';
+
+  @override
+  String get rewardPatternHapticDescription =>
+      'Spritziger Reward für Wasser, Coins oder Fortschritt';
+
+  @override
+  String get purchasePatternHaptic => 'Purchase Pattern';
+
+  @override
+  String get purchasePatternHapticDescription =>
+      'Kurze Bestätigung für Kaufen oder Platzieren';
+
+  @override
+  String get unlockPatternHaptic => 'Unlock Pattern';
+
+  @override
+  String get unlockPatternHapticDescription =>
+      'Größeres Reveal für neue Pflanzen oder Meilensteine';
+
+  @override
+  String get errorPatternHaptic => 'Error Pattern';
+
+  @override
+  String get errorPatternHapticDescription =>
+      'Klares Nein/blockiert ohne lange Vibration';
+
+  @override
+  String get primaryButtonFeedback => 'Primary Button';
+
+  @override
+  String get iconButtonLightFeedback => 'Icon Button light';
+
+  @override
+  String get iconButtonMediumFeedback => 'Icon Button medium';
+
+  @override
   String get monthJan => 'Jan.';
 
   @override
