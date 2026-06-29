@@ -28,7 +28,7 @@ class FocusByTagsCard extends StatelessWidget {
               Text(
                 'Focus by Tags',
                 style: AppTextStyles.headline.copyWith(
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -71,7 +71,7 @@ class FocusByTagsCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.headline.copyWith(
-                            fontSize: 21,
+                            fontSize: 18,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -80,7 +80,7 @@ class FocusByTagsCard extends StatelessWidget {
                         '${segment.percentage.round()}%, ${formatDuration(segment.duration)}',
                         style: AppTextStyles.headline.copyWith(
                           color: AppColors.grayWarm,
-                          fontSize: 20,
+                          fontSize: 17,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

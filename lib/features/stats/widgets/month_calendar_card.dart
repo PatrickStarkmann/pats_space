@@ -39,13 +39,13 @@ class MonthCalendarCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.sm,
+          AppSpacing.md,
           AppSpacing.lg,
-          AppSpacing.sm,
+          AppSpacing.md,
           AppSpacing.lg,
         ),
         child: Column(
@@ -69,7 +69,7 @@ class MonthCalendarCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: AppTextStyles.headline.copyWith(
                       color: const Color(0xFFB9C1CC),
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -153,7 +153,7 @@ class _CalendarDayCell extends StatelessWidget {
           day.toString(),
           style: AppTextStyles.headline.copyWith(
             color: isToday ? CupertinoColors.systemRed : AppColors.charcoal,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -251,7 +251,7 @@ class _CalendarHeaderPill extends StatelessWidget {
                   title,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.headline.copyWith(
-                    fontSize: 23,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -282,7 +282,7 @@ class _CalendarPillButton extends StatelessWidget {
       child: SizedBox(
         width: 58,
         height: 46,
-        child: Icon(icon, color: AppColors.charcoal, size: 27),
+        child: Icon(icon, color: AppColors.charcoal, size: 24),
       ),
     );
   }

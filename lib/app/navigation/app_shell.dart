@@ -115,11 +115,13 @@ class _AppShellContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      backgroundColor: selectedTab == AppTab.stats
+      backgroundColor:
+          selectedTab == AppTab.stats || selectedTab == AppTab.settings
           ? const Color(0xFFF5F4FA)
           : AppColors.background,
       horizontalPadding: switch (selectedTab) {
-        AppTab.stats => AppSpacing.sm,
+        AppTab.stats => 0,
+        AppTab.settings => 0,
         AppTab.space => 0,
         _ => AppSpacing.screenHorizontal,
       },

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
-import 'package:pats_space/core/theme/app_spacing.dart';
 
 class StatsCard extends StatelessWidget {
   const StatsCard({super.key, required this.child});
@@ -12,12 +11,9 @@ class StatsCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: child,
-      ),
+      child: Padding(padding: const EdgeInsets.all(20), child: child),
     );
   }
 }
@@ -32,7 +28,7 @@ class CardTitleMarker extends StatelessWidget {
         color: AppColors.charcoal,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const SizedBox(width: 7, height: 28),
+      child: const SizedBox(width: 6, height: 24),
     );
   }
 }

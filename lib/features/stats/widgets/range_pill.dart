@@ -22,8 +22,8 @@ class RangePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: SizedBox(
-        width: 174,
-        height: 45,
+        width: 162,
+        height: 42,
         child: Row(
           children: [
             _SmallPillArrow(
@@ -37,7 +37,7 @@ class RangePill extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.headline.copyWith(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -65,9 +65,9 @@ class _SmallPillArrow extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onPressed,
       child: SizedBox(
-        width: 42,
-        height: 45,
-        child: Icon(icon, color: AppColors.charcoal, size: 22),
+        width: 40,
+        height: 42,
+        child: Icon(icon, color: AppColors.charcoal, size: 20),
       ),
     );
   }

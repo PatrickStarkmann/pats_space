@@ -41,14 +41,14 @@ class FocusLineChartCard extends StatelessWidget {
                   children: [
                     Text(
                       value,
-                      style: AppTextStyles.title.copyWith(fontSize: 39),
+                      style: AppTextStyles.title.copyWith(fontSize: 34),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       title,
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.grayWarm,
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

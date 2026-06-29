@@ -39,10 +39,11 @@ class _StatsScreenState extends State<StatsScreen> {
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom:
-                  MediaQuery.paddingOf(context).bottom + AppSpacing.xxl * 2.4,
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+              MediaQuery.paddingOf(context).bottom + AppSpacing.xxl * 2.4,
             ),
             child: Column(
               children: [
