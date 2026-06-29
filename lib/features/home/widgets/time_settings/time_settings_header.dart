@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class TimeSettingsGrabber extends StatelessWidget {
   const TimeSettingsGrabber({super.key});
@@ -33,6 +34,8 @@ class TimeSettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return SizedBox(
       height: compact ? 58 : 72,
       child: Row(
@@ -43,7 +46,7 @@ class TimeSettingsHeader extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Time Settings',
+              l10n.timeSettings,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

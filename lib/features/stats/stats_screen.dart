@@ -6,6 +6,7 @@ import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
 import 'package:pats_space/features/stats/widgets/focus_by_tags_card.dart';
 import 'package:pats_space/features/stats/widgets/focus_line_chart_card.dart';
 import 'package:pats_space/features/stats/widgets/month_calendar_card.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key, required this.historyController});
@@ -33,6 +34,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return AnimatedBuilder(
       animation: widget.historyController,
       builder: (context, child) {
+        final l10n = AppLocalizations.of(context);
         final records = widget.historyController.records;
         final now = DateTime.now();
 
@@ -56,19 +58,19 @@ class _StatsScreenState extends State<StatsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FocusLineChartCard(
-                  title: 'Avg Focus Time',
+                  title: l10n.avgFocusTime,
                   value: formatDuration(
                     averageDailyFocusTime(records, _visibleWeek),
                   ),
-                  rangeTitle: formatWeekRange(_visibleWeek),
-                  labels: const [
-                    'Mon',
-                    'Tue',
-                    'Wed',
-                    'Thu',
-                    'Fri',
-                    'Sat',
-                    'Sun',
+                  rangeTitle: formatWeekRange(_visibleWeek, l10n),
+                  labels: [
+                    l10n.weekdayMon,
+                    l10n.weekdayTue,
+                    l10n.weekdayWed,
+                    l10n.weekdayThu,
+                    l10n.weekdayFri,
+                    l10n.weekdaySat,
+                    l10n.weekdaySun,
                   ],
                   values: weeklyFocusHours(records, _visibleWeek),
                   onPreviousRange: _showPreviousWeek,
@@ -76,11 +78,11 @@ class _StatsScreenState extends State<StatsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FocusLineChartCard(
-                  title: 'Monthly Focus Time',
+                  title: l10n.monthlyFocusTime,
                   value: formatDuration(
                     monthlyFocusTime(records, _visibleMonth),
                   ),
-                  rangeTitle: formatMonthShortTitle(_visibleMonth),
+                  rangeTitle: formatMonthShortTitle(_visibleMonth, l10n),
                   labels: const ['1', '7', '14', '21', '28', '31'],
                   values: monthlyFocusHours(records, _visibleMonth),
                   onPreviousRange: _showPreviousMonth,

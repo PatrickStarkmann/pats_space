@@ -6,6 +6,7 @@ import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/focus/models/focus_accent_color.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class FocusLabelSettingsCard extends StatelessWidget {
   const FocusLabelSettingsCard({
@@ -64,12 +65,13 @@ class FocusLabelSettingsCard extends StatelessWidget {
   }
 
   Future<void> _openLabelEditor(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController(text: settings.focusLabel);
     final updatedLabel = await showCupertinoDialog<String>(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('Tag bearbeiten'),
+          title: Text(l10n.editTag),
           content: Padding(
             padding: const EdgeInsets.only(top: AppSpacing.md),
             child: CupertinoTextField(
@@ -77,7 +79,7 @@ class FocusLabelSettingsCard extends StatelessWidget {
               autofocus: true,
               clearButtonMode: OverlayVisibilityMode.editing,
               maxLength: 24,
-              placeholder: 'z. B. Mathe',
+              placeholder: l10n.tagPlaceholder,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
                 Navigator.of(context).pop(controller.text);
@@ -87,12 +89,12 @@ class FocusLabelSettingsCard extends StatelessWidget {
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Abbrechen'),
+              child: Text(l10n.cancel),
             ),
             CupertinoDialogAction(
               isDefaultAction: true,
               onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Speichern'),
+              child: Text(l10n.save),
             ),
           ],
         );

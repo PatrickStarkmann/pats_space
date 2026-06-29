@@ -5,6 +5,7 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_card.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class PomodoroSettingsCard extends StatefulWidget {
   const PomodoroSettingsCard({
@@ -27,6 +28,8 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return TimeSettingsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +46,7 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
                 child: SizedBox(width: 6, height: 28),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Pomodoro', style: AppTextStyles.headline),
+              Text(l10n.pomodoro, style: AppTextStyles.headline),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),

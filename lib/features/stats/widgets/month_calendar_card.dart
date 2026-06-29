@@ -5,6 +5,7 @@ import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class MonthCalendarCard extends StatelessWidget {
   const MonthCalendarCard({
@@ -34,7 +35,16 @@ class MonthCalendarCard extends StatelessWidget {
         DateTime(visibleMonth.year, visibleMonth.month).weekday % 7;
     final cellCount = firstWeekdayOffset + daysInMonth;
     final rowCount = (cellCount / 7).ceil();
-    final weekdays = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+    final l10n = AppLocalizations.of(context);
+    final weekdays = [
+      l10n.weekdaySun,
+      l10n.weekdayMon,
+      l10n.weekdayTue,
+      l10n.weekdayWed,
+      l10n.weekdayThu,
+      l10n.weekdayFri,
+      l10n.weekdaySat,
+    ];
 
     return DecoratedBox(
       decoration: BoxDecoration(

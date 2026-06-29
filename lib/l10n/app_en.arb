@@ -1,0 +1,207 @@
+{
+  "@@locale": "en",
+  "settingsTitle": "Settings",
+  "account": "Account",
+  "language": "Language",
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "sounds": "Sounds",
+  "notifications": "Notifications",
+  "on": "On",
+  "off": "Off",
+  "contactUs": "Contact us",
+  "others": "Others",
+  "alertSounds": "Alert sounds",
+  "alertSoundsDescription": "Play sounds for focus, break and stop",
+  "sound": "Sound",
+  "softBell": "Soft bell",
+  "notificationsDescription": "Session reminders and break alerts",
+  "focusReminder": "Focus reminder",
+  "focusReminderDescription": "Before a planned session starts",
+  "breakReminder": "Break reminder",
+  "breakReminderDescription": "When it is time to rest",
+  "signIn": "Sign in",
+  "restorePurchases": "Restore purchases",
+  "deleteAccount": "Delete account",
+  "privacyPolicy": "Privacy policy",
+  "termsOfUse": "Terms of use",
+  "version": "Version",
+  "appVersion": "Pat's Space 0.1.0",
+  "timeSettings": "Time Settings",
+  "cancel": "Cancel",
+  "done": "Done",
+  "back": "Back",
+  "save": "Save",
+  "focusMode": "Focus Mode",
+  "pomodoro": "Pomodoro",
+  "stopwatch": "Stopwatch",
+  "sessions": "Sessions",
+  "longBreakInterval": "Long Break Interval",
+  "shortBreak": "Short Break",
+  "longBreak": "Long Break",
+  "editTag": "Edit tag",
+  "tagPlaceholder": "e.g. Math",
+  "animation": "Animation",
+  "focus": "Focus",
+  "breakLabel": "Break",
+  "choose": "Choose",
+  "stopwatchDescription": "Start an open-ended focus session when you do not know how long you need. Pause when you step away, then finish to save the exact time.",
+  "avgFocusTime": "Avg Focus Time",
+  "monthlyFocusTime": "Monthly Focus Time",
+  "focusByTags": "Focus by Tags",
+  "noFocusData": "No focus data yet",
+  "weekdaySun": "Sun",
+  "weekdayMon": "Mon",
+  "weekdayTue": "Tue",
+  "weekdayWed": "Wed",
+  "weekdayThu": "Thu",
+  "weekdayFri": "Fri",
+  "weekdaySat": "Sat",
+  "groupFocus": "Group Focus",
+  "friendsFocusingNow": "Friends focusing now",
+  "friends": "Friends",
+  "createOpenRoom": "Create open room",
+  "createOpenRoomSubtitle": "Friends can join while you focus",
+  "noRoomsRightNow": "No rooms right now",
+  "noRoomsSubtitle": "Create a room so friends can join you.",
+  "noFriendsYet": "No friends yet",
+  "noFriendsSubtitle": "Friends you add will appear here.",
+  "join": "Join",
+  "full": "Full",
+  "available": "Available",
+  "online": "online",
+  "offline": "offline",
+  "focusing": "focusing",
+  "chooseActivity": "Choose activity",
+  "reading": "reading",
+  "studying": "studying",
+  "working": "working",
+  "notStarted": "not started",
+  "leaveRoom": "Leave Room",
+  "roomTitle": "{name}'s room",
+  "@roomTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "friendsInRoom": "{count, plural, =1{1 friend in room} other{{count} friends in room}}",
+  "@friendsInRoom": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startingPomodoro": "starting a pomodoro",
+  "fullRoom": "full room",
+  "focusCount": "{count} focusing",
+  "@focusCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "breakCount": "{count} break",
+  "@breakCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shop": "Shop",
+  "shopDescription": "Collect new looks and little pieces for your garden.",
+  "potStyles": "Pot styles",
+  "decor": "Decor",
+  "collected": "Collected",
+  "inGarden": "In garden",
+  "place": "Place",
+  "equipped": "Equipped",
+  "use": "Use",
+  "locked": "Locked",
+  "needItem": "Need {item}",
+  "@needItem": {
+    "placeholders": {
+      "item": {}
+    }
+  },
+  "needAmount": "Need {amount}",
+  "@needAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "leaveGroupFocusTitle": "Leave group focus?",
+  "leaveGroupFocusMessage": "You can rejoin an open friend room from the group lobby later.",
+  "stay": "Stay",
+  "leave": "Leave",
+  "focusRunningTitle": "Focus is running",
+  "focusRunningSettingsMessage": "If you save the settings, the current focus will be cancelled.",
+  "cancelAndSave": "Cancel & save",
+  "cancelFocusTitle": "Cancel focus?",
+  "cancelFocusMessage": "The current focus run will end and your progress in this round will be reset.",
+  "cancelFocus": "Cancel focus",
+  "skipFocusTitle": "Skip focus?",
+  "skipShortFocusMessage": "Under 5 minutes you do not get water and this focus will not be saved in your stats.",
+  "skipAnyway": "Skip anyway",
+  "finishStopwatchTitle": "Finish stopwatch?",
+  "finishShortStopwatchMessage": "Under 5 minutes you do not get water and this session will not be saved in your stats.",
+  "finishAnyway": "Finish anyway",
+  "keepFocusing": "Keep focusing",
+  "wellDone": "Well done",
+  "takeABreath": "Take a breath",
+  "rewardWaterMessage": "Your garden has more water now.",
+  "noRewardWaterMessage": "No water this time, but you can always begin again.",
+  "waterReward": "+{amount} water",
+  "@waterReward": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "noWater": "No water",
+  "focusedDuration": "{duration} focused",
+  "@focusedDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "continueAction": "Continue",
+  "goToSpace": "Go to Space",
+  "animations": "Animations",
+  "select": "Select",
+  "cleanUpGardenTitle": "Clean up garden?",
+  "cleanUpGardenMessage": "This stores placed decor back in your inventory and moves pots to their default spots. Your plants stay planted.",
+  "cleanUp": "Clean up",
+  "choosePlant": "Choose plant"
+  ,"monthJan": "Jan",
+  "monthFeb": "Feb",
+  "monthMar": "Mar",
+  "monthApr": "Apr",
+  "monthMay": "May",
+  "monthJun": "Jun",
+  "monthJul": "Jul",
+  "monthAug": "Aug",
+  "monthSep": "Sep",
+  "monthOct": "Oct",
+  "monthNov": "Nov",
+  "monthDec": "Dec",
+  "potClassic": "Classic",
+  "potBlue": "Blue pot",
+  "potColorful": "Colorful pot",
+  "potHanging": "Hanging pot",
+  "potRound": "Round pot",
+  "potWhite": "White pot",
+  "decorBench": "Garden bench",
+  "decorFountain": "Fountain",
+  "decorPlantFrame": "Plant frame",
+  "decorHangingPot": "Hanging pot",
+  "decorLantern": "Lantern",
+  "decorStonePath": "Stone path",
+  "decorWateringCan": "Watering can"
+}

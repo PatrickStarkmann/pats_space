@@ -11,6 +11,7 @@ import 'package:pats_space/features/focus/repositories/focus_settings_repository
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
 import 'package:pats_space/features/home/home_screen.dart';
+import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/settings_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/repositories/shared_preferences_garden_repository.dart';
@@ -19,7 +20,14 @@ import 'package:pats_space/features/stats/stats_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    super.key,
+    required this.language,
+    required this.onLanguageChanged,
+  });
+
+  final AppLanguage language;
+  final ValueChanged<AppLanguage> onLanguageChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -62,6 +70,8 @@ class _AppShellState extends State<AppShell> {
             setState(() => _selectedTab = tab);
           },
           bundle: bundle,
+          language: widget.language,
+          onLanguageChanged: widget.onLanguageChanged,
         );
       },
     );
@@ -106,11 +116,15 @@ class _AppShellContent extends StatelessWidget {
     required this.selectedTab,
     required this.onTabSelected,
     required this.bundle,
+    required this.language,
+    required this.onLanguageChanged,
   });
 
   final AppTab selectedTab;
   final ValueChanged<AppTab> onTabSelected;
   final _AppPersistenceBundle bundle;
+  final AppLanguage language;
+  final ValueChanged<AppLanguage> onLanguageChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +155,10 @@ class _AppShellContent extends StatelessWidget {
           ),
           SpaceScreen(gardenController: bundle.gardenController),
           StatsScreen(historyController: bundle.historyController),
-          const SettingsScreen(),
+          SettingsScreen(
+            language: language,
+            onLanguageChanged: onLanguageChanged,
+          ),
         ],
       ),
     );

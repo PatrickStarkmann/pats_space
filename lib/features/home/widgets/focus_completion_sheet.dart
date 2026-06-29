@@ -4,6 +4,7 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/primary_button.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class FocusCompletionSheet extends StatefulWidget {
   const FocusCompletionSheet({
@@ -32,6 +33,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final hasReward = widget.waterReward > 0;
 
     return GestureDetector(
@@ -138,7 +140,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      hasReward ? 'Well done' : 'Take a breath',
+                      hasReward ? l10n.wellDone : l10n.takeABreath,
                       style: AppTextStyles.title,
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -146,8 +148,8 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: Text(
                         hasReward
-                            ? 'Your garden has more water now.'
-                            : 'No water this time, but you can always begin again.',
+                            ? l10n.rewardWaterMessage
+                            : l10n.noRewardWaterMessage,
                         textAlign: TextAlign.center,
                         style: AppTextStyles.bodyMuted,
                       ),
@@ -163,18 +165,18 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
                               ? CupertinoIcons.drop_fill
                               : CupertinoIcons.drop,
                           label: hasReward
-                              ? '+${widget.waterReward} water'
-                              : 'No water',
+                              ? l10n.waterReward(widget.waterReward)
+                              : l10n.noWater,
                         ),
                         _RewardPill(
                           icon: CupertinoIcons.timer,
-                          label: '$_formattedMinutes focused',
+                          label: l10n.focusedDuration(_formattedMinutes),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     PrimaryButton(
-                      label: 'Continue',
+                      label: l10n.continueAction,
                       onPressed: widget.onContinue,
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -187,7 +189,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet> {
                           vertical: AppSpacing.sm,
                         ),
                         child: Text(
-                          'Go to Space',
+                          l10n.goToSpace,
                           style: AppTextStyles.bodyMuted,
                         ),
                       ),

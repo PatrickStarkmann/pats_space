@@ -6,6 +6,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_header.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 Future<bool> showGroupFocusRoomSheet({
   required BuildContext context,
@@ -47,6 +48,7 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final l10n = AppLocalizations.of(context);
     final compact = mediaQuery.size.height < 760;
 
     return SafeArea(
@@ -72,7 +74,7 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
               const TimeSettingsGrabber(),
               _RoomHeader(
                 compact: compact,
-                title: '${_room.hostName}\'s room',
+                title: l10n.roomTitle(_room.hostName),
                 onClose: () => Navigator.of(context).pop(false),
               ),
               _RoomSummary(room: _room),
@@ -99,17 +101,18 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
   }
 
   Future<void> _showActivityPicker(SocialFocusMember member) async {
+    final l10n = AppLocalizations.of(context);
     final selectedActivity = await showCupertinoModalPopup<SocialFocusActivity>(
       context: context,
       builder: (context) {
         return CupertinoActionSheet(
-          title: const Text('Choose activity'),
+          title: Text(l10n.chooseActivity),
           actions: [
             for (final activity in SocialFocusActivity.values)
               CupertinoActionSheetAction(
                 onPressed: () => Navigator.of(context).pop(activity),
                 child: Text(
-                  _activityLabel(activity),
+                  _activityLabel(activity, l10n),
                   style: const TextStyle(color: AppColors.charcoal),
                 ),
               ),
@@ -117,7 +120,7 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
           cancelButton: CupertinoActionSheetAction(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              l10n.cancel,
               style: const TextStyle(color: AppColors.charcoal),
             ),
           ),
@@ -200,6 +203,7 @@ class _RoomSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final focusingCount = room.members
         .where((member) => member.status == SocialFocusMemberStatus.focusing)
         .length;
@@ -207,8 +211,8 @@ class _RoomSummary extends StatelessWidget {
         .where((member) => member.status == SocialFocusMemberStatus.breakTime)
         .length;
     final parts = [
-      if (focusingCount > 0) '$focusingCount focusing',
-      if (breakCount > 0) '$breakCount break',
+      if (focusingCount > 0) l10n.focusCount(focusingCount),
+      if (breakCount > 0) l10n.breakCount(breakCount),
       room.seatsLabel,
     ];
 
@@ -251,6 +255,7 @@ class _MemberRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final editable = onActivityPressed != null;
 
     return Column(
@@ -275,7 +280,7 @@ class _MemberRow extends StatelessWidget {
                 ),
               ),
               _MemberStatusButton(
-                label: _statusLabel(member, editable: editable),
+                label: _statusLabel(member, editable: editable, l10n: l10n),
                 editable: editable,
                 onPressed: onActivityPressed,
               ),
@@ -292,15 +297,19 @@ class _MemberRow extends StatelessWidget {
     );
   }
 
-  String _statusLabel(SocialFocusMember member, {required bool editable}) {
+  String _statusLabel(
+    SocialFocusMember member, {
+    required bool editable,
+    required AppLocalizations l10n,
+  }) {
     if (editable && member.status == SocialFocusMemberStatus.idle) {
-      return '${_activityLabel(member.activity)} · not started';
+      return '${_activityLabel(member.activity, l10n)} · ${l10n.notStarted}';
     }
 
     return switch (member.status) {
-      SocialFocusMemberStatus.idle => 'not started',
-      SocialFocusMemberStatus.breakTime => 'break',
-      SocialFocusMemberStatus.focusing => _activityLabel(member.activity),
+      SocialFocusMemberStatus.idle => l10n.notStarted,
+      SocialFocusMemberStatus.breakTime => l10n.breakLabel,
+      SocialFocusMemberStatus.focusing => _activityLabel(member.activity, l10n),
     };
   }
 }
@@ -347,11 +356,11 @@ class _MemberStatusButton extends StatelessWidget {
   }
 }
 
-String _activityLabel(SocialFocusActivity activity) {
+String _activityLabel(SocialFocusActivity activity, AppLocalizations l10n) {
   return switch (activity) {
-    SocialFocusActivity.reading => 'reading',
-    SocialFocusActivity.studying => 'studying',
-    SocialFocusActivity.working => 'working',
+    SocialFocusActivity.reading => l10n.reading,
+    SocialFocusActivity.studying => l10n.studying,
+    SocialFocusActivity.working => l10n.working,
   };
 }
 
@@ -362,6 +371,8 @@ class _LeaveRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -378,7 +389,7 @@ class _LeaveRow extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'Leave Room',
+              l10n.leaveRoom,
               style: AppTextStyles.body.copyWith(
                 color: CupertinoColors.systemRed,
                 fontWeight: FontWeight.w500,

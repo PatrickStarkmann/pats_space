@@ -3,11 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/features/settings/models/app_language.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 const _settingsBackgroundColor = Color(0xFFF5F4FA);
 
+extension _LocalizedAppLanguage on AppLanguage {
+  String localizedName(AppLocalizations l10n) {
+    return switch (this) {
+      AppLanguage.system => l10n.languageSystem,
+      AppLanguage.english => l10n.languageEnglish,
+      AppLanguage.german => l10n.languageGerman,
+    };
+  }
+}
+
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({
+    super.key,
+    required this.language,
+    required this.onLanguageChanged,
+  });
+
+  final AppLanguage language;
+  final ValueChanged<AppLanguage> onLanguageChanged;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -24,13 +43,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Navigator(
         onGenerateRoute: (_) => _settingsRoute(
           (routeContext) => _MainSettingsPage(
+            language: widget.language,
             soundsEnabled: _soundsEnabled,
             notificationsEnabled: _notificationsEnabled,
-            onSoundsChanged: (value) {
-              setState(() => _soundsEnabled = value);
+            onLanguagePressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (languageContext) => _LanguageSettingsPage(
+                    selectedLanguage: widget.language,
+                    onBack: () => Navigator.of(languageContext).maybePop(),
+                    onLanguageSelected: widget.onLanguageChanged,
+                  ),
+                ),
+              );
             },
-            onNotificationsChanged: (value) {
-              setState(() => _notificationsEnabled = value);
+            onSoundsPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (soundsContext) => _SoundsSettingsPage(
+                    soundsEnabled: _soundsEnabled,
+                    onBack: () => Navigator.of(soundsContext).maybePop(),
+                    onSoundsChanged: (value) {
+                      setState(() => _soundsEnabled = value);
+                    },
+                  ),
+                ),
+              );
+            },
+            onNotificationsPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (notificationsContext) => _NotificationsSettingsPage(
+                    notificationsEnabled: _notificationsEnabled,
+                    onBack: () => Navigator.of(notificationsContext).maybePop(),
+                    onNotificationsChanged: (value) {
+                      setState(() => _notificationsEnabled = value);
+                    },
+                  ),
+                ),
+              );
             },
             onAccountPressed: () {
               Navigator.of(routeContext).push(
@@ -66,40 +117,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 class _MainSettingsPage extends StatelessWidget {
   const _MainSettingsPage({
+    required this.language,
     required this.soundsEnabled,
     required this.notificationsEnabled,
-    required this.onSoundsChanged,
-    required this.onNotificationsChanged,
+    required this.onLanguagePressed,
+    required this.onSoundsPressed,
+    required this.onNotificationsPressed,
     required this.onAccountPressed,
     required this.onOthersPressed,
   });
 
+  final AppLanguage language;
   final bool soundsEnabled;
   final bool notificationsEnabled;
-  final ValueChanged<bool> onSoundsChanged;
-  final ValueChanged<bool> onNotificationsChanged;
+  final VoidCallback onLanguagePressed;
+  final VoidCallback onSoundsPressed;
+  final VoidCallback onNotificationsPressed;
   final VoidCallback onAccountPressed;
   final VoidCallback onOthersPressed;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return _SettingsScrollView(
-      title: 'Settings',
+      title: l10n.settingsTitle,
       children: [
         _SettingsGroup(
           children: [
             _SettingsRow(
               icon: CupertinoIcons.person_crop_circle,
-              title: 'Account',
+              title: l10n.account,
               trailing: const _Chevron(),
               onTap: onAccountPressed,
             ),
             const _SettingsDivider(),
-            const _SettingsRow(
+            _SettingsRow(
               icon: CupertinoIcons.globe,
-              title: 'Language',
-              subtitle: 'English',
-              trailing: _Chevron(),
+              title: l10n.language,
+              subtitle: language.localizedName(l10n),
+              trailing: const _Chevron(),
+              onTap: onLanguagePressed,
             ),
           ],
         ),
@@ -108,8 +166,108 @@ class _MainSettingsPage extends StatelessWidget {
           children: [
             _SettingsRow(
               icon: CupertinoIcons.speaker_2,
-              title: 'Sounds',
-              subtitle: 'Focus and break alerts',
+              title: l10n.sounds,
+              subtitle: soundsEnabled ? l10n.on : l10n.off,
+              trailing: const _Chevron(),
+              onTap: onSoundsPressed,
+            ),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: CupertinoIcons.bell,
+              title: l10n.notifications,
+              subtitle: notificationsEnabled ? l10n.on : l10n.off,
+              trailing: const _Chevron(),
+              onTap: onNotificationsPressed,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _SettingsGroup(
+          children: [
+            _SettingsRow(
+              icon: CupertinoIcons.envelope,
+              title: l10n.contactUs,
+              trailing: const _Chevron(),
+            ),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: CupertinoIcons.ellipsis_circle,
+              title: l10n.others,
+              trailing: const _Chevron(),
+              onTap: onOthersPressed,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LanguageSettingsPage extends StatelessWidget {
+  const _LanguageSettingsPage({
+    required this.selectedLanguage,
+    required this.onBack,
+    required this.onLanguageSelected,
+  });
+
+  final AppLanguage selectedLanguage;
+  final VoidCallback onBack;
+  final ValueChanged<AppLanguage> onLanguageSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    const languages = AppLanguage.values;
+
+    return _SettingsScrollView(
+      title: l10n.language,
+      leading: _BackButton(onPressed: onBack),
+      children: [
+        _SettingsGroup(
+          children: [
+            for (var index = 0; index < languages.length; index++) ...[
+              _SettingsRow(
+                icon: CupertinoIcons.globe,
+                title: languages[index].localizedName(l10n),
+                trailing: selectedLanguage == languages[index]
+                    ? const _Checkmark()
+                    : null,
+                onTap: () => onLanguageSelected(languages[index]),
+              ),
+              if (index != languages.length - 1) const _SettingsDivider(),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SoundsSettingsPage extends StatelessWidget {
+  const _SoundsSettingsPage({
+    required this.soundsEnabled,
+    required this.onBack,
+    required this.onSoundsChanged,
+  });
+
+  final bool soundsEnabled;
+  final VoidCallback onBack;
+  final ValueChanged<bool> onSoundsChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return _SettingsScrollView(
+      title: l10n.sounds,
+      leading: _BackButton(onPressed: onBack),
+      children: [
+        _SettingsGroup(
+          children: [
+            _SettingsRow(
+              icon: CupertinoIcons.speaker_2,
+              title: l10n.alertSounds,
+              subtitle: l10n.alertSoundsDescription,
               trailing: CupertinoSwitch(
                 value: soundsEnabled,
                 activeTrackColor: AppColors.charcoal,
@@ -118,31 +276,62 @@ class _MainSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
+              icon: CupertinoIcons.speaker_1,
+              title: l10n.sound,
+              subtitle: l10n.softBell,
+              trailing: const _Chevron(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _NotificationsSettingsPage extends StatelessWidget {
+  const _NotificationsSettingsPage({
+    required this.notificationsEnabled,
+    required this.onBack,
+    required this.onNotificationsChanged,
+  });
+
+  final bool notificationsEnabled;
+  final VoidCallback onBack;
+  final ValueChanged<bool> onNotificationsChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return _SettingsScrollView(
+      title: l10n.notifications,
+      leading: _BackButton(onPressed: onBack),
+      children: [
+        _SettingsGroup(
+          children: [
+            _SettingsRow(
               icon: CupertinoIcons.bell,
-              title: 'Notifications',
-              subtitle: 'Session reminders and updates',
+              title: l10n.notifications,
+              subtitle: l10n.notificationsDescription,
               trailing: CupertinoSwitch(
                 value: notificationsEnabled,
                 activeTrackColor: AppColors.charcoal,
                 onChanged: onNotificationsChanged,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        _SettingsGroup(
-          children: [
-            const _SettingsRow(
-              icon: CupertinoIcons.envelope,
-              title: 'Contact us',
-              trailing: _Chevron(),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: CupertinoIcons.timer,
+              title: l10n.focusReminder,
+              subtitle: l10n.focusReminderDescription,
+              trailing: const _Chevron(),
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.ellipsis_circle,
-              title: 'Others',
+              icon: CupertinoIcons.moon,
+              title: l10n.breakReminder,
+              subtitle: l10n.breakReminderDescription,
               trailing: const _Chevron(),
-              onTap: onOthersPressed,
             ),
           ],
         ),
@@ -158,29 +347,31 @@ class _AccountSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return _SettingsScrollView(
-      title: 'Account',
+      title: l10n.account,
       leading: _BackButton(onPressed: onBack),
-      children: const [
+      children: [
         _SettingsGroup(
           children: [
             _SettingsRow(
               icon: CupertinoIcons.person_crop_circle,
-              title: 'Sign in',
-              trailing: _Chevron(),
+              title: l10n.signIn,
+              trailing: const _Chevron(),
             ),
-            _SettingsDivider(),
+            const _SettingsDivider(),
             _SettingsRow(
               icon: CupertinoIcons.arrow_counterclockwise_circle,
-              title: 'Restore purchases',
-              trailing: _Chevron(),
+              title: l10n.restorePurchases,
+              trailing: const _Chevron(),
             ),
-            _SettingsDivider(),
+            const _SettingsDivider(),
             _SettingsRow(
               icon: CupertinoIcons.trash,
-              title: 'Delete account',
+              title: l10n.deleteAccount,
               destructive: true,
-              trailing: _Chevron(),
+              trailing: const _Chevron(),
             ),
           ],
         ),
@@ -196,28 +387,30 @@ class _OthersSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return _SettingsScrollView(
-      title: 'Others',
+      title: l10n.others,
       leading: _BackButton(onPressed: onBack),
-      children: const [
+      children: [
         _SettingsGroup(
           children: [
             _SettingsRow(
               icon: CupertinoIcons.shield,
-              title: 'Privacy policy',
-              trailing: _Chevron(),
+              title: l10n.privacyPolicy,
+              trailing: const _Chevron(),
             ),
-            _SettingsDivider(),
+            const _SettingsDivider(),
             _SettingsRow(
               icon: CupertinoIcons.doc_text,
-              title: 'Terms of use',
-              trailing: _Chevron(),
+              title: l10n.termsOfUse,
+              trailing: const _Chevron(),
             ),
-            _SettingsDivider(),
+            const _SettingsDivider(),
             _SettingsRow(
               icon: CupertinoIcons.info_circle,
-              title: 'Version',
-              subtitle: 'Pat\'s Space 0.1.0',
+              title: l10n.version,
+              subtitle: l10n.appVersion,
             ),
           ],
         ),
@@ -394,6 +587,19 @@ class _Chevron extends StatelessWidget {
       CupertinoIcons.chevron_forward,
       color: Color(0xFFC7C7CC),
       size: 23,
+    );
+  }
+}
+
+class _Checkmark extends StatelessWidget {
+  const _Checkmark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Icon(
+      CupertinoIcons.check_mark,
+      color: AppColors.charcoal,
+      size: 22,
     );
   }
 }

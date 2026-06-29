@@ -7,6 +7,7 @@ import 'package:pats_space/features/stats/painters/donut_chart_painter.dart';
 import 'package:pats_space/features/stats/utils/stats_aggregations.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
 import 'package:pats_space/features/stats/widgets/stats_card.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class FocusByTagsCard extends StatelessWidget {
   const FocusByTagsCard({super.key, required this.records});
@@ -15,6 +16,7 @@ class FocusByTagsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final segments = tagFocusSegments(records);
 
     return StatsCard(
@@ -26,7 +28,7 @@ class FocusByTagsCard extends StatelessWidget {
               const CardTitleMarker(),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Focus by Tags',
+                l10n.focusByTags,
                 style: AppTextStyles.headline.copyWith(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -47,7 +49,7 @@ class FocusByTagsCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           if (segments.isEmpty)
             Text(
-              'Noch keine Fokusdaten',
+              l10n.noFocusData,
               style: AppTextStyles.body.copyWith(color: AppColors.grayWarm),
             )
           else

@@ -7,6 +7,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/focus/focus_animation_catalog.dart';
 import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class AnimationPairSettingsCard extends StatelessWidget {
   const AnimationPairSettingsCard({
@@ -20,6 +21,8 @@ class AnimationPairSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openPicker(context),
@@ -36,7 +39,7 @@ class AnimationPairSettingsCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Animationen',
+                    l10n.animations,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.headline,
@@ -183,6 +186,7 @@ class _AnimationPairPickerDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final showingBreak = (_tick ~/ 4).isOdd;
     final spec = showingBreak
         ? FocusAnimationCatalog.breakSpec(_pair)
@@ -207,10 +211,13 @@ class _AnimationPairPickerDialogState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Animationen', style: _noDecoration(AppTextStyles.title)),
+                Text(
+                  l10n.animations,
+                  style: _noDecoration(AppTextStyles.title),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${_pair.label} · ${showingBreak ? 'Pause' : 'Fokus'}',
+                  '${_pair.label} · ${showingBreak ? l10n.breakLabel : l10n.focus}',
                   style: _noDecoration(AppTextStyles.bodyMuted),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -243,14 +250,14 @@ class _AnimationPairPickerDialogState
                   children: [
                     Expanded(
                       child: _DialogButton(
-                        label: 'Auswählen',
+                        label: l10n.select,
                         onPressed: () => Navigator.of(context).pop(_pair),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: _DialogButton(
-                        label: 'Abbrechen',
+                        label: l10n.cancel,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),

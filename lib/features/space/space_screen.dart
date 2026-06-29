@@ -16,6 +16,7 @@ import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 import 'package:pats_space/features/space/widgets/garden_plant_card.dart';
 import 'package:pats_space/features/space/widgets/garden_resource_counter.dart';
 import 'package:pats_space/features/space/widgets/garden_stage.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class SpaceScreen extends StatefulWidget {
   const SpaceScreen({super.key, required this.gardenController});
@@ -167,23 +168,22 @@ class _SpaceScreenState extends State<SpaceScreen> {
   }
 
   Future<void> _confirmCleanUpGarden() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('Clean up garden?'),
-          content: const Text(
-            'This stores placed decor back in your inventory and moves pots to their default spots. Your plants stay planted.',
-          ),
+          title: Text(l10n.cleanUpGardenTitle),
+          content: Text(l10n.cleanUpGardenMessage),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Clean up'),
+              child: Text(l10n.cleanUp),
             ),
           ],
         );

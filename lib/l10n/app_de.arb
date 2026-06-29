@@ -1,0 +1,207 @@
+{
+  "@@locale": "de",
+  "settingsTitle": "Einstellungen",
+  "account": "Account",
+  "language": "Sprache",
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "sounds": "Sounds",
+  "notifications": "Mitteilungen",
+  "on": "Ein",
+  "off": "Aus",
+  "contactUs": "Kontakt",
+  "others": "Andere",
+  "alertSounds": "Hinweistöne",
+  "alertSoundsDescription": "Töne für Fokus, Pause und Stop abspielen",
+  "sound": "Ton",
+  "softBell": "Sanfte Glocke",
+  "notificationsDescription": "Erinnerungen für Sessions und Pausen",
+  "focusReminder": "Fokus-Erinnerung",
+  "focusReminderDescription": "Bevor eine geplante Session startet",
+  "breakReminder": "Pausen-Erinnerung",
+  "breakReminderDescription": "Wenn es Zeit für eine Pause ist",
+  "signIn": "Anmelden",
+  "restorePurchases": "Käufe wiederherstellen",
+  "deleteAccount": "Account löschen",
+  "privacyPolicy": "Datenschutzerklärung",
+  "termsOfUse": "Nutzungsbedingungen",
+  "version": "Version",
+  "appVersion": "Pat's Space 0.1.0",
+  "timeSettings": "Zeit-Einstellungen",
+  "cancel": "Abbrechen",
+  "done": "Fertig",
+  "back": "Zurück",
+  "save": "Speichern",
+  "focusMode": "Fokusmodus",
+  "pomodoro": "Pomodoro",
+  "stopwatch": "Stoppuhr",
+  "sessions": "Sessions",
+  "longBreakInterval": "Lange-Pause-Intervall",
+  "shortBreak": "Kurze Pause",
+  "longBreak": "Lange Pause",
+  "editTag": "Tag bearbeiten",
+  "tagPlaceholder": "z. B. Mathe",
+  "animation": "Animation",
+  "focus": "Fokus",
+  "breakLabel": "Pause",
+  "choose": "Auswählen",
+  "stopwatchDescription": "Starte eine offene Fokus-Session, wenn du noch nicht weißt, wie lange du brauchst. Pausiere, wenn du weggehst, und beende sie, um die exakte Zeit zu speichern.",
+  "avgFocusTime": "Ø Fokuszeit",
+  "monthlyFocusTime": "Fokuszeit im Monat",
+  "focusByTags": "Fokus nach Tags",
+  "noFocusData": "Noch keine Fokusdaten",
+  "weekdaySun": "So.",
+  "weekdayMon": "Mo.",
+  "weekdayTue": "Di.",
+  "weekdayWed": "Mi.",
+  "weekdayThu": "Do.",
+  "weekdayFri": "Fr.",
+  "weekdaySat": "Sa.",
+  "groupFocus": "Gruppenfokus",
+  "friendsFocusingNow": "Freunde fokussieren gerade",
+  "friends": "Freunde",
+  "createOpenRoom": "Offenen Raum erstellen",
+  "createOpenRoomSubtitle": "Freunde können beitreten, während du fokussierst",
+  "noRoomsRightNow": "Gerade keine Räume",
+  "noRoomsSubtitle": "Erstelle einen Raum, damit Freunde beitreten können.",
+  "noFriendsYet": "Noch keine Freunde",
+  "noFriendsSubtitle": "Freunde, die du hinzufügst, erscheinen hier.",
+  "join": "Beitreten",
+  "full": "Voll",
+  "available": "Verfügbar",
+  "online": "online",
+  "offline": "offline",
+  "focusing": "fokussiert",
+  "chooseActivity": "Aktivität wählen",
+  "reading": "lesen",
+  "studying": "lernen",
+  "working": "arbeiten",
+  "notStarted": "nicht gestartet",
+  "leaveRoom": "Raum verlassen",
+  "roomTitle": "{name}s Raum",
+  "@roomTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "friendsInRoom": "{count, plural, =1{1 Freund im Raum} other{{count} Freunde im Raum}}",
+  "@friendsInRoom": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startingPomodoro": "startet einen Pomodoro",
+  "fullRoom": "voller Raum",
+  "focusCount": "{count} fokussiert",
+  "@focusCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "breakCount": "{count} Pause",
+  "@breakCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shop": "Shop",
+  "shopDescription": "Sammle neue Looks und kleine Dinge für deinen Garten.",
+  "potStyles": "Topf-Stile",
+  "decor": "Deko",
+  "collected": "Gesammelt",
+  "inGarden": "Im Garten",
+  "place": "Platzieren",
+  "equipped": "Ausgerüstet",
+  "use": "Nutzen",
+  "locked": "Gesperrt",
+  "needItem": "Benötigt {item}",
+  "@needItem": {
+    "placeholders": {
+      "item": {}
+    }
+  },
+  "needAmount": "Benötigt {amount}",
+  "@needAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "leaveGroupFocusTitle": "Gruppenfokus verlassen?",
+  "leaveGroupFocusMessage": "Du kannst später wieder einem offenen Raum von Freunden beitreten.",
+  "stay": "Bleiben",
+  "leave": "Verlassen",
+  "focusRunningTitle": "Fokus läuft gerade",
+  "focusRunningSettingsMessage": "Wenn du die Einstellungen speicherst, wird der aktuelle Fokus abgebrochen.",
+  "cancelAndSave": "Abbrechen & speichern",
+  "cancelFocusTitle": "Fokus abbrechen?",
+  "cancelFocusMessage": "Der aktuelle Fokuslauf wird beendet und dein Fortschritt in dieser Runde wird zurückgesetzt.",
+  "cancelFocus": "Fokus abbrechen",
+  "skipFocusTitle": "Fokus überspringen?",
+  "skipShortFocusMessage": "Unter 5 Minuten bekommst du kein Wasser und dieser Fokus wird nicht in den Stats gespeichert.",
+  "skipAnyway": "Trotzdem überspringen",
+  "finishStopwatchTitle": "Stoppuhr beenden?",
+  "finishShortStopwatchMessage": "Unter 5 Minuten bekommst du kein Wasser und diese Session wird nicht in den Stats gespeichert.",
+  "finishAnyway": "Trotzdem beenden",
+  "keepFocusing": "Weiter fokussieren",
+  "wellDone": "Gut gemacht",
+  "takeABreath": "Kurz durchatmen",
+  "rewardWaterMessage": "Dein Garten hat jetzt mehr Wasser.",
+  "noRewardWaterMessage": "Diesmal gibt es kein Wasser, aber du kannst jederzeit neu anfangen.",
+  "waterReward": "+{amount} Wasser",
+  "@waterReward": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "noWater": "Kein Wasser",
+  "focusedDuration": "{duration} fokussiert",
+  "@focusedDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "continueAction": "Weiter",
+  "goToSpace": "Zum Space",
+  "animations": "Animationen",
+  "select": "Auswählen",
+  "cleanUpGardenTitle": "Garten aufräumen?",
+  "cleanUpGardenMessage": "Platzierte Deko wird zurück ins Inventar gelegt und Töpfe werden an ihre Standardplätze verschoben. Deine Pflanzen bleiben eingepflanzt.",
+  "cleanUp": "Aufräumen",
+  "choosePlant": "Pflanze wählen"
+  ,"monthJan": "Jan.",
+  "monthFeb": "Feb.",
+  "monthMar": "März",
+  "monthApr": "Apr.",
+  "monthMay": "Mai",
+  "monthJun": "Juni",
+  "monthJul": "Juli",
+  "monthAug": "Aug.",
+  "monthSep": "Sept.",
+  "monthOct": "Okt.",
+  "monthNov": "Nov.",
+  "monthDec": "Dez.",
+  "potClassic": "Klassisch",
+  "potBlue": "Blauer Topf",
+  "potColorful": "Bunter Topf",
+  "potHanging": "Hängender Topf",
+  "potRound": "Runder Topf",
+  "potWhite": "Weißer Topf",
+  "decorBench": "Gartenbank",
+  "decorFountain": "Brunnen",
+  "decorPlantFrame": "Pflanzenrahmen",
+  "decorHangingPot": "Hängender Topf",
+  "decorLantern": "Laterne",
+  "decorStonePath": "Steinweg",
+  "decorWateringCan": "Gießkanne"
+}

@@ -9,6 +9,7 @@ import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 Future<void> showShopSheet({
   required BuildContext context,
@@ -51,6 +52,7 @@ class ShopScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: gardenController,
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context);
         final garden = gardenController.state;
 
         return ColoredBox(
@@ -74,16 +76,16 @@ class ShopScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   _ShopItemSection<GardenPotStyle>(
-                    title: 'Pot styles',
+                    title: l10n.potStyles,
                     items: GardenPotStyle.shopStyles,
                     isOwned: garden.ownedPotStyles.contains,
                     isEquipped: (_) => false,
-                    nameOf: (style) => style.displayName,
+                    nameOf: (style) => _potStyleName(style, l10n),
                     costOf: (style) => style.cost,
                     assetOf: (style) => style.assetPath,
                     actionLabel: (style) {
                       if (garden.ownedPotStyles.contains(style)) {
-                        return 'Collected';
+                        return l10n.collected;
                       }
                       return null;
                     },
@@ -105,7 +107,7 @@ class ShopScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   _ShopItemSection<GardenDecoration>(
-                    title: 'Decor',
+                    title: l10n.decor,
                     items: GardenDecoration.shopDecorations,
                     isOwned: garden.ownedDecorations.contains,
                     isEquipped: garden.placedDecorations.contains,
@@ -118,17 +120,17 @@ class ShopScreen extends StatelessWidget {
                       final requirement = decoration.requirement;
                       return requirement == null
                           ? null
-                          : 'Need ${requirement.displayName}';
+                          : l10n.needItem(_decorationName(requirement, l10n));
                     },
-                    nameOf: (decoration) => decoration.displayName,
+                    nameOf: (decoration) => _decorationName(decoration, l10n),
                     costOf: (decoration) => decoration.cost,
                     assetOf: (decoration) => decoration.assetPath,
                     actionLabel: (decoration) {
                       if (garden.placedDecorations.contains(decoration)) {
-                        return 'In garden';
+                        return l10n.inGarden;
                       }
                       if (garden.ownedDecorations.contains(decoration)) {
-                        return 'Place';
+                        return l10n.place;
                       }
                       return null;
                     },
@@ -158,6 +160,29 @@ class ShopScreen extends StatelessWidget {
   }
 }
 
+String _potStyleName(GardenPotStyle style, AppLocalizations l10n) {
+  return switch (style) {
+    GardenPotStyle.classic => l10n.potClassic,
+    GardenPotStyle.blue => l10n.potBlue,
+    GardenPotStyle.colorful => l10n.potColorful,
+    GardenPotStyle.hanging => l10n.potHanging,
+    GardenPotStyle.round => l10n.potRound,
+    GardenPotStyle.white => l10n.potWhite,
+  };
+}
+
+String _decorationName(GardenDecoration decoration, AppLocalizations l10n) {
+  return switch (decoration) {
+    GardenDecoration.bench => l10n.decorBench,
+    GardenDecoration.fountain => l10n.decorFountain,
+    GardenDecoration.hangingPlantFrame => l10n.decorPlantFrame,
+    GardenDecoration.hangingPot => l10n.decorHangingPot,
+    GardenDecoration.lantern => l10n.decorLantern,
+    GardenDecoration.stonePath => l10n.decorStonePath,
+    GardenDecoration.wateringCan => l10n.decorWateringCan,
+  };
+}
+
 class _ShopHeader extends StatelessWidget {
   const _ShopHeader({required this.coins, required this.onClose});
 
@@ -166,6 +191,8 @@ class _ShopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       children: [
         if (onClose != null) ...[
@@ -191,10 +218,10 @@ class _ShopHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Shop', style: AppTextStyles.title),
+                  Text(l10n.shop, style: AppTextStyles.title),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Collect new looks and little pieces for your garden.',
+                    l10n.shopDescription,
                     style: AppTextStyles.bodyMuted.copyWith(fontSize: 15),
                   ),
                 ],
@@ -374,17 +401,18 @@ class _ShopProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final resolvedActionLabel =
         actionLabel ??
         (equipped
-            ? 'Equipped'
+            ? l10n.equipped
             : owned
-            ? 'Use'
+            ? l10n.use
             : !available
-            ? unavailableLabel ?? 'Locked'
+            ? unavailableLabel ?? l10n.locked
             : canBuy
             ? '$cost'
-            : 'Need $cost');
+            : l10n.needAmount(cost));
 
     final buttonColor = equipped
         ? AppColors.sageSoft

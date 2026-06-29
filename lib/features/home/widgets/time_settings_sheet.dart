@@ -15,6 +15,7 @@ import 'package:pats_space/features/home/widgets/time_settings/stopwatch_setting
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_list_picker_page.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_header.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_value_picker_page.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 Future<FocusTimerSettings?> showTimeSettingsSheet({
   required BuildContext context,
@@ -275,10 +276,12 @@ class _DetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (detail.usesListPicker) {
       return TimeSettingsListPickerPage(
         compact: compact,
-        title: detail.title,
+        title: detail.title(l10n),
         values: detail.pickerValues,
         selectedValue: detail.selectedValue(settings),
         labelBuilder: detail.labelBuilder,
@@ -289,7 +292,7 @@ class _DetailPage extends StatelessWidget {
 
     return TimeSettingsValuePickerPage(
       compact: compact,
-      title: detail.title,
+      title: detail.title(l10n),
       values: detail.pickerValues,
       selectedValue: detail.selectedValue(settings),
       labelBuilder: detail.labelBuilder,
@@ -305,12 +308,12 @@ enum _TimeSettingsDetail {
   shortBreak,
   longBreak;
 
-  String get title {
+  String title(AppLocalizations l10n) {
     return switch (this) {
-      _TimeSettingsDetail.sessions => 'Sessions',
-      _TimeSettingsDetail.longBreakInterval => 'Long Break Interval',
-      _TimeSettingsDetail.shortBreak => 'Short Break',
-      _TimeSettingsDetail.longBreak => 'Long Break',
+      _TimeSettingsDetail.sessions => l10n.sessions,
+      _TimeSettingsDetail.longBreakInterval => l10n.longBreakInterval,
+      _TimeSettingsDetail.shortBreak => l10n.shortBreak,
+      _TimeSettingsDetail.longBreak => l10n.longBreak,
     };
   }
 

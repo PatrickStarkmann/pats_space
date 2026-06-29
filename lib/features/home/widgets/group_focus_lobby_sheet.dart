@@ -6,6 +6,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_header.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 Future<GroupFocusLobbySelection?> showGroupFocusLobbySheet({
   required BuildContext context,
@@ -39,6 +40,7 @@ class GroupFocusLobbySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final l10n = AppLocalizations.of(context);
     final compact = mediaQuery.size.height < 760;
     final contentGap = compact ? AppSpacing.md : AppSpacing.lg;
 
@@ -81,11 +83,11 @@ class GroupFocusLobbySheet extends StatelessWidget {
                         ).pop(const GroupFocusLobbySelection.create()),
                       ),
                       SizedBox(height: contentGap),
-                      const _SectionLabel('Friends focusing now'),
+                      _SectionLabel(l10n.friendsFocusingNow),
                       const SizedBox(height: AppSpacing.xs),
                       _RoomsList(rooms: snapshot.openRooms),
                       SizedBox(height: contentGap),
-                      const _SectionLabel('Friends'),
+                      _SectionLabel(l10n.friends),
                       const SizedBox(height: AppSpacing.xs),
                       _FriendsList(friends: snapshot.friends),
                     ],
@@ -113,6 +115,8 @@ class _GroupFocusHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return SizedBox(
       height: compact ? 58 : 72,
       child: Row(
@@ -123,7 +127,7 @@ class _GroupFocusHeader extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Group Focus',
+              l10n.groupFocus,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -147,12 +151,14 @@ class _CreateRoomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return _ListGroup(
       children: [
         _ListRow(
           leading: const Icon(CupertinoIcons.plus_circle_fill),
-          title: 'Create open room',
-          subtitle: 'Friends can join while you focus',
+          title: l10n.createOpenRoom,
+          subtitle: l10n.createOpenRoomSubtitle,
           trailing: const _Chevron(),
           onTap: onPressed,
         ),
@@ -210,12 +216,13 @@ class _RoomsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rooms.isEmpty) {
-      return const _ListGroup(
+      final l10n = AppLocalizations.of(context);
+      return _ListGroup(
         children: [
           _EmptyRow(
-            leading: Icon(CupertinoIcons.person_2),
-            title: 'No rooms right now',
-            subtitle: 'Create a room so friends can join you.',
+            leading: const Icon(CupertinoIcons.person_2),
+            title: l10n.noRoomsRightNow,
+            subtitle: l10n.noRoomsSubtitle,
           ),
         ],
       );
@@ -238,12 +245,13 @@ class _FriendsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (friends.isEmpty) {
-      return const _ListGroup(
+      final l10n = AppLocalizations.of(context);
+      return _ListGroup(
         children: [
           _EmptyRow(
-            leading: Icon(CupertinoIcons.person),
-            title: 'No friends yet',
-            subtitle: 'Friends you add will appear here.',
+            leading: const Icon(CupertinoIcons.person),
+            title: l10n.noFriendsYet,
+            subtitle: l10n.noFriendsSubtitle,
           ),
         ],
       );
@@ -269,20 +277,21 @@ class _RoomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final full = room.members.length >= room.capacity;
 
     return _ListRow(
       leading: const Icon(CupertinoIcons.person_2_fill),
-      title: '${room.hostName}\'s room',
-      subtitle: '${room.statusLabel} • ${room.memberNames}',
+      title: l10n.roomTitle(room.hostName),
+      subtitle: '${_roomStatusLabel(room, l10n)} • ${room.memberNames}',
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(room.seatsLabel, style: AppTextStyles.caption),
           const SizedBox(width: AppSpacing.xs),
           full
-              ? const _StatusText('Full', enabled: false)
-              : const _ActionText('Join'),
+              ? _StatusText(l10n.full, enabled: false)
+              : _ActionText(l10n.join),
         ],
       ),
       showDivider: showDivider,
@@ -303,27 +312,42 @@ class _FriendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final available = friend.status == SocialFocusFriendStatus.online;
 
     return _ListRow(
       leading: const Icon(CupertinoIcons.person),
       title: friend.name,
-      subtitle: _friendStatusLabel(friend.status),
+      subtitle: _friendStatusLabel(friend.status, l10n),
       trailing: _StatusText(
-        available ? 'Available' : _friendStatusLabel(friend.status),
+        available ? l10n.available : _friendStatusLabel(friend.status, l10n),
         enabled: available,
       ),
       showDivider: showDivider,
     );
   }
 
-  String _friendStatusLabel(SocialFocusFriendStatus status) {
+  String _friendStatusLabel(
+    SocialFocusFriendStatus status,
+    AppLocalizations l10n,
+  ) {
     return switch (status) {
-      SocialFocusFriendStatus.online => 'online',
-      SocialFocusFriendStatus.focusing => 'focusing',
-      SocialFocusFriendStatus.offline => 'offline',
+      SocialFocusFriendStatus.online => l10n.online,
+      SocialFocusFriendStatus.focusing => l10n.focusing,
+      SocialFocusFriendStatus.offline => l10n.offline,
     };
   }
+}
+
+String _roomStatusLabel(SocialFocusRoom room, AppLocalizations l10n) {
+  if (room.members.length >= room.capacity) {
+    return l10n.fullRoom;
+  }
+  if (room.members.length <= 1) {
+    return l10n.startingPomodoro;
+  }
+
+  return l10n.friendsInRoom(room.members.length);
 }
 
 class _EmptyRow extends StatelessWidget {

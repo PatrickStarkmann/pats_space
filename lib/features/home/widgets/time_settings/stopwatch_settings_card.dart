@@ -4,12 +4,15 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_card.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class StopwatchSettingsCard extends StatelessWidget {
   const StopwatchSettingsCard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return TimeSettingsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,14 +29,11 @@ class StopwatchSettingsCard extends StatelessWidget {
                 child: SizedBox(width: 6, height: 28),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Stopwatch', style: AppTextStyles.headline),
+              Text(l10n.stopwatch, style: AppTextStyles.headline),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Start an open-ended focus session when you do not know how long you need. Pause when you step away, then finish to save the exact time.',
-            style: AppTextStyles.bodyMuted,
-          ),
+          Text(l10n.stopwatchDescription, style: AppTextStyles.bodyMuted),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import 'package:pats_space/features/space/models/garden_pot.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class GardenPlantCard extends StatefulWidget {
   const GardenPlantCard({
@@ -227,12 +228,13 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final plantTypes = _availablePlantTypes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Choose plant', style: AppTextStyles.headline),
+        Text(l10n.choosePlant, style: AppTextStyles.headline),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 208,

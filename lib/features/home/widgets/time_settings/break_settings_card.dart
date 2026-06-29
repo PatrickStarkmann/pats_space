@@ -5,6 +5,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/home/widgets/time_settings/time_settings_card.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class BreakSettingsCard extends StatelessWidget {
   const BreakSettingsCard({
@@ -24,29 +25,31 @@ class BreakSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return TimeSettingsCard(
       child: Column(
         children: [
           _SettingsRow(
-            label: 'Sessions',
+            label: l10n.sessions,
             value: '${settings.sessionsPerRound}',
             onTap: onSessionsPressed,
           ),
           const Divider(color: AppColors.graySoft),
           _SettingsRow(
-            label: 'Long Break Interval',
+            label: l10n.longBreakInterval,
             value: '${settings.longBreakInterval}',
             onTap: onLongBreakIntervalPressed,
           ),
           const Divider(color: AppColors.graySoft),
           _SettingsRow(
-            label: 'Short Break',
+            label: l10n.shortBreak,
             value: '${settings.shortBreakMinutes}m',
             onTap: onShortBreakPressed,
           ),
           const Divider(color: AppColors.graySoft),
           _SettingsRow(
-            label: 'Long Break',
+            label: l10n.longBreak,
             value: '${settings.longBreakMinutes}m',
             onTap: onLongBreakPressed,
           ),

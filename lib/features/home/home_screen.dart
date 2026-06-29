@@ -30,6 +30,7 @@ import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
 import 'package:pats_space/features/social_focus/controllers/social_focus_controller.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/social_focus/repositories/fake_social_focus_repository.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -383,23 +384,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _confirmLeaveGroupFocus() async {
+    final l10n = AppLocalizations.of(context);
     final result = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('Leave group focus?'),
-          content: const Text(
-            'You can rejoin an open friend room from the group lobby later.',
-          ),
+          title: Text(l10n.leaveGroupFocusTitle),
+          content: Text(l10n.leaveGroupFocusMessage),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Stay'),
+              child: Text(l10n.stay),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Leave'),
+              child: Text(l10n.leave),
             ),
           ],
         );
@@ -509,23 +509,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _confirmSettingsCancelSession() async {
+    final l10n = AppLocalizations.of(context);
     final result = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('Focus läuft gerade'),
-          content: const Text(
-            'Wenn du die Einstellungen speicherst, wird der aktuelle Fokus abgebrochen.',
-          ),
+          title: Text(l10n.focusRunningTitle),
+          content: Text(l10n.focusRunningSettingsMessage),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Zurück'),
+              child: Text(l10n.back),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Abbrechen & speichern'),
+              child: Text(l10n.cancelAndSave),
             ),
           ],
         );
@@ -536,23 +535,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmCancelFocusRound() async {
+    final l10n = AppLocalizations.of(context);
     final result = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
-          title: const Text('Fokus abbrechen?'),
-          content: const Text(
-            'Der aktuelle Fokuslauf wird beendet und dein Fortschritt in dieser Runde wird zurückgesetzt.',
-          ),
+          title: Text(l10n.cancelFocusTitle),
+          content: Text(l10n.cancelFocusMessage),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Zurück'),
+              child: Text(l10n.back),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Fokus abbrechen'),
+              child: Text(l10n.cancelFocus),
             ),
           ],
         );
@@ -584,6 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleSkip() async {
+    final l10n = AppLocalizations.of(context);
     final shouldWarn =
         _timerController.phase == FocusSessionPhase.focus &&
         _timerController.elapsedFocusDuration <
@@ -591,10 +590,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (shouldWarn) {
       final shouldSkip = await _confirmShortFocusExit(
-        title: 'Fokus überspringen?',
-        content:
-            'Unter 5 Minuten bekommst du kein Wasser und dieser Fokus wird nicht in den Stats gespeichert.',
-        confirmLabel: 'Trotzdem überspringen',
+        title: l10n.skipFocusTitle,
+        content: l10n.skipShortFocusMessage,
+        confirmLabel: l10n.skipAnyway,
       );
       if (!shouldSkip) {
         return;
@@ -608,16 +606,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleFinishStopwatch() async {
+    final l10n = AppLocalizations.of(context);
     final focusDuration = _timerController.elapsedFocusDuration;
     final underRewardMinimum =
         focusDuration < FocusRewardCalculator.waterInterval;
 
     if (underRewardMinimum) {
       final shouldFinish = await _confirmShortFocusExit(
-        title: 'Stopwatch beenden?',
-        content:
-            'Unter 5 Minuten bekommst du kein Wasser und diese Session wird nicht in den Stats gespeichert.',
-        confirmLabel: 'Trotzdem beenden',
+        title: l10n.finishStopwatchTitle,
+        content: l10n.finishShortStopwatchMessage,
+        confirmLabel: l10n.finishAnyway,
       );
       if (!shouldFinish) {
         return;
@@ -636,6 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String content,
     required String confirmLabel,
   }) async {
+    final l10n = AppLocalizations.of(context);
     final result = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) {
@@ -645,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Weiter fokussieren'),
+              child: Text(l10n.keepFocusing),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,

@@ -1,12 +1,14 @@
+import 'package:pats_space/l10n/generated/app_localizations.dart';
+
 String formatMonthTitle(DateTime month) {
   return '${month.year} / ${month.month.toString().padLeft(2, '0')}';
 }
 
-String formatMonthShortTitle(DateTime month) {
-  return '${_monthNames[month.month - 1]} ${month.year}';
+String formatMonthShortTitle(DateTime month, AppLocalizations l10n) {
+  return '${_monthName(month.month, l10n)} ${month.year}';
 }
 
-String formatWeekRange(DateTime date) {
+String formatWeekRange(DateTime date, AppLocalizations l10n) {
   final startOfWeek = DateTime(
     date.year,
     date.month,
@@ -14,10 +16,10 @@ String formatWeekRange(DateTime date) {
   );
   final endOfWeek = startOfWeek.add(const Duration(days: 6));
   if (startOfWeek.month == endOfWeek.month) {
-    return '${_monthNames[startOfWeek.month - 1]}, ${startOfWeek.day} - ${endOfWeek.day}';
+    return '${_monthName(startOfWeek.month, l10n)} ${startOfWeek.day} - ${endOfWeek.day}';
   }
 
-  return '${_monthNames[startOfWeek.month - 1]} ${startOfWeek.day} - ${_monthNames[endOfWeek.month - 1]} ${endOfWeek.day}';
+  return '${_monthName(startOfWeek.month, l10n)} ${startOfWeek.day} - ${_monthName(endOfWeek.month, l10n)} ${endOfWeek.day}';
 }
 
 String formatDuration(Duration duration) {
@@ -35,17 +37,20 @@ String formatDuration(Duration duration) {
   return '${hours}h ${remainingMinutes}m';
 }
 
-const _monthNames = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
+String _monthName(int month, AppLocalizations l10n) {
+  return switch (month) {
+    1 => l10n.monthJan,
+    2 => l10n.monthFeb,
+    3 => l10n.monthMar,
+    4 => l10n.monthApr,
+    5 => l10n.monthMay,
+    6 => l10n.monthJun,
+    7 => l10n.monthJul,
+    8 => l10n.monthAug,
+    9 => l10n.monthSep,
+    10 => l10n.monthOct,
+    11 => l10n.monthNov,
+    12 => l10n.monthDec,
+    _ => '',
+  };
+}
