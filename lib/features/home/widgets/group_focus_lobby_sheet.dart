@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
@@ -12,12 +14,14 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 Future<GroupFocusLobbySelection?> showGroupFocusLobbySheet({
   required BuildContext context,
   required SocialFocusLobbySnapshot snapshot,
+  required Stream<SocialFocusLobbySnapshot> snapshots,
 }) {
   return showModalBottomSheet<GroupFocusLobbySelection>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.transparent,
-    builder: (_) => GroupFocusLobbySheet(snapshot: snapshot),
+    builder: (_) =>
+        GroupFocusLobbySheet(initialSnapshot: snapshot, snapshots: snapshots),
   );
 }
 
@@ -34,7 +38,31 @@ class GroupFocusLobbySelection {
 }
 
 class GroupFocusLobbySheet extends StatelessWidget {
-  const GroupFocusLobbySheet({super.key, required this.snapshot});
+  const GroupFocusLobbySheet({
+    super.key,
+    required this.initialSnapshot,
+    required this.snapshots,
+  });
+
+  final SocialFocusLobbySnapshot initialSnapshot;
+  final Stream<SocialFocusLobbySnapshot> snapshots;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<SocialFocusLobbySnapshot>(
+      stream: snapshots,
+      initialData: initialSnapshot,
+      builder: (context, snapshot) {
+        return _GroupFocusLobbyContent(
+          snapshot: snapshot.data ?? initialSnapshot,
+        );
+      },
+    );
+  }
+}
+
+class _GroupFocusLobbyContent extends StatelessWidget {
+  const _GroupFocusLobbyContent({required this.snapshot});
 
   final SocialFocusLobbySnapshot snapshot;
 

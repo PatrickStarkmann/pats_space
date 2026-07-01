@@ -25,6 +25,14 @@ class SocialFocusController extends ChangeNotifier {
     return snapshot;
   }
 
+  Stream<SocialFocusLobbySnapshot> watchLobby() {
+    return _repository.watchLobby().map((snapshot) {
+      _lastLobbySnapshot = snapshot;
+      notifyListeners();
+      return snapshot;
+    });
+  }
+
   Future<bool> restoreActiveRoom() async {
     final room = await _repository.restoreActiveRoom();
     if (room == null) {

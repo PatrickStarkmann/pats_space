@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
@@ -11,6 +13,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
        _firestore = firestore;
 
   static const _roomCapacity = 4;
+  static const _onlineWindow = Duration(seconds: 90);
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
 
@@ -43,8 +46,20 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
         .toList();
     final focusingFriendIds = rooms
         .expand((room) => room.members)
-        .where((member) => friendIds.contains(member.id))
+        .where(
+          (member) =>
+              friendIds.contains(member.id) &&
+              friends.any(
+                (friend) =>
+                    friend.id == member.id &&
+                    friend.status != SocialFocusFriendStatus.offline,
+              ),
+        )
         .map((member) => member.id)
+        .toSet();
+    final onlineFriendIds = friends
+        .where((friend) => friend.status != SocialFocusFriendStatus.offline)
+        .map((friend) => friend.id)
         .toSet();
     final friendsWithStatus = [
       for (final friend in friends)
@@ -53,14 +68,78 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
           name: friend.name,
           status: focusingFriendIds.contains(friend.id)
               ? SocialFocusFriendStatus.focusing
-              : SocialFocusFriendStatus.online,
+              : friend.status,
         ),
     ];
+    final visibleRooms = openRooms
+        .where((room) => _containsFriend(room, onlineFriendIds))
+        .toList();
 
     return SocialFocusLobbySnapshot(
-      openRooms: openRooms,
+      openRooms: visibleRooms,
       friends: friendsWithStatus,
     );
+  }
+
+  @override
+  Stream<SocialFocusLobbySnapshot> watchLobby() {
+    late StreamController<SocialFocusLobbySnapshot> controller;
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? roomsSubscription;
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+    friendsSubscription;
+    Timer? presenceTimer;
+    var emitting = false;
+    var pending = false;
+
+    Future<void> emitLatest() async {
+      if (emitting) {
+        pending = true;
+        return;
+      }
+
+      emitting = true;
+      try {
+        do {
+          pending = false;
+          final snapshot = await loadLobby();
+          if (!controller.isClosed) {
+            controller.add(snapshot);
+          }
+        } while (pending && !controller.isClosed);
+      } catch (error, stackTrace) {
+        if (!controller.isClosed) {
+          controller.addError(error, stackTrace);
+        }
+      } finally {
+        emitting = false;
+      }
+    }
+
+    controller = StreamController<SocialFocusLobbySnapshot>(
+      onListen: () async {
+        final user = await _ensureSignedIn();
+        roomsSubscription = _rooms
+            .where('isOpen', isEqualTo: true)
+            .snapshots()
+            .listen((_) => emitLatest(), onError: controller.addError);
+        friendsSubscription = _userRef(user.uid)
+            .collection('friends')
+            .snapshots()
+            .listen((_) => emitLatest(), onError: controller.addError);
+        presenceTimer = Timer.periodic(
+          const Duration(seconds: 15),
+          (_) => emitLatest(),
+        );
+        await emitLatest();
+      },
+      onCancel: () async {
+        presenceTimer?.cancel();
+        await roomsSubscription?.cancel();
+        await friendsSubscription?.cancel();
+      },
+    );
+
+    return controller.stream;
   }
 
   @override
@@ -287,19 +366,31 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
         .collection('friends')
         .get();
 
-    return snapshot.docs
-        .map((doc) {
-          final data = doc.data();
-          return SocialFocusFriend(
-            id: doc.id,
-            name: _cleanDisplayName(
-              data['displayName'] as String?,
-              fallbackUid: doc.id,
-            ),
-            status: SocialFocusFriendStatus.online,
-          );
-        })
-        .toList(growable: false);
+    final now = DateTime.now();
+    return Future.wait(
+      snapshot.docs.map((doc) async {
+        final data = doc.data();
+        final userDoc = await _userRef(doc.id).get();
+        return SocialFocusFriend(
+          id: doc.id,
+          name: _cleanDisplayName(
+            data['displayName'] as String?,
+            fallbackUid: doc.id,
+          ),
+          status: _isRecentlySeen(userDoc.data()?['lastSeenAt'], now)
+              ? SocialFocusFriendStatus.online
+              : SocialFocusFriendStatus.offline,
+        );
+      }),
+    );
+  }
+
+  bool _isRecentlySeen(Object? value, DateTime now) {
+    if (value is! Timestamp) {
+      return false;
+    }
+
+    return now.difference(value.toDate()) <= _onlineWindow;
   }
 
   bool _containsFriend(SocialFocusRoom room, Set<String> friendIds) {

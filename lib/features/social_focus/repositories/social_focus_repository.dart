@@ -3,6 +3,8 @@ import 'package:pats_space/features/social_focus/models/social_focus_models.dart
 abstract class SocialFocusRepository {
   Future<SocialFocusLobbySnapshot> loadLobby();
 
+  Stream<SocialFocusLobbySnapshot> watchLobby();
+
   Future<SocialFocusRoom?> restoreActiveRoom();
 
   Stream<SocialFocusRoom?> watchRoom(String roomId);

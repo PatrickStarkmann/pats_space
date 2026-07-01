@@ -125,6 +125,11 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
   }
 
   @override
+  Stream<SocialFocusLobbySnapshot> watchLobby() async* {
+    yield await loadLobby();
+  }
+
+  @override
   Future<SocialFocusRoom?> restoreActiveRoom() async {
     return _activeRoom;
   }

@@ -367,6 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final selection = await showGroupFocusLobbySheet(
       context: context,
       snapshot: snapshot,
+      snapshots: _socialFocusController.watchLobby(),
     );
     if (!mounted) {
       return;
