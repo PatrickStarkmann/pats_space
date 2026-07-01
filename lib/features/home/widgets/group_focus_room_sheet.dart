@@ -12,6 +12,7 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 Future<bool> showGroupFocusRoomSheet({
   required BuildContext context,
   required SocialFocusRoom room,
+  required String? localMemberId,
   required Future<void> Function(SocialFocusActivity activity)
   onLocalActivityChanged,
 }) async {
@@ -21,6 +22,7 @@ Future<bool> showGroupFocusRoomSheet({
     backgroundColor: AppColors.transparent,
     builder: (_) => GroupFocusRoomSheet(
       room: room,
+      localMemberId: localMemberId,
       onLocalActivityChanged: onLocalActivityChanged,
     ),
   );
@@ -32,10 +34,12 @@ class GroupFocusRoomSheet extends StatefulWidget {
   const GroupFocusRoomSheet({
     super.key,
     required this.room,
+    required this.localMemberId,
     required this.onLocalActivityChanged,
   });
 
   final SocialFocusRoom room;
+  final String? localMemberId;
   final Future<void> Function(SocialFocusActivity activity)
   onLocalActivityChanged;
 
@@ -86,7 +90,8 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
                     _MemberRow(
                       member: _room.members[index],
                       showDivider: index < _room.members.length - 1,
-                      onActivityPressed: _room.members[index].id == 'me'
+                      onActivityPressed:
+                          _room.members[index].id == widget.localMemberId
                           ? () => _showActivityPicker(_room.members[index])
                           : null,
                     ),

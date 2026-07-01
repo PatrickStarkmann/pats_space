@@ -4,6 +4,28 @@ enum SocialFocusFriendStatus { online, focusing, offline }
 
 enum SocialFocusMemberStatus { idle, focusing, breakTime }
 
+extension SocialFocusActivitySerialization on SocialFocusActivity {
+  String get value => name;
+
+  static SocialFocusActivity fromValue(Object? value) {
+    return SocialFocusActivity.values.firstWhere(
+      (activity) => activity.name == value,
+      orElse: () => SocialFocusActivity.working,
+    );
+  }
+}
+
+extension SocialFocusMemberStatusSerialization on SocialFocusMemberStatus {
+  String get value => name;
+
+  static SocialFocusMemberStatus fromValue(Object? value) {
+    return SocialFocusMemberStatus.values.firstWhere(
+      (status) => status.name == value,
+      orElse: () => SocialFocusMemberStatus.idle,
+    );
+  }
+}
+
 class SocialFocusFriend {
   const SocialFocusFriend({
     required this.id,
@@ -28,6 +50,24 @@ class SocialFocusMember {
   final String name;
   final SocialFocusActivity activity;
   final SocialFocusMemberStatus status;
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'activity': activity.value,
+      'status': status.value,
+    };
+  }
+
+  static SocialFocusMember fromJson(Map<String, Object?> json) {
+    return SocialFocusMember(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Friend',
+      activity: SocialFocusActivitySerialization.fromValue(json['activity']),
+      status: SocialFocusMemberStatusSerialization.fromValue(json['status']),
+    );
+  }
 }
 
 class SocialFocusRoom {
@@ -49,6 +89,22 @@ class SocialFocusRoom {
 
   String get memberNames {
     return members.map((member) => member.name).join(', ');
+  }
+
+  SocialFocusRoom copyWith({
+    String? id,
+    String? hostName,
+    String? statusLabel,
+    List<SocialFocusMember>? members,
+    int? capacity,
+  }) {
+    return SocialFocusRoom(
+      id: id ?? this.id,
+      hostName: hostName ?? this.hostName,
+      statusLabel: statusLabel ?? this.statusLabel,
+      members: members ?? this.members,
+      capacity: capacity ?? this.capacity,
+    );
   }
 }
 

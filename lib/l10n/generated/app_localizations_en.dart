@@ -12,6 +12,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get yourProfile => 'Your profile';
+
+  @override
+  String get editName => 'Edit name';
+
+  @override
+  String get namePlaceholder => 'Your name';
+
+  @override
+  String get friendCode => 'Friend code';
+
+  @override
+  String get addFriend => 'Add friend';
+
+  @override
+  String get addFriendSubtitle => 'Enter a friend\'s code';
+
+  @override
+  String get friendCodePlaceholder => 'A7K9Q2';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get accept => 'Accept';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get friendsSettingsSubtitle => 'Add friends and manage requests';
+
+  @override
+  String get incomingRequests => 'Requests';
+
+  @override
+  String get sentRequests => 'Sent requests';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get noIncomingRequests => 'No requests right now';
+
+  @override
+  String get noSentRequests => 'No sent requests';
+
+  @override
+  String get cancelRequest => 'Cancel';
+
+  @override
+  String get removeFriendTitle => 'Remove friend?';
+
+  @override
+  String removeFriendMessage(Object name) {
+    return 'Remove $name from your friends?';
+  }
+
+  @override
+  String get friendRequest => 'Friend request';
+
+  @override
+  String get friendRequestSent => 'Friend request sent.';
+
+  @override
+  String get friendAdded => 'Friend added.';
+
+  @override
+  String get friendCodeCopied => 'Friend code copied.';
+
+  @override
+  String get cannotAddYourself => 'This is your own code.';
+
+  @override
+  String get friendCodeNotFound => 'No friend found for this code.';
+
+  @override
+  String get friendAddFailed => 'Could not add friend right now.';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
   String get account => 'Account';
 
   @override

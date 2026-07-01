@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /social_focus_rooms/{roomId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.hostUid == request.auth.uid ||
+        request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'isOpen',
+          'updatedAt',
+        ])
+      );
+      allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
+
+      match /members/{memberId} {
+        allow read: if signedIn();
+        allow create, update, delete: if signedIn() && memberId == request.auth.uid;
+      }
+    }
+
+    match /{path=**}/members/{memberId} {
+      allow read: if signedIn();
+    }
+
+    match /users/{userId}/friends/{friendId} {
+      allow read: if signedIn() && userId == request.auth.uid;
+      allow write: if signedIn() && (
+        userId == request.auth.uid ||
+        friendId == request.auth.uid
+      );
+    }
+
+    match /users/{userId}/friend_requests/{requesterId} {
+      allow read: if signedIn() && userId == request.auth.uid;
+      allow create, update: if signedIn() &&
+        requesterId == request.auth.uid &&
+        request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (
+        userId == request.auth.uid ||
+        requesterId == request.auth.uid
+      );
+    }
+
+    match /users/{userId}/sent_friend_requests/{recipientId} {
+      allow read: if signedIn() && userId == request.auth.uid;
+      allow create, update: if signedIn() && userId == request.auth.uid;
+      allow delete: if signedIn() && (
+        userId == request.auth.uid ||
+        recipientId == request.auth.uid
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow write: if signedIn() && userId == request.auth.uid;
+    }
+
+    match /friend_codes/{friendCode} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+  }
+}

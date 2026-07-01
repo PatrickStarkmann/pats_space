@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
@@ -30,7 +32,7 @@ import 'package:pats_space/features/home/widgets/social_focus_group_view.dart';
 import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
 import 'package:pats_space/features/social_focus/controllers/social_focus_controller.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
-import 'package:pats_space/features/social_focus/repositories/fake_social_focus_repository.dart';
+import 'package:pats_space/features/social_focus/repositories/firebase_social_focus_repository.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -68,7 +70,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _socialFocusController = SocialFocusController(
-      repository: FakeSocialFocusRepository(),
+      repository: FirebaseSocialFocusRepository(
+        auth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+      ),
     );
     _timerController = FocusTimerController(
       initialSettings: widget.initialSettings,
@@ -76,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onFocusRoundCompleted: _handleFocusRoundCompleted,
     )..addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
+    _restoreSocialFocusRoom();
   }
 
   @override
@@ -384,6 +390,16 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _focusViewMode = _FocusViewMode.group);
   }
 
+  Future<void> _restoreSocialFocusRoom() async {
+    final restored = await _socialFocusController.restoreActiveRoom();
+    if (!mounted || !restored) {
+      return;
+    }
+
+    _syncSocialFocusStatus();
+    setState(() => _focusViewMode = _FocusViewMode.group);
+  }
+
   Future<bool> _confirmLeaveGroupFocus() async {
     final l10n = AppLocalizations.of(context);
     final result = await showCupertinoDialog<bool>(
@@ -419,6 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldLeave = await showGroupFocusRoomSheet(
       context: context,
       room: _roomWithLiveLocalStatus(room),
+      localMemberId: _localSocialFocusMemberId,
       onLocalActivityChanged: _socialFocusController.updateLocalActivity,
     );
     if (!mounted || !shouldLeave) {
@@ -446,18 +463,21 @@ class _HomeScreenState extends State<HomeScreen> {
           name: member.name,
           focusFrames: _framesForSocialActivity(member.activity),
           status: _statusForSocialMember(member),
-          usesLocalTimer: member.id == 'me',
+          usesLocalTimer: member.id == _localSocialFocusMemberId,
         ),
     ];
   }
 
   SocialFocusMemberStatus _statusForSocialMember(SocialFocusMember member) {
-    if (member.id != 'me') {
+    if (member.id != _localSocialFocusMemberId) {
       return member.status;
     }
 
     return _localSocialFocusStatus;
   }
+
+  String? get _localSocialFocusMemberId =>
+      FirebaseAuth.instance.currentUser?.uid;
 
   SocialFocusRoom _roomWithLiveLocalStatus(SocialFocusRoom room) {
     return SocialFocusRoom(
@@ -661,8 +681,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _syncAnimation() {
-    if (_timerController.active) {
+    if (_timerController.running) {
       _characterAnimator.start();
+    } else if (_timerController.active) {
+      _characterAnimator.pause();
     } else {
       _characterAnimator.reset();
     }

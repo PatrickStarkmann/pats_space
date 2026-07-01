@@ -1,12 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
+import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
 import 'package:pats_space/core/widgets/primary_button.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
+import 'package:pats_space/features/settings/models/user_profile.dart';
+import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
+import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 const _settingsBackgroundColor = Color(0xFFF5F4FA);
@@ -38,6 +45,16 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundsEnabled = true;
   bool _notificationsEnabled = false;
+  late final UserProfileRepository _profileRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileRepository = FirebaseUserProfileRepository(
+      auth: FirebaseAuth.instance,
+      firestore: FirebaseFirestore.instance,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onGenerateRoute: (_) => _settingsRoute(
           (routeContext) => _MainSettingsPage(
             language: widget.language,
+            profileRepository: _profileRepository,
             soundsEnabled: _soundsEnabled,
             notificationsEnabled: _notificationsEnabled,
             onLanguagePressed: () {
@@ -104,6 +122,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
+            onFriendsPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (friendsContext) => _FriendsSettingsPage(
+                    repository: _profileRepository,
+                    onBack: () => Navigator.of(friendsContext).maybePop(),
+                  ),
+                ),
+              );
+            },
             onOthersPressed: () {
               Navigator.of(routeContext).push(
                 _settingsRoute(
@@ -130,6 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _MainSettingsPage extends StatelessWidget {
   const _MainSettingsPage({
     required this.language,
+    required this.profileRepository,
     required this.soundsEnabled,
     required this.notificationsEnabled,
     required this.onLanguagePressed,
@@ -137,10 +166,12 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onNotificationsPressed,
     required this.onFeedbackLabPressed,
     required this.onAccountPressed,
+    required this.onFriendsPressed,
     required this.onOthersPressed,
   });
 
   final AppLanguage language;
+  final UserProfileRepository profileRepository;
   final bool soundsEnabled;
   final bool notificationsEnabled;
   final VoidCallback onLanguagePressed;
@@ -148,6 +179,7 @@ class _MainSettingsPage extends StatelessWidget {
   final VoidCallback onNotificationsPressed;
   final VoidCallback onFeedbackLabPressed;
   final VoidCallback onAccountPressed;
+  final VoidCallback onFriendsPressed;
   final VoidCallback onOthersPressed;
 
   @override
@@ -157,6 +189,8 @@ class _MainSettingsPage extends StatelessWidget {
     return _SettingsScrollView(
       title: l10n.settingsTitle,
       children: [
+        _ProfileCard(repository: profileRepository),
+        const SizedBox(height: AppSpacing.lg),
         _SettingsGroup(
           children: [
             _SettingsRow(
@@ -164,6 +198,14 @@ class _MainSettingsPage extends StatelessWidget {
               title: l10n.account,
               trailing: const _Chevron(),
               onTap: onAccountPressed,
+            ),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: CupertinoIcons.person_2,
+              title: l10n.friends,
+              subtitle: l10n.friendsSettingsSubtitle,
+              trailing: const _Chevron(),
+              onTap: onFriendsPressed,
             ),
             const _SettingsDivider(),
             _SettingsRow(
@@ -220,6 +262,574 @@ class _MainSettingsPage extends StatelessWidget {
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+class _ProfileCard extends StatefulWidget {
+  const _ProfileCard({required this.repository});
+
+  final UserProfileRepository repository;
+
+  @override
+  State<_ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<_ProfileCard> {
+  late final Future<UserProfile> _profileFuture = _loadProfile();
+  UserProfile? _profile;
+  bool _saving = false;
+
+  Future<UserProfile> _loadProfile() async {
+    final profile = await widget.repository.loadProfile();
+    if (mounted) {
+      setState(() => _profile = profile);
+    }
+    return profile;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return FutureBuilder<UserProfile>(
+      future: _profileFuture,
+      builder: (context, snapshot) {
+        final profile = _profile ?? snapshot.data;
+        final displayName = profile?.displayName ?? l10n.loading;
+        final friendCode = profile?.friendCode ?? l10n.loading;
+
+        return Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    CupertinoIcons.person_crop_circle_fill,
+                    color: AppColors.charcoal,
+                    size: 42,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.yourProfile,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.grayWarm,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.headline.copyWith(
+                            color: CupertinoColors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: profile == null || _saving
+                        ? null
+                        : () => _editDisplayName(context, profile),
+                    icon: _saving
+                        ? const CupertinoActivityIndicator()
+                        : const Icon(CupertinoIcons.pencil, size: 23),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: _settingsBackgroundColor,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.friendCode,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.grayWarm,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            friendCode,
+                            style: AppTextStyles.headline.copyWith(
+                              color: AppColors.charcoal,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: profile == null
+                          ? null
+                          : () => _copyFriendCode(profile.friendCode),
+                      icon: const Icon(CupertinoIcons.doc_on_doc, size: 22),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _copyFriendCode(String friendCode) async {
+    await Clipboard.setData(ClipboardData(text: friendCode));
+    AppHaptics.selection();
+    if (!mounted) {
+      return;
+    }
+
+    await _showMessage(AppLocalizations.of(context).friendCodeCopied);
+  }
+
+  Future<void> _editDisplayName(
+    BuildContext context,
+    UserProfile profile,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final controller = TextEditingController(text: profile.displayName);
+    final updatedName = await showCupertinoDialog<String>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.editName),
+          content: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: CupertinoTextField(
+              controller: controller,
+              autofocus: true,
+              clearButtonMode: OverlayVisibilityMode.editing,
+              maxLength: 24,
+              placeholder: l10n.namePlaceholder,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                Navigator.of(context).pop(controller.text);
+              },
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text(l10n.save),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    final trimmedName = updatedName?.trim();
+    if (trimmedName == null ||
+        trimmedName.isEmpty ||
+        trimmedName == profile.displayName) {
+      return;
+    }
+
+    setState(() => _saving = true);
+    final savedProfile = await widget.repository.saveDisplayName(trimmedName);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _profile = savedProfile;
+      _saving = false;
+    });
+  }
+
+  Future<void> _showMessage(String message) {
+    final l10n = AppLocalizations.of(context);
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.done),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FriendsSettingsPage extends StatefulWidget {
+  const _FriendsSettingsPage({required this.repository, required this.onBack});
+
+  final UserProfileRepository repository;
+  final VoidCallback onBack;
+
+  @override
+  State<_FriendsSettingsPage> createState() => _FriendsSettingsPageState();
+}
+
+class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
+  late Future<void> _loadFuture = _loadFriends();
+  List<UserFriend> _friends = const [];
+  List<FriendRequest> _incomingRequests = const [];
+  List<FriendRequest> _sentRequests = const [];
+  bool _sendingRequest = false;
+  String? _busyId;
+
+  Future<void> _loadFriends() async {
+    final results = await Future.wait([
+      widget.repository.loadFriends(),
+      widget.repository.loadIncomingFriendRequests(),
+      widget.repository.loadSentFriendRequests(),
+    ]);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _friends = results[0] as List<UserFriend>;
+      _incomingRequests = results[1] as List<FriendRequest>;
+      _sentRequests = results[2] as List<FriendRequest>;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return _SettingsScrollView(
+      title: l10n.friends,
+      leading: _BackButton(onPressed: widget.onBack),
+      children: [
+        FutureBuilder<void>(
+          future: _loadFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CupertinoActivityIndicator());
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SettingsGroup(
+                  children: [
+                    _SettingsRow(
+                      icon: CupertinoIcons.person_badge_plus,
+                      title: l10n.addFriend,
+                      subtitle: l10n.addFriendSubtitle,
+                      trailing: _sendingRequest
+                          ? const CupertinoActivityIndicator()
+                          : const _Chevron(),
+                      onTap: _sendingRequest ? null : _sendFriendRequest,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _FriendsSection(
+                  title: l10n.incomingRequests,
+                  emptyText: l10n.noIncomingRequests,
+                  children: [
+                    for (final request in _incomingRequests)
+                      _ProfileActionRow(
+                        icon: CupertinoIcons.person_2_fill,
+                        title: request.displayName,
+                        subtitle: request.friendCode,
+                        trailing: _busyId == request.uid
+                            ? const CupertinoActivityIndicator()
+                            : _ActionText(l10n.accept),
+                        onTap: _busyId == null
+                            ? () => _acceptFriendRequest(request)
+                            : null,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _FriendsSection(
+                  title: l10n.sentRequests,
+                  emptyText: l10n.noSentRequests,
+                  children: [
+                    for (final request in _sentRequests)
+                      _ProfileActionRow(
+                        icon: CupertinoIcons.paperplane,
+                        title: request.displayName,
+                        subtitle: l10n.pending,
+                        trailing: _busyId == request.uid
+                            ? const CupertinoActivityIndicator()
+                            : _ActionText(l10n.cancelRequest),
+                        onTap: _busyId == null
+                            ? () => _cancelFriendRequest(request)
+                            : null,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _FriendsSection(
+                  title: l10n.friends,
+                  emptyText: l10n.noFriendsYet,
+                  children: [
+                    for (final friend in _friends)
+                      _ProfileActionRow(
+                        icon: CupertinoIcons.person,
+                        title: friend.displayName,
+                        subtitle: friend.friendCode,
+                        trailing: _busyId == friend.uid
+                            ? const CupertinoActivityIndicator()
+                            : _ActionText(l10n.remove),
+                        onTap: _busyId == null
+                            ? () => _deleteFriend(friend)
+                            : null,
+                      ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _sendFriendRequest() async {
+    final l10n = AppLocalizations.of(context);
+    final controller = TextEditingController();
+    final friendCode = await showCupertinoDialog<String>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.addFriend),
+          content: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: CupertinoTextField(
+              controller: controller,
+              autofocus: true,
+              clearButtonMode: OverlayVisibilityMode.editing,
+              placeholder: l10n.friendCodePlaceholder,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                Navigator.of(context).pop(controller.text);
+              },
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text(l10n.add),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    final trimmedCode = friendCode?.trim();
+    if (trimmedCode == null || trimmedCode.isEmpty) {
+      return;
+    }
+
+    setState(() => _sendingRequest = true);
+    try {
+      await widget.repository.sendFriendRequestByCode(trimmedCode);
+      if (!mounted) {
+        return;
+      }
+
+      await _refresh();
+      await _showMessage(l10n.friendRequestSent);
+    } on FriendCodeException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _sendingRequest = false);
+      await _showMessage(
+        error.failure == FriendCodeFailure.self
+            ? l10n.cannotAddYourself
+            : l10n.friendCodeNotFound,
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _sendingRequest = false);
+      await _showMessage(l10n.friendAddFailed);
+    }
+  }
+
+  Future<void> _acceptFriendRequest(FriendRequest request) async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _busyId = request.uid);
+    await widget.repository.acceptFriendRequest(request);
+    if (!mounted) {
+      return;
+    }
+
+    await _refresh();
+    await _showMessage(l10n.friendAdded);
+  }
+
+  Future<void> _cancelFriendRequest(FriendRequest request) async {
+    setState(() => _busyId = request.uid);
+    await widget.repository.cancelFriendRequest(request);
+    if (!mounted) {
+      return;
+    }
+
+    await _refresh();
+  }
+
+  Future<void> _deleteFriend(UserFriend friend) async {
+    final l10n = AppLocalizations.of(context);
+    final shouldDelete = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.removeFriendTitle),
+          content: Text(l10n.removeFriendMessage(friend.displayName)),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.remove),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldDelete != true) {
+      return;
+    }
+
+    setState(() => _busyId = friend.uid);
+    await widget.repository.deleteFriend(friend);
+    if (!mounted) {
+      return;
+    }
+
+    await _refresh();
+  }
+
+  Future<void> _refresh() async {
+    await _loadFriends();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _sendingRequest = false;
+      _busyId = null;
+      _loadFuture = Future.value();
+    });
+  }
+
+  Future<void> _showMessage(String message) {
+    final l10n = AppLocalizations.of(context);
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.done),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FriendsSection extends StatelessWidget {
+  const _FriendsSection({
+    required this.title,
+    required this.emptyText,
+    required this.children,
+  });
+
+  final String title;
+  final String emptyText;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xs),
+          child: Text(
+            title,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.grayWarm,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        if (children.isEmpty)
+          _SettingsGroup(
+            children: [
+              _SettingsRow(icon: CupertinoIcons.person, title: emptyText),
+            ],
+          )
+        else
+          Column(
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                children[index],
+                if (index != children.length - 1)
+                  const SizedBox(height: AppSpacing.xs),
+              ],
+            ],
+          ),
       ],
     );
   }
@@ -761,6 +1371,88 @@ class _SettingsGroup extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
+    );
+  }
+}
+
+class _ProfileActionRow extends StatelessWidget {
+  const _ProfileActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: _settingsBackgroundColor,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.charcoal, size: 24),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      color: CupertinoColors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMuted.copyWith(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionText extends StatelessWidget {
+  const _ActionText(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: AppTextStyles.caption.copyWith(
+        color: AppColors.charcoal,
+        fontWeight: FontWeight.w800,
+      ),
     );
   }
 }

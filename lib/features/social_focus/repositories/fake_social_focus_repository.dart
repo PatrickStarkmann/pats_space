@@ -125,6 +125,18 @@ class FakeSocialFocusRepository implements SocialFocusRepository {
   }
 
   @override
+  Future<SocialFocusRoom?> restoreActiveRoom() async {
+    return _activeRoom;
+  }
+
+  @override
+  Stream<SocialFocusRoom?> watchRoom(String roomId) async* {
+    if (_activeRoom?.id == roomId) {
+      yield _activeRoom;
+    }
+  }
+
+  @override
   Future<SocialFocusRoom> createOpenRoom() async {
     _activeRoom = const SocialFocusRoom(
       id: 'my-room',

@@ -1,0 +1,42 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "patsspace-app",
+          "appId": "1:1051905230507:android:1b74b712529e2c6b4199ee",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "patsspace-app",
+          "appId": "1:1051905230507:ios:7f4ba15b9f0773d04199ee",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "patsspace-app",
+          "appId": "1:1051905230507:ios:7f4ba15b9f0773d04199ee",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "patsspace-app",
+          "configurations": {
+            "android": "1:1051905230507:android:1b74b712529e2c6b4199ee",
+            "ios": "1:1051905230507:ios:7f4ba15b9f0773d04199ee",
+            "macos": "1:1051905230507:ios:7f4ba15b9f0773d04199ee"
+          }
+        }
+      }
+    }
+  }
+}

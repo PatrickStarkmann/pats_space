@@ -104,6 +104,168 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @yourProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile'**
+  String get yourProfile;
+
+  /// No description provided for @editName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get editName;
+
+  /// No description provided for @namePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get namePlaceholder;
+
+  /// No description provided for @friendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code'**
+  String get friendCode;
+
+  /// No description provided for @addFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friend'**
+  String get addFriend;
+
+  /// No description provided for @addFriendSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a friend\'s code'**
+  String get addFriendSubtitle;
+
+  /// No description provided for @friendCodePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'A7K9Q2'**
+  String get friendCodePlaceholder;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @accept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @friendsSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends and manage requests'**
+  String get friendsSettingsSubtitle;
+
+  /// No description provided for @incomingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get incomingRequests;
+
+  /// No description provided for @sentRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent requests'**
+  String get sentRequests;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @noIncomingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests right now'**
+  String get noIncomingRequests;
+
+  /// No description provided for @noSentRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent requests'**
+  String get noSentRequests;
+
+  /// No description provided for @cancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelRequest;
+
+  /// No description provided for @removeFriendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove friend?'**
+  String get removeFriendTitle;
+
+  /// No description provided for @removeFriendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from your friends?'**
+  String removeFriendMessage(Object name);
+
+  /// No description provided for @friendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request'**
+  String get friendRequest;
+
+  /// No description provided for @friendRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent.'**
+  String get friendRequestSent;
+
+  /// No description provided for @friendAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend added.'**
+  String get friendAdded;
+
+  /// No description provided for @friendCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code copied.'**
+  String get friendCodeCopied;
+
+  /// No description provided for @cannotAddYourself.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own code.'**
+  String get cannotAddYourself;
+
+  /// No description provided for @friendCodeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No friend found for this code.'**
+  String get friendCodeNotFound;
+
+  /// No description provided for @friendAddFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add friend right now.'**
+  String get friendAddFailed;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
   /// No description provided for @account.
   ///
   /// In en, this message translates to:

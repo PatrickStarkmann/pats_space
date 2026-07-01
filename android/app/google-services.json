@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1051905230507",
+    "project_id": "patsspace-app",
+    "storage_bucket": "patsspace-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051905230507:android:1b74b712529e2c6b4199ee",
+        "android_client_info": {
+          "package_name": "com.patsspace.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwX2ATyoi5yZ0X14jVeQ2daKkd0S3LIkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

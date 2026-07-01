@@ -1,4 +1,4 @@
-package com.example.pats_space
+package com.patsspace.app
 
 import io.flutter.embedding.android.FlutterActivity
 

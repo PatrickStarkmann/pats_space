@@ -12,6 +12,92 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsTitle => 'Einstellungen';
 
   @override
+  String get yourProfile => 'Dein Profil';
+
+  @override
+  String get editName => 'Name bearbeiten';
+
+  @override
+  String get namePlaceholder => 'Dein Name';
+
+  @override
+  String get friendCode => 'Freundescode';
+
+  @override
+  String get addFriend => 'Freund hinzufügen';
+
+  @override
+  String get addFriendSubtitle => 'Code eines Freundes eingeben';
+
+  @override
+  String get friendCodePlaceholder => 'A7K9Q2';
+
+  @override
+  String get add => 'Hinzufügen';
+
+  @override
+  String get accept => 'Annehmen';
+
+  @override
+  String get remove => 'Entfernen';
+
+  @override
+  String get friendsSettingsSubtitle =>
+      'Freunde hinzufügen und Anfragen verwalten';
+
+  @override
+  String get incomingRequests => 'Anfragen';
+
+  @override
+  String get sentRequests => 'Gesendete Anfragen';
+
+  @override
+  String get pending => 'Ausstehend';
+
+  @override
+  String get noIncomingRequests => 'Gerade keine Anfragen';
+
+  @override
+  String get noSentRequests => 'Keine gesendeten Anfragen';
+
+  @override
+  String get cancelRequest => 'Abbrechen';
+
+  @override
+  String get removeFriendTitle => 'Freund entfernen?';
+
+  @override
+  String removeFriendMessage(Object name) {
+    return '$name aus deinen Freunden entfernen?';
+  }
+
+  @override
+  String get friendRequest => 'Freundschaftsanfrage';
+
+  @override
+  String get friendRequestSent => 'Freundschaftsanfrage gesendet.';
+
+  @override
+  String get friendAdded => 'Freund hinzugefügt.';
+
+  @override
+  String get friendCodeCopied => 'Freundescode kopiert.';
+
+  @override
+  String get cannotAddYourself => 'Das ist dein eigener Code.';
+
+  @override
+  String get friendCodeNotFound =>
+      'Für diesen Code wurde kein Freund gefunden.';
+
+  @override
+  String get friendAddFailed =>
+      'Freund konnte gerade nicht hinzugefügt werden.';
+
+  @override
+  String get loading => 'Lädt...';
+
+  @override
   String get account => 'Account';
 
   @override
