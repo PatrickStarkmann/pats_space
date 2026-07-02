@@ -54,6 +54,46 @@
   "breakReminder": "Break reminder",
   "breakReminderDescription": "When it is time to rest",
   "signIn": "Sign in",
+  "secureAccount": "Secure account",
+  "secureAccountSubtitle": "Choose Apple or Google",
+  "accountSecured": "Account secured",
+  "anonymousAccountSubtitle": "Link Apple or Google so your friends and progress stay safe.",
+  "signedInAccountSubtitle": "Your friends and progress are saved.",
+  "signedInWithProvider": "Signed in with {provider}",
+  "@signedInWithProvider": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "chooseSignInMethod": "Choose how you want to secure this account.",
+  "continueWithApple": "Continue with Apple",
+  "continueWithGoogle": "Continue with Google",
+  "connectedAccounts": "Connected: {providers}",
+  "@connectedAccounts": {
+    "placeholders": {
+      "providers": {}
+    }
+  },
+  "connected": "Connected",
+  "accountSecureSuccess": "Account secured.",
+  "accountSecureFailed": "Could not secure your account right now.",
+  "existingAccountSignInSuccess": "Signed in.",
+  "replaceGuestAccountTitle": "Use existing account?",
+  "replaceGuestAccountMessage": "This Apple or Google account already exists. Your current guest progress on this device will be replaced.",
+  "replaceGuestAccountAction": "Use existing account",
+  "providerAlreadyLinked": "Apple or Google is already connected.",
+  "accountProviderInUse": "This Apple or Google account is already used somewhere else.",
+  "providerNotEnabled": "This sign-in option is not ready yet.",
+  "signInCancelled": "Sign-in was cancelled.",
+  "signOut": "Sign out",
+  "signOutTitle": "Sign out?",
+  "signOutMessage": "You will continue with a new anonymous account on this device.",
+  "signedOutMessage": "Signed out. You are now using a new anonymous account.",
+  "deleteAccountTitle": "Delete account?",
+  "deleteAccountMessage": "This removes your profile, friends, requests and friend code. This cannot be undone.",
+  "accountDeletedMessage": "Account deleted.",
+  "accountDeleteFailed": "Could not delete your account right now.",
+  "accountDeleteNeedsSignIn": "Please sign in again before deleting your account.",
   "restorePurchases": "Restore purchases",
   "deleteAccount": "Delete account",
   "privacyPolicy": "Privacy policy",

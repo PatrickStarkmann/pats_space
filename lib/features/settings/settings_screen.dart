@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pats_space/core/auth/account_auth_service.dart';
+import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
+import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
@@ -277,13 +283,46 @@ class _ProfileCard extends StatefulWidget {
 }
 
 class _ProfileCardState extends State<_ProfileCard> {
-  late final Future<UserProfile> _profileFuture = _loadProfile();
+  StreamSubscription<User?>? _authSubscription;
+  Future<UserProfile>? _profileFuture;
   UserProfile? _profile;
+  int _profileLoadGeneration = 0;
   bool _saving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _loadProfile();
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) {
+        return;
+      }
+
+      if (user == null) {
+        setState(() {
+          _profile = null;
+          _profileFuture = null;
+        });
+        return;
+      }
+
+      setState(() {
+        _profile = null;
+        _profileFuture = _loadProfile();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<UserProfile> _loadProfile() async {
+    final generation = ++_profileLoadGeneration;
     final profile = await widget.repository.loadProfile();
-    if (mounted) {
+    if (mounted && generation == _profileLoadGeneration) {
       setState(() => _profile = profile);
     }
     return profile;
@@ -1227,25 +1266,59 @@ class _IconFeedbackDemo extends StatelessWidget {
   }
 }
 
-class _AccountSettingsPage extends StatelessWidget {
+class _AccountSettingsPage extends StatefulWidget {
   const _AccountSettingsPage({required this.onBack});
 
   final VoidCallback onBack;
 
   @override
+  State<_AccountSettingsPage> createState() => _AccountSettingsPageState();
+}
+
+enum _AccountSignInMethod { apple, google }
+
+class _AccountSettingsPageState extends State<_AccountSettingsPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final AccountAuthService _accountAuthService =
+      FirebaseAccountAuthService(
+        auth: _auth,
+        firestore: FirebaseFirestore.instance,
+      );
+  bool _linking = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final user = _auth.currentUser;
+    final secured = user != null && !user.isAnonymous;
+    final providerIds =
+        user?.providerData.map((provider) => provider.providerId).toSet() ??
+        const <String>{};
 
     return _SettingsScrollView(
       title: l10n.account,
-      leading: _BackButton(onPressed: onBack),
+      leading: _BackButton(onPressed: widget.onBack),
       children: [
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.person_crop_circle,
-              title: l10n.signIn,
-              trailing: const _Chevron(),
+              icon: secured
+                  ? CupertinoIcons.checkmark_shield
+                  : CupertinoIcons.person_crop_circle_badge_plus,
+              title: secured
+                  ? l10n.signedInWithProvider(
+                      _connectedProviderName(providerIds),
+                    )
+                  : l10n.signIn,
+              subtitle: secured
+                  ? l10n.signedInAccountSubtitle
+                  : l10n.anonymousAccountSubtitle,
+              trailing: _linking
+                  ? const CupertinoActivityIndicator()
+                  : secured
+                  ? null
+                  : const _Chevron(),
+              onTap: secured || _linking ? null : _showSignInOptions,
             ),
             const _SettingsDivider(),
             _SettingsRow(
@@ -1253,14 +1326,392 @@ class _AccountSettingsPage extends StatelessWidget {
               title: l10n.restorePurchases,
               trailing: const _Chevron(),
             ),
+            if (secured) ...[
+              const _SettingsDivider(),
+              _SettingsRow(
+                icon: CupertinoIcons.square_arrow_right,
+                title: l10n.signOut,
+                destructive: true,
+                onTap: _linking ? null : _confirmSignOut,
+              ),
+            ],
             const _SettingsDivider(),
             _SettingsRow(
               icon: CupertinoIcons.trash,
               title: l10n.deleteAccount,
               destructive: true,
               trailing: const _Chevron(),
+              onTap: _linking ? null : _confirmDeleteAccount,
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  String _connectedProviderName(Set<String> providerIds) {
+    final connected = <String>[
+      if (providerIds.contains(AppleAuthProvider.PROVIDER_ID)) 'Apple',
+      if (providerIds.contains(GoogleAuthProvider.PROVIDER_ID)) 'Google',
+    ];
+    if (connected.isEmpty) {
+      return 'Apple / Google';
+    }
+
+    return connected.join(', ');
+  }
+
+  Future<void> _showSignInOptions() async {
+    final l10n = AppLocalizations.of(context);
+    final user = _auth.currentUser;
+    final providerIds =
+        user?.providerData.map((provider) => provider.providerId).toSet() ??
+        const <String>{};
+    final appleLinked = providerIds.contains(AppleAuthProvider.PROVIDER_ID);
+    final googleLinked = providerIds.contains(GoogleAuthProvider.PROVIDER_ID);
+
+    final method = await showCupertinoModalPopup<_AccountSignInMethod>(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: Text(l10n.signIn),
+          message: Text(l10n.chooseSignInMethod),
+          actions: [
+            if (_accountAuthService.isAppleSignInAvailable)
+              CupertinoActionSheetAction(
+                onPressed: () => Navigator.of(
+                  context,
+                ).pop(appleLinked ? null : _AccountSignInMethod.apple),
+                child: _ProviderActionLabel(
+                  mark: '',
+                  label: l10n.continueWithApple,
+                  connected: appleLinked,
+                ),
+              ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(
+                context,
+              ).pop(googleLinked ? null : _AccountSignInMethod.google),
+              child: _ProviderActionLabel(
+                mark: 'G',
+                label: l10n.continueWithGoogle,
+                connected: googleLinked,
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancel),
+          ),
+        );
+      },
+    );
+
+    if (method == null) {
+      return;
+    }
+
+    switch (method) {
+      case _AccountSignInMethod.apple:
+        await _secureAccount(_accountAuthService.secureWithApple);
+      case _AccountSignInMethod.google:
+        await _secureAccount(_accountAuthService.secureWithGoogle);
+    }
+  }
+
+  Future<void> _secureAccount(
+    Future<AccountAuthResult> Function() secure,
+  ) async {
+    setState(() => _linking = true);
+    try {
+      final result = await secure();
+      final resolvedResult = await _resolveAccountAuthResult(result);
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(_successMessage(resolvedResult));
+      setState(() => _linking = false);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(
+        _messageForAuthError(error, AppLocalizations.of(context)),
+      );
+      setState(() => _linking = false);
+    } on GoogleSignInException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      if (error.code != GoogleSignInExceptionCode.canceled) {
+        await _showMessage(AppLocalizations.of(context).accountSecureFailed);
+      }
+      setState(() => _linking = false);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(AppLocalizations.of(context).accountSecureFailed);
+      setState(() => _linking = false);
+    }
+  }
+
+  Future<AccountAuthResult> _resolveAccountAuthResult(
+    AccountAuthResult result,
+  ) async {
+    if (result is! GuestReplacementRequired) {
+      return result;
+    }
+
+    final shouldReplace = await _confirmReplaceGuestAccount();
+    if (shouldReplace != true) {
+      throw FirebaseAuthException(code: 'canceled');
+    }
+
+    return _accountAuthService.replaceGuestWithExistingAccount(result);
+  }
+
+  String _successMessage(AccountAuthResult result) {
+    final l10n = AppLocalizations.of(context);
+    return switch (result) {
+      ExistingAccountSignedIn() => l10n.existingAccountSignInSuccess,
+      _ => l10n.accountSecureSuccess,
+    };
+  }
+
+  Future<bool?> _confirmReplaceGuestAccount() {
+    final l10n = AppLocalizations.of(context);
+    return showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.replaceGuestAccountTitle),
+          content: Text(l10n.replaceGuestAccountMessage),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.replaceGuestAccountAction),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmSignOut() async {
+    final l10n = AppLocalizations.of(context);
+    final shouldSignOut = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.signOutTitle),
+          content: Text(l10n.signOutMessage),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.signOut),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldSignOut != true) {
+      return;
+    }
+
+    setState(() => _linking = true);
+    try {
+      await _accountAuthService.signOutToGuest();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _linking = false);
+      await _showMessage(l10n.signedOutMessage);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _linking = false);
+      await _showMessage(l10n.accountSecureFailed);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final l10n = AppLocalizations.of(context);
+    final shouldDelete = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.deleteAccountTitle),
+          content: Text(l10n.deleteAccountMessage),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.deleteAccount),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldDelete != true) {
+      return;
+    }
+
+    await _deleteAccount();
+  }
+
+  Future<void> _deleteAccount() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _linking = true);
+    try {
+      await _accountAuthService.deleteCurrentAccount();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _linking = false);
+      await _showMessage(l10n.accountDeletedMessage);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _linking = false);
+      await _showMessage(_messageForDeleteError(error, l10n));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _linking = false);
+      await _showMessage(l10n.accountDeleteFailed);
+    }
+  }
+
+  String _messageForAuthError(
+    FirebaseAuthException error,
+    AppLocalizations l10n,
+  ) {
+    return switch (error.code) {
+      'provider-already-linked' => l10n.providerAlreadyLinked,
+      'credential-already-in-use' ||
+      'account-exists-with-different-credential' ||
+      'email-already-in-use' => l10n.accountProviderInUse,
+      'operation-not-allowed' => l10n.providerNotEnabled,
+      'web-context-cancelled' ||
+      'popup-closed-by-user' ||
+      'canceled' ||
+      'cancelled' => l10n.signInCancelled,
+      _ => l10n.accountSecureFailed,
+    };
+  }
+
+  String _messageForDeleteError(
+    FirebaseAuthException error,
+    AppLocalizations l10n,
+  ) {
+    return switch (error.code) {
+      'requires-recent-login' => l10n.accountDeleteNeedsSignIn,
+      'web-context-cancelled' ||
+      'popup-closed-by-user' ||
+      'canceled' ||
+      'cancelled' => l10n.signInCancelled,
+      _ => l10n.accountDeleteFailed,
+    };
+  }
+
+  Future<void> _showMessage(String message) {
+    final l10n = AppLocalizations.of(context);
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.done),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ProviderActionLabel extends StatelessWidget {
+  const _ProviderActionLabel({
+    required this.mark,
+    required this.label,
+    required this.connected,
+  });
+
+  final String mark;
+  final String label;
+  final bool connected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final color = connected ? AppColors.grayWarm : CupertinoColors.black;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 24,
+          child: mark == 'G'
+              ? Opacity(
+                  opacity: connected ? .45 : 1,
+                  child: Center(
+                    child: Image.asset(
+                      AppAssets.googleLogo,
+                      width: 18,
+                      height: 18,
+                    ),
+                  ),
+                )
+              : Text(
+                  mark,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          connected ? '$label · ${l10n.connected}' : label,
+          style: AppTextStyles.body.copyWith(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

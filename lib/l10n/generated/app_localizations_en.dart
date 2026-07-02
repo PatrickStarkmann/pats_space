@@ -158,6 +158,108 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign in';
 
   @override
+  String get secureAccount => 'Secure account';
+
+  @override
+  String get secureAccountSubtitle => 'Choose Apple or Google';
+
+  @override
+  String get accountSecured => 'Account secured';
+
+  @override
+  String get anonymousAccountSubtitle =>
+      'Link Apple or Google so your friends and progress stay safe.';
+
+  @override
+  String get signedInAccountSubtitle => 'Your friends and progress are saved.';
+
+  @override
+  String signedInWithProvider(Object provider) {
+    return 'Signed in with $provider';
+  }
+
+  @override
+  String get chooseSignInMethod =>
+      'Choose how you want to secure this account.';
+
+  @override
+  String get continueWithApple => 'Continue with Apple';
+
+  @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String connectedAccounts(Object providers) {
+    return 'Connected: $providers';
+  }
+
+  @override
+  String get connected => 'Connected';
+
+  @override
+  String get accountSecureSuccess => 'Account secured.';
+
+  @override
+  String get accountSecureFailed => 'Could not secure your account right now.';
+
+  @override
+  String get existingAccountSignInSuccess => 'Signed in.';
+
+  @override
+  String get replaceGuestAccountTitle => 'Use existing account?';
+
+  @override
+  String get replaceGuestAccountMessage =>
+      'This Apple or Google account already exists. Your current guest progress on this device will be replaced.';
+
+  @override
+  String get replaceGuestAccountAction => 'Use existing account';
+
+  @override
+  String get providerAlreadyLinked => 'Apple or Google is already connected.';
+
+  @override
+  String get accountProviderInUse =>
+      'This Apple or Google account is already used somewhere else.';
+
+  @override
+  String get providerNotEnabled => 'This sign-in option is not ready yet.';
+
+  @override
+  String get signInCancelled => 'Sign-in was cancelled.';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signOutTitle => 'Sign out?';
+
+  @override
+  String get signOutMessage =>
+      'You will continue with a new anonymous account on this device.';
+
+  @override
+  String get signedOutMessage =>
+      'Signed out. You are now using a new anonymous account.';
+
+  @override
+  String get deleteAccountTitle => 'Delete account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'This removes your profile, friends, requests and friend code. This cannot be undone.';
+
+  @override
+  String get accountDeletedMessage => 'Account deleted.';
+
+  @override
+  String get accountDeleteFailed => 'Could not delete your account right now.';
+
+  @override
+  String get accountDeleteNeedsSignIn =>
+      'Please sign in again before deleting your account.';
+
+  @override
   String get restorePurchases => 'Restore purchases';
 
   @override

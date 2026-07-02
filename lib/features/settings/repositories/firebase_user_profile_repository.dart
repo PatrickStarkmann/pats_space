@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pats_space/core/auth/auth_session.dart';
 import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
 
@@ -15,7 +16,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<UserProfile> loadProfile() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final userRef = _firestore.collection('users').doc(user.uid);
     final snapshot = await userRef.get();
     final data = snapshot.data();
@@ -55,7 +56,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<UserProfile> saveDisplayName(String displayName) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final cleanedName = _cleanDisplayName(displayName, fallbackUid: user.uid);
     final currentProfile = await loadProfile();
     await _firestore.collection('users').doc(user.uid).set({
@@ -86,7 +87,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<List<UserFriend>> loadFriends() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final snapshot = await _firestore
         .collection('users')
         .doc(user.uid)
@@ -108,7 +109,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<List<FriendRequest>> loadIncomingFriendRequests() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final snapshot = await _firestore
         .collection('users')
         .doc(user.uid)
@@ -130,7 +131,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<List<FriendRequest>> loadSentFriendRequests() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final snapshot = await _firestore
         .collection('users')
         .doc(user.uid)
@@ -152,7 +153,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<UserProfile> sendFriendRequestByCode(String friendCode) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final profile = await loadProfile();
     final normalizedCode = _normalizeFriendCode(friendCode);
     if (normalizedCode == profile.friendCode) {
@@ -225,7 +226,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<void> acceptFriendRequest(FriendRequest request) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final profile = await loadProfile();
     final now = FieldValue.serverTimestamp();
     final batch = _firestore.batch();
@@ -278,7 +279,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<void> cancelFriendRequest(FriendRequest request) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final batch = _firestore.batch();
     batch.delete(
       _firestore
@@ -299,7 +300,7 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
 
   @override
   Future<void> deleteFriend(UserFriend friend) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final batch = _firestore.batch();
     batch.delete(
       _firestore
@@ -377,14 +378,8 @@ class FirebaseUserProfileRepository implements UserProfileRepository {
     }
   }
 
-  Future<User> _ensureSignedIn() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      return currentUser;
-    }
-
-    final credential = await _auth.signInAnonymously();
-    return credential.user!;
+  Future<User> _requireUser() async {
+    return requireCurrentUser(_auth);
   }
 
   String _cleanDisplayName(String? displayName, {required String fallbackUid}) {

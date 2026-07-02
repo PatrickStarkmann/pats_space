@@ -162,6 +162,113 @@ class AppLocalizationsDe extends AppLocalizations {
   String get signIn => 'Anmelden';
 
   @override
+  String get secureAccount => 'Account sichern';
+
+  @override
+  String get secureAccountSubtitle => 'Apple oder Google auswählen';
+
+  @override
+  String get accountSecured => 'Account gesichert';
+
+  @override
+  String get anonymousAccountSubtitle =>
+      'Verknüpfe Apple oder Google, damit Freunde und Fortschritt erhalten bleiben.';
+
+  @override
+  String get signedInAccountSubtitle =>
+      'Deine Freunde und dein Fortschritt sind gesichert.';
+
+  @override
+  String signedInWithProvider(Object provider) {
+    return 'Angemeldet mit $provider';
+  }
+
+  @override
+  String get chooseSignInMethod =>
+      'Wähle aus, womit du diesen Account sichern möchtest.';
+
+  @override
+  String get continueWithApple => 'Mit Apple fortfahren';
+
+  @override
+  String get continueWithGoogle => 'Mit Google fortfahren';
+
+  @override
+  String connectedAccounts(Object providers) {
+    return 'Verbunden: $providers';
+  }
+
+  @override
+  String get connected => 'Verbunden';
+
+  @override
+  String get accountSecureSuccess => 'Account gesichert.';
+
+  @override
+  String get accountSecureFailed =>
+      'Account konnte gerade nicht gesichert werden.';
+
+  @override
+  String get existingAccountSignInSuccess => 'Angemeldet.';
+
+  @override
+  String get replaceGuestAccountTitle => 'Bestehenden Account nutzen?';
+
+  @override
+  String get replaceGuestAccountMessage =>
+      'Dieser Apple- oder Google-Account ist bereits vorhanden. Dein aktueller Gaststand auf diesem Gerät wird ersetzt.';
+
+  @override
+  String get replaceGuestAccountAction => 'Bestehenden Account nutzen';
+
+  @override
+  String get providerAlreadyLinked =>
+      'Apple oder Google ist bereits verbunden.';
+
+  @override
+  String get accountProviderInUse =>
+      'Dieser Apple- oder Google-Account wird schon woanders genutzt.';
+
+  @override
+  String get providerNotEnabled =>
+      'Diese Anmeldung ist noch nicht fertig eingerichtet.';
+
+  @override
+  String get signInCancelled => 'Anmeldung abgebrochen.';
+
+  @override
+  String get signOut => 'Abmelden';
+
+  @override
+  String get signOutTitle => 'Abmelden?';
+
+  @override
+  String get signOutMessage =>
+      'Du nutzt auf diesem Gerät danach einen neuen anonymen Account.';
+
+  @override
+  String get signedOutMessage =>
+      'Abgemeldet. Du nutzt jetzt einen neuen anonymen Account.';
+
+  @override
+  String get deleteAccountTitle => 'Account löschen?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Profil, Freunde, Anfragen und Freundescode werden gelöscht. Das kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get accountDeletedMessage => 'Account gelöscht.';
+
+  @override
+  String get accountDeleteFailed =>
+      'Account konnte gerade nicht gelöscht werden.';
+
+  @override
+  String get accountDeleteNeedsSignIn =>
+      'Bitte melde dich erneut an, bevor du den Account löschst.';
+
+  @override
   String get restorePurchases => 'Käufe wiederherstellen';
 
   @override

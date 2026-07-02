@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pats_space/core/auth/auth_session.dart';
 
 class FirebasePresenceRepository with WidgetsBindingObserver {
   FirebasePresenceRepository({
@@ -56,7 +57,7 @@ class FirebasePresenceRepository with WidgetsBindingObserver {
 
   Future<void> _markSeen() async {
     try {
-      final user = await _ensureSignedIn();
+      final user = await _requireUser();
       await _firestore.collection('users').doc(user.uid).set({
         'lastSeenAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -66,13 +67,7 @@ class FirebasePresenceRepository with WidgetsBindingObserver {
     }
   }
 
-  Future<User> _ensureSignedIn() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      return currentUser;
-    }
-
-    final credential = await _auth.signInAnonymously();
-    return credential.user!;
+  Future<User> _requireUser() async {
+    return requireCurrentUser(_auth);
   }
 }

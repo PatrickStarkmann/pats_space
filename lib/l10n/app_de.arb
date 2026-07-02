@@ -54,6 +54,46 @@
   "breakReminder": "Pausen-Erinnerung",
   "breakReminderDescription": "Wenn es Zeit für eine Pause ist",
   "signIn": "Anmelden",
+  "secureAccount": "Account sichern",
+  "secureAccountSubtitle": "Apple oder Google auswählen",
+  "accountSecured": "Account gesichert",
+  "anonymousAccountSubtitle": "Verknüpfe Apple oder Google, damit Freunde und Fortschritt erhalten bleiben.",
+  "signedInAccountSubtitle": "Deine Freunde und dein Fortschritt sind gesichert.",
+  "signedInWithProvider": "Angemeldet mit {provider}",
+  "@signedInWithProvider": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "chooseSignInMethod": "Wähle aus, womit du diesen Account sichern möchtest.",
+  "continueWithApple": "Mit Apple fortfahren",
+  "continueWithGoogle": "Mit Google fortfahren",
+  "connectedAccounts": "Verbunden: {providers}",
+  "@connectedAccounts": {
+    "placeholders": {
+      "providers": {}
+    }
+  },
+  "connected": "Verbunden",
+  "accountSecureSuccess": "Account gesichert.",
+  "accountSecureFailed": "Account konnte gerade nicht gesichert werden.",
+  "existingAccountSignInSuccess": "Angemeldet.",
+  "replaceGuestAccountTitle": "Bestehenden Account nutzen?",
+  "replaceGuestAccountMessage": "Dieser Apple- oder Google-Account ist bereits vorhanden. Dein aktueller Gaststand auf diesem Gerät wird ersetzt.",
+  "replaceGuestAccountAction": "Bestehenden Account nutzen",
+  "providerAlreadyLinked": "Apple oder Google ist bereits verbunden.",
+  "accountProviderInUse": "Dieser Apple- oder Google-Account wird schon woanders genutzt.",
+  "providerNotEnabled": "Diese Anmeldung ist noch nicht fertig eingerichtet.",
+  "signInCancelled": "Anmeldung abgebrochen.",
+  "signOut": "Abmelden",
+  "signOutTitle": "Abmelden?",
+  "signOutMessage": "Du nutzt auf diesem Gerät danach einen neuen anonymen Account.",
+  "signedOutMessage": "Abgemeldet. Du nutzt jetzt einen neuen anonymen Account.",
+  "deleteAccountTitle": "Account löschen?",
+  "deleteAccountMessage": "Profil, Freunde, Anfragen und Freundescode werden gelöscht. Das kann nicht rückgängig gemacht werden.",
+  "accountDeletedMessage": "Account gelöscht.",
+  "accountDeleteFailed": "Account konnte gerade nicht gelöscht werden.",
+  "accountDeleteNeedsSignIn": "Bitte melde dich erneut an, bevor du den Account löschst.",
   "restorePurchases": "Käufe wiederherstellen",
   "deleteAccount": "Account löschen",
   "privacyPolicy": "Datenschutzerklärung",

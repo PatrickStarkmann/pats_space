@@ -18,6 +18,20 @@
 	<string>pats_space</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-1051905230507-ios-7f4ba15b9f0773d04199ee</string>
+				<string>com.googleusercontent.apps.1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d.apps.googleusercontent.com</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>

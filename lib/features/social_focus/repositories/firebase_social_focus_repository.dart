@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pats_space/core/auth/auth_session.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/social_focus/repositories/social_focus_repository.dart';
 
@@ -25,7 +26,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<SocialFocusLobbySnapshot> loadLobby() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final friends = await _loadFriends(user.uid);
     final friendIds = friends.map((friend) => friend.id).toSet();
     final snapshot = await _rooms
@@ -117,7 +118,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
     controller = StreamController<SocialFocusLobbySnapshot>(
       onListen: () async {
-        final user = await _ensureSignedIn();
+        final user = await _requireUser();
         roomsSubscription = _rooms
             .where('isOpen', isEqualTo: true)
             .snapshots()
@@ -144,7 +145,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<SocialFocusRoom?> restoreActiveRoom() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final storedRoomId = await _loadActiveRoomId(user.uid);
     if (storedRoomId != null) {
       final room = await _restoreRoomForUser(storedRoomId, user.uid);
@@ -198,7 +199,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<SocialFocusRoom> createOpenRoom() async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     await _leavePreviousRoom(user.uid);
     final roomRef = _rooms.doc();
     final member = await _localMember(user);
@@ -225,7 +226,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<SocialFocusRoom> joinRoom(String roomId) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     await _leavePreviousRoom(user.uid, exceptRoomId: roomId);
     final roomRef = _rooms.doc(roomId);
     final member = await _localMember(user);
@@ -255,7 +256,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
     String roomId,
     SocialFocusActivity activity,
   ) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final now = FieldValue.serverTimestamp();
     await _rooms.doc(roomId).collection('members').doc(user.uid).set({
       'id': user.uid,
@@ -273,7 +274,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
     String roomId,
     SocialFocusMemberStatus status,
   ) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final now = FieldValue.serverTimestamp();
     await _rooms.doc(roomId).collection('members').doc(user.uid).set({
       'id': user.uid,
@@ -288,7 +289,7 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
 
   @override
   Future<void> leaveRoom(String roomId) async {
-    final user = await _ensureSignedIn();
+    final user = await _requireUser();
     final roomRef = _rooms.doc(roomId);
     await roomRef.collection('members').doc(user.uid).delete();
 
@@ -319,14 +320,8 @@ class FirebaseSocialFocusRepository implements SocialFocusRepository {
     await _clearActiveRoomId(user.uid);
   }
 
-  Future<User> _ensureSignedIn() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      return currentUser;
-    }
-
-    final credential = await _auth.signInAnonymously();
-    return credential.user!;
+  Future<User> _requireUser() async {
+    return requireCurrentUser(_auth);
   }
 
   Future<SocialFocusMember> _localMember(User user) async {

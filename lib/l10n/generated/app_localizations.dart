@@ -392,6 +392,186 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get signIn;
 
+  /// No description provided for @secureAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure account'**
+  String get secureAccount;
+
+  /// No description provided for @secureAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Apple or Google'**
+  String get secureAccountSubtitle;
+
+  /// No description provided for @accountSecured.
+  ///
+  /// In en, this message translates to:
+  /// **'Account secured'**
+  String get accountSecured;
+
+  /// No description provided for @anonymousAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Apple or Google so your friends and progress stay safe.'**
+  String get anonymousAccountSubtitle;
+
+  /// No description provided for @signedInAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your friends and progress are saved.'**
+  String get signedInAccountSubtitle;
+
+  /// No description provided for @signedInWithProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in with {provider}'**
+  String signedInWithProvider(Object provider);
+
+  /// No description provided for @chooseSignInMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you want to secure this account.'**
+  String get chooseSignInMethod;
+
+  /// No description provided for @continueWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get continueWithApple;
+
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @connectedAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected: {providers}'**
+  String connectedAccounts(Object providers);
+
+  /// No description provided for @connected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connected;
+
+  /// No description provided for @accountSecureSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account secured.'**
+  String get accountSecureSuccess;
+
+  /// No description provided for @accountSecureFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not secure your account right now.'**
+  String get accountSecureFailed;
+
+  /// No description provided for @existingAccountSignInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in.'**
+  String get existingAccountSignInSuccess;
+
+  /// No description provided for @replaceGuestAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use existing account?'**
+  String get replaceGuestAccountTitle;
+
+  /// No description provided for @replaceGuestAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This Apple or Google account already exists. Your current guest progress on this device will be replaced.'**
+  String get replaceGuestAccountMessage;
+
+  /// No description provided for @replaceGuestAccountAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use existing account'**
+  String get replaceGuestAccountAction;
+
+  /// No description provided for @providerAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple or Google is already connected.'**
+  String get providerAlreadyLinked;
+
+  /// No description provided for @accountProviderInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This Apple or Google account is already used somewhere else.'**
+  String get accountProviderInUse;
+
+  /// No description provided for @providerNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This sign-in option is not ready yet.'**
+  String get providerNotEnabled;
+
+  /// No description provided for @signInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was cancelled.'**
+  String get signInCancelled;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @signOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get signOutTitle;
+
+  /// No description provided for @signOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will continue with a new anonymous account on this device.'**
+  String get signOutMessage;
+
+  /// No description provided for @signedOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out. You are now using a new anonymous account.'**
+  String get signedOutMessage;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes your profile, friends, requests and friend code. This cannot be undone.'**
+  String get deleteAccountMessage;
+
+  /// No description provided for @accountDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted.'**
+  String get accountDeletedMessage;
+
+  /// No description provided for @accountDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete your account right now.'**
+  String get accountDeleteFailed;
+
+  /// No description provided for @accountDeleteNeedsSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again before deleting your account.'**
+  String get accountDeleteNeedsSignIn;
+
   /// No description provided for @restorePurchases.
   ///
   /// In en, this message translates to:

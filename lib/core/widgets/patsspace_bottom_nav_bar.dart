@@ -5,6 +5,7 @@ import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class PatsspaceBottomNavBar extends StatelessWidget {
   const PatsspaceBottomNavBar({
@@ -50,8 +51,8 @@ class PatsspaceBottomNavBar extends StatelessWidget {
                   child: SizedBox(
                     width: 52,
                     height: 44,
-                    child: Icon(
-                      tab.icon,
+                    child: PhosphorIcon(
+                      selected ? tab.selectedIcon : tab.icon,
                       color: selected ? AppColors.charcoal : AppColors.grayWarm,
                       size: selected ? 28 : 26,
                     ),

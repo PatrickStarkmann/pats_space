@@ -1,13 +1,34 @@
-import 'package:flutter/cupertino.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 enum AppTab {
-  home(label: 'Home', icon: CupertinoIcons.timer),
-  space(label: 'Space', icon: CupertinoIcons.tree),
-  stats(label: 'Stats', icon: CupertinoIcons.chart_bar_alt_fill),
-  settings(label: 'Settings', icon: CupertinoIcons.gear_alt);
+  home(
+    label: 'Home',
+    icon: PhosphorIconsRegular.timer,
+    selectedIcon: PhosphorIconsFill.timer,
+  ),
+  space(
+    label: 'Space',
+    icon: PhosphorIconsRegular.plant,
+    selectedIcon: PhosphorIconsFill.plant,
+  ),
+  stats(
+    label: 'Stats',
+    icon: PhosphorIconsRegular.chartBar,
+    selectedIcon: PhosphorIconsFill.chartBar,
+  ),
+  settings(
+    label: 'Settings',
+    icon: PhosphorIconsRegular.gear,
+    selectedIcon: PhosphorIconsFill.gear,
+  );
 
-  const AppTab({required this.label, required this.icon});
+  const AppTab({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+  });
 
   final String label;
-  final IconData icon;
+  final PhosphorIconData icon;
+  final PhosphorIconData selectedIcon;
 }
