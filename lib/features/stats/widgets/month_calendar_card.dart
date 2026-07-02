@@ -60,15 +60,13 @@ class MonthCalendarCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _CalendarHeaderPill(
-                  title: formatMonthTitle(visibleMonth),
-                  onPreviousMonth: onPreviousMonth,
-                  onNextMonth: onNextMonth,
-                ),
-              ],
+            Align(
+              alignment: Alignment.center,
+              child: _CalendarHeaderPill(
+                title: formatMonthTitle(visibleMonth),
+                onPreviousMonth: onPreviousMonth,
+                onNextMonth: onNextMonth,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Row(
@@ -260,6 +258,8 @@ class _CalendarHeaderPill extends StatelessWidget {
                 child: Text(
                   title,
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.headline.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,

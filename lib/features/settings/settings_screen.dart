@@ -21,6 +21,7 @@ import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 const _settingsBackgroundColor = Color(0xFFF5F4FA);
 
@@ -200,14 +201,14 @@ class _MainSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.person_crop_circle,
+              icon: PhosphorIconsRegular.userCircleGear,
               title: l10n.account,
               trailing: const _Chevron(),
               onTap: onAccountPressed,
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.person_2,
+              icon: PhosphorIconsRegular.users,
               title: l10n.friends,
               subtitle: l10n.friendsSettingsSubtitle,
               trailing: const _Chevron(),
@@ -215,7 +216,7 @@ class _MainSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.globe,
+              icon: PhosphorIconsRegular.globe,
               title: l10n.language,
               subtitle: language.localizedName(l10n),
               trailing: const _Chevron(),
@@ -227,7 +228,7 @@ class _MainSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.speaker_2,
+              icon: PhosphorIconsRegular.speakerHigh,
               title: l10n.sounds,
               subtitle: soundsEnabled ? l10n.on : l10n.off,
               trailing: const _Chevron(),
@@ -235,7 +236,7 @@ class _MainSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.bell,
+              icon: PhosphorIconsRegular.bell,
               title: l10n.notifications,
               subtitle: notificationsEnabled ? l10n.on : l10n.off,
               trailing: const _Chevron(),
@@ -247,13 +248,13 @@ class _MainSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.envelope,
+              icon: PhosphorIconsRegular.envelope,
               title: l10n.contactUs,
               trailing: const _Chevron(),
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.bolt,
+              icon: PhosphorIconsRegular.lightning,
               title: l10n.feedbackLab,
               subtitle: l10n.feedbackLabSubtitle,
               trailing: const _Chevron(),
@@ -261,7 +262,7 @@ class _MainSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.ellipsis_circle,
+              icon: PhosphorIconsRegular.dotsThreeCircle,
               title: l10n.others,
               trailing: const _Chevron(),
               onTap: onOthersPressed,
@@ -287,12 +288,12 @@ class _ProfileCardState extends State<_ProfileCard> {
   Future<UserProfile>? _profileFuture;
   UserProfile? _profile;
   int _profileLoadGeneration = 0;
+  String? _loadedUserId;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _profileFuture = _loadProfile();
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) {
         return;
@@ -302,7 +303,12 @@ class _ProfileCardState extends State<_ProfileCard> {
         setState(() {
           _profile = null;
           _profileFuture = null;
+          _loadedUserId = null;
         });
+        return;
+      }
+
+      if (_loadedUserId == user.uid && _profile != null) {
         return;
       }
 
@@ -323,7 +329,10 @@ class _ProfileCardState extends State<_ProfileCard> {
     final generation = ++_profileLoadGeneration;
     final profile = await widget.repository.loadProfile();
     if (mounted && generation == _profileLoadGeneration) {
-      setState(() => _profile = profile);
+      setState(() {
+        _profile = profile;
+        _loadedUserId = profile.uid;
+      });
     }
     return profile;
   }
@@ -387,7 +396,10 @@ class _ProfileCardState extends State<_ProfileCard> {
                         : () => _editDisplayName(context, profile),
                     icon: _saving
                         ? const CupertinoActivityIndicator()
-                        : const Icon(CupertinoIcons.pencil, size: 23),
+                        : const PhosphorIcon(
+                            PhosphorIconsRegular.pencilSimple,
+                            size: 23,
+                          ),
                   ),
                 ],
               ),
@@ -430,7 +442,10 @@ class _ProfileCardState extends State<_ProfileCard> {
                       onPressed: profile == null
                           ? null
                           : () => _copyFriendCode(profile.friendCode),
-                      icon: const Icon(CupertinoIcons.doc_on_doc, size: 22),
+                      icon: const PhosphorIcon(
+                        PhosphorIconsRegular.copy,
+                        size: 22,
+                      ),
                     ),
                   ],
                 ),
@@ -457,38 +472,19 @@ class _ProfileCardState extends State<_ProfileCard> {
     BuildContext context,
     UserProfile profile,
   ) async {
+    AppHaptics.selection();
+
     final l10n = AppLocalizations.of(context);
     final controller = TextEditingController(text: profile.displayName);
     final updatedName = await showCupertinoDialog<String>(
       context: context,
       builder: (context) {
-        return CupertinoAlertDialog(
-          title: Text(l10n.editName),
-          content: Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: CupertinoTextField(
-              controller: controller,
-              autofocus: true,
-              clearButtonMode: OverlayVisibilityMode.editing,
-              maxLength: 24,
-              placeholder: l10n.namePlaceholder,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) {
-                Navigator.of(context).pop(controller.text);
-              },
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancel),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: Text(l10n.save),
-            ),
-          ],
+        return _EditDisplayNameDialog(
+          controller: controller,
+          title: l10n.editName,
+          placeholder: l10n.namePlaceholder,
+          cancelLabel: l10n.cancel,
+          saveLabel: l10n.save,
         );
       },
     );
@@ -529,6 +525,81 @@ class _ProfileCardState extends State<_ProfileCard> {
           ],
         );
       },
+    );
+  }
+}
+
+class _EditDisplayNameDialog extends StatefulWidget {
+  const _EditDisplayNameDialog({
+    required this.controller,
+    required this.title,
+    required this.placeholder,
+    required this.cancelLabel,
+    required this.saveLabel,
+  });
+
+  final TextEditingController controller;
+  final String title;
+  final String placeholder;
+  final String cancelLabel;
+  final String saveLabel;
+
+  @override
+  State<_EditDisplayNameDialog> createState() => _EditDisplayNameDialogState();
+}
+
+class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) {
+        return;
+      }
+
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoAlertDialog(
+      title: Text(widget.title),
+      content: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: CupertinoTextField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          clearButtonMode: OverlayVisibilityMode.editing,
+          maxLength: 24,
+          placeholder: widget.placeholder,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            Navigator.of(context).pop(widget.controller.text);
+          },
+        ),
+      ),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.cancelLabel),
+        ),
+        CupertinoDialogAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.of(context).pop(widget.controller.text),
+          child: Text(widget.saveLabel),
+        ),
+      ],
     );
   }
 }
@@ -589,7 +660,7 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
                 _SettingsGroup(
                   children: [
                     _SettingsRow(
-                      icon: CupertinoIcons.person_badge_plus,
+                      icon: PhosphorIconsRegular.userPlus,
                       title: l10n.addFriend,
                       subtitle: l10n.addFriendSubtitle,
                       trailing: _sendingRequest
@@ -606,7 +677,7 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
                   children: [
                     for (final request in _incomingRequests)
                       _ProfileActionRow(
-                        icon: CupertinoIcons.person_2_fill,
+                        icon: PhosphorIconsRegular.users,
                         title: request.displayName,
                         subtitle: request.friendCode,
                         trailing: _busyId == request.uid
@@ -625,7 +696,7 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
                   children: [
                     for (final request in _sentRequests)
                       _ProfileActionRow(
-                        icon: CupertinoIcons.paperplane,
+                        icon: PhosphorIconsRegular.paperPlaneTilt,
                         title: request.displayName,
                         subtitle: l10n.pending,
                         trailing: _busyId == request.uid
@@ -644,7 +715,7 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
                   children: [
                     for (final friend in _friends)
                       _ProfileActionRow(
-                        icon: CupertinoIcons.person,
+                        icon: PhosphorIconsRegular.user,
                         title: friend.displayName,
                         subtitle: friend.friendCode,
                         trailing: _busyId == friend.uid
@@ -856,7 +927,7 @@ class _FriendsSection extends StatelessWidget {
         if (children.isEmpty)
           _SettingsGroup(
             children: [
-              _SettingsRow(icon: CupertinoIcons.person, title: emptyText),
+              _SettingsRow(icon: PhosphorIconsRegular.user, title: emptyText),
             ],
           )
         else
@@ -898,7 +969,7 @@ class _LanguageSettingsPage extends StatelessWidget {
           children: [
             for (var index = 0; index < languages.length; index++) ...[
               _SettingsRow(
-                icon: CupertinoIcons.globe,
+                icon: PhosphorIconsRegular.globe,
                 title: languages[index].localizedName(l10n),
                 trailing: selectedLanguage == languages[index]
                     ? const _Checkmark()
@@ -936,7 +1007,7 @@ class _SoundsSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.speaker_2,
+              icon: PhosphorIconsRegular.speakerHigh,
               title: l10n.alertSounds,
               subtitle: l10n.alertSoundsDescription,
               trailing: CupertinoSwitch(
@@ -947,7 +1018,7 @@ class _SoundsSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.speaker_1,
+              icon: PhosphorIconsRegular.speakerLow,
               title: l10n.sound,
               subtitle: l10n.softBell,
               trailing: const _Chevron(),
@@ -981,7 +1052,7 @@ class _NotificationsSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.bell,
+              icon: PhosphorIconsRegular.bell,
               title: l10n.notifications,
               subtitle: l10n.notificationsDescription,
               trailing: CupertinoSwitch(
@@ -992,14 +1063,14 @@ class _NotificationsSettingsPage extends StatelessWidget {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.timer,
+              icon: PhosphorIconsRegular.timer,
               title: l10n.focusReminder,
               subtitle: l10n.focusReminderDescription,
               trailing: const _Chevron(),
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.moon,
+              icon: PhosphorIconsRegular.moon,
               title: l10n.breakReminder,
               subtitle: l10n.breakReminderDescription,
               trailing: const _Chevron(),
@@ -1174,7 +1245,7 @@ class _FeedbackTestButton extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final IconData icon;
+  final Object icon;
   final VoidCallback onTap;
 
   @override
@@ -1196,7 +1267,7 @@ class _FeedbackTestButton extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(icon, color: AppColors.charcoal, size: 24),
+                _SettingsIcon(icon, color: AppColors.charcoal, size: 24),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(
@@ -1303,8 +1374,8 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
           children: [
             _SettingsRow(
               icon: secured
-                  ? CupertinoIcons.checkmark_shield
-                  : CupertinoIcons.person_crop_circle_badge_plus,
+                  ? PhosphorIconsRegular.shieldCheck
+                  : PhosphorIconsRegular.userCirclePlus,
               title: secured
                   ? l10n.signedInWithProvider(
                       _connectedProviderName(providerIds),
@@ -1322,14 +1393,14 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.arrow_counterclockwise_circle,
+              icon: PhosphorIconsRegular.arrowCounterClockwise,
               title: l10n.restorePurchases,
               trailing: const _Chevron(),
             ),
             if (secured) ...[
               const _SettingsDivider(),
               _SettingsRow(
-                icon: CupertinoIcons.square_arrow_right,
+                icon: PhosphorIconsRegular.signOut,
                 title: l10n.signOut,
                 destructive: true,
                 onTap: _linking ? null : _confirmSignOut,
@@ -1337,7 +1408,7 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
             ],
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.trash,
+              icon: PhosphorIconsRegular.trash,
               title: l10n.deleteAccount,
               destructive: true,
               trailing: const _Chevron(),
@@ -1734,19 +1805,19 @@ class _OthersSettingsPage extends StatelessWidget {
         _SettingsGroup(
           children: [
             _SettingsRow(
-              icon: CupertinoIcons.shield,
+              icon: PhosphorIconsRegular.lockKey,
               title: l10n.privacyPolicy,
               trailing: const _Chevron(),
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.doc_text,
+              icon: PhosphorIconsRegular.scroll,
               title: l10n.termsOfUse,
               trailing: const _Chevron(),
             ),
             const _SettingsDivider(),
             _SettingsRow(
-              icon: CupertinoIcons.info_circle,
+              icon: PhosphorIconsRegular.info,
               title: l10n.version,
               subtitle: l10n.appVersion,
             ),
@@ -1857,7 +1928,7 @@ class _ProfileActionRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.charcoal, size: 24),
+            _SettingsIcon(icon, color: AppColors.charcoal, size: 24),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
@@ -1918,7 +1989,7 @@ class _SettingsRow extends StatelessWidget {
     this.destructive = false,
   });
 
-  final IconData icon;
+  final Object icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
@@ -1936,7 +2007,7 @@ class _SettingsRow extends StatelessWidget {
           children: [
             SizedBox(
               width: 40,
-              child: Icon(
+              child: _SettingsIcon(
                 icon,
                 color: destructive
                     ? CupertinoColors.systemRed
@@ -1982,6 +2053,27 @@ class _SettingsRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SettingsIcon extends StatelessWidget {
+  const _SettingsIcon(this.icon, {required this.color, required this.size});
+
+  final Object icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = this.icon;
+    if (icon is PhosphorIconData) {
+      return PhosphorIcon(icon, color: color, size: size);
+    }
+    if (icon is IconData) {
+      return Icon(icon, color: color, size: size);
+    }
+
+    throw ArgumentError.value(icon, 'icon', 'Unsupported settings icon type');
   }
 }
 
