@@ -11,6 +11,7 @@ class FocusSessionRecord {
     required this.startedAt,
     required this.completedAt,
     required this.animationPair,
+    this.waterReward = 0,
   });
 
   final String id;
@@ -20,4 +21,18 @@ class FocusSessionRecord {
   final DateTime startedAt;
   final DateTime completedAt;
   final FocusAnimationPair animationPair;
+  final int waterReward;
+
+  FocusSessionRecord copyWith({int? waterReward}) {
+    return FocusSessionRecord(
+      id: id,
+      tag: tag,
+      mode: mode,
+      focusDuration: focusDuration,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      animationPair: animationPair,
+      waterReward: waterReward ?? this.waterReward,
+    );
+  }
 }

@@ -15,7 +15,6 @@ class GardenState {
     this.activeArea = GardenArea.main,
     Map<GardenArea, List<GardenPot>>? potsByArea,
     Set<GardenPotStyle> ownedPotStyles = GardenPotStyle.initiallyOwned,
-    this.selectedPotStyle = GardenPotStyle.classic,
     Set<GardenDecoration> ownedDecorations = const {},
     Set<GardenDecoration> placedDecorations = const {},
     Map<GardenArea, Set<GardenDecoration>>? placedDecorationsByArea,
@@ -57,8 +56,8 @@ class GardenState {
          activePlacements: potPlacements,
        );
 
-  static const defaultWater = 1000;
-  static const defaultCoins = 1000;
+  static const defaultWater = 0;
+  static const defaultCoins = 0;
   static const defaultPotCount = 4;
   static const maxPotCount = 9;
 
@@ -69,7 +68,6 @@ class GardenState {
       unlockedPlantTypes: GardenPlantType.initiallyUnlocked,
       activeArea: GardenArea.main,
       ownedPotStyles: GardenPotStyle.initiallyOwned,
-      selectedPotStyle: GardenPotStyle.classic,
       ownedDecorations: const {},
       placedDecorations: const {},
       decorationPlacements: const {},
@@ -86,7 +84,6 @@ class GardenState {
   final Map<GardenArea, List<GardenPot>> potsByArea;
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
-  final GardenPotStyle selectedPotStyle;
   final Set<GardenDecoration> ownedDecorations;
   final Map<GardenArea, Set<GardenDecoration>> placedDecorationsByArea;
   final Map<GardenArea, Map<GardenDecoration, GardenDecorationPlacement>>
@@ -132,7 +129,6 @@ class GardenState {
     Map<GardenArea, List<GardenPot>>? potsByArea,
     Set<GardenPlantType>? unlockedPlantTypes,
     Set<GardenPotStyle>? ownedPotStyles,
-    GardenPotStyle? selectedPotStyle,
     Set<GardenDecoration>? ownedDecorations,
     Set<GardenDecoration>? placedDecorations,
     Map<GardenArea, Set<GardenDecoration>>? placedDecorationsByArea,
@@ -167,7 +163,6 @@ class GardenState {
               ...GardenPotStyle.initiallyOwned,
               ...ownedPotStyles,
             }),
-      selectedPotStyle: selectedPotStyle ?? this.selectedPotStyle,
       ownedDecorations: ownedDecorations == null
           ? this.ownedDecorations
           : Set.unmodifiable(ownedDecorations),

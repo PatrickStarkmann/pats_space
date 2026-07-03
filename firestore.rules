@@ -61,6 +61,10 @@ service cloud.firestore {
       allow write: if signedIn() && userId == request.auth.uid;
     }
 
+    match /users/{userId}/private/{documentId} {
+      allow read, write: if signedIn() && userId == request.auth.uid;
+    }
+
     match /friend_codes/{friendCode} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;

@@ -724,7 +724,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (waterReward > 0) {
-      widget.historyController.addRecord(record);
+      widget.historyController.addRecord(
+        record.copyWith(waterReward: waterReward),
+      );
     }
 
     if (record.mode == FocusMode.stopwatch) {

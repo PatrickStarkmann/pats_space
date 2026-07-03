@@ -426,7 +426,7 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
     });
 
-    test('pot styles can be bought and equipped', () {
+    test('pot styles can be bought', () {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(coins: 200),
       );
@@ -437,11 +437,6 @@ void main() {
       expect(bought, isTrue);
       expect(controller.state.coins, 80);
       expect(controller.state.ownedPotStyles, contains(GardenPotStyle.blue));
-      expect(controller.state.selectedPotStyle, GardenPotStyle.blue);
-
-      final selected = controller.selectPotStyle(GardenPotStyle.classic);
-      expect(selected, isTrue);
-      expect(controller.state.selectedPotStyle, GardenPotStyle.classic);
     });
 
     test('pot style can be changed per selected pot', () {

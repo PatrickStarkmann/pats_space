@@ -102,23 +102,8 @@ class GardenController extends ChangeNotifier {
       _state.copyWith(
         coins: _state.coins - style.cost,
         ownedPotStyles: {..._state.ownedPotStyles, style},
-        selectedPotStyle: style,
       ),
     );
-    return true;
-  }
-
-  bool selectPotStyle(GardenPotStyle style) {
-    if (!GardenPotStyle.shopStyles.contains(style) &&
-        style != GardenPotStyle.classic) {
-      return false;
-    }
-
-    if (!_state.ownedPotStyles.contains(style)) {
-      return false;
-    }
-
-    _setState(_state.copyWith(selectedPotStyle: style));
     return true;
   }
 
@@ -138,13 +123,7 @@ class GardenController extends ChangeNotifier {
 
     final updatedPots = [..._state.pots]
       ..[index] = _state.pots[index].copyWith(potStyle: style);
-    _setState(
-      _state.copyWith(
-        pots: updatedPots,
-        selectedPotStyle: style,
-        selectedPotIndex: index,
-      ),
-    );
+    _setState(_state.copyWith(pots: updatedPots, selectedPotIndex: index));
     return true;
   }
 
@@ -652,7 +631,6 @@ class GardenController extends ChangeNotifier {
         a.selectedPotIndex != b.selectedPotIndex ||
         !setEquals(a.unlockedPlantTypes, b.unlockedPlantTypes) ||
         !setEquals(a.ownedPotStyles, b.ownedPotStyles) ||
-        a.selectedPotStyle != b.selectedPotStyle ||
         !setEquals(a.ownedDecorations, b.ownedDecorations) ||
         !_sameDecorationSetsByArea(
           a.placedDecorationsByArea,

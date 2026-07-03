@@ -180,6 +180,7 @@ class FirebaseAccountAuthService implements AccountAuthService {
     final friends = await userRef.collection('friends').get();
     final incoming = await userRef.collection('friend_requests').get();
     final sent = await userRef.collection('sent_friend_requests').get();
+    final privateDocs = await userRef.collection('private').get();
     var batch = _firestore.batch();
     var writeCount = 0;
 
@@ -224,6 +225,9 @@ class FirebaseAccountAuthService implements AccountAuthService {
             .collection('friend_requests')
             .doc(user.uid),
       );
+    }
+    for (final doc in privateDocs.docs) {
+      await queueDelete(doc.reference);
     }
     if (friendCode != null && friendCode.isNotEmpty) {
       await queueDelete(_firestore.collection('friend_codes').doc(friendCode));
