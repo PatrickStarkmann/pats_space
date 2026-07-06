@@ -10,6 +10,7 @@ import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
+import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
 import 'package:pats_space/features/shop/shop_screen.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
@@ -19,9 +20,16 @@ import 'package:pats_space/features/space/widgets/garden_stage.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class SpaceScreen extends StatefulWidget {
-  const SpaceScreen({super.key, required this.gardenController});
+  const SpaceScreen({
+    super.key,
+    required this.gardenController,
+    this.tutorialActive = false,
+    this.onTutorialCompleted,
+  });
 
   final GardenController gardenController;
+  final bool tutorialActive;
+  final VoidCallback? onTutorialCompleted;
 
   @override
   State<SpaceScreen> createState() => _SpaceScreenState();
@@ -514,9 +522,147 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   onCompleted: () => _removePlantUnlockReveal(reveal.id),
                 ),
               ),
+            if (widget.tutorialActive)
+              Positioned(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                top: MediaQuery.paddingOf(context).top + 116,
+                child: _GardenTutorialCoach(
+                  gardenController: widget.gardenController,
+                  onCompleted: widget.onTutorialCompleted,
+                ),
+              ),
           ],
         );
       },
+    );
+  }
+}
+
+class _GardenTutorialCoach extends StatelessWidget {
+  const _GardenTutorialCoach({
+    required this.gardenController,
+    required this.onCompleted,
+  });
+
+  final GardenController gardenController;
+  final VoidCallback? onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final garden = gardenController.state;
+    final selectedPot = garden.selectedPot;
+    final plantedAndWatered = garden.pots.any(
+      (pot) =>
+          !pot.isEmpty &&
+          (pot.stage != GardenGrowthStage.seed || pot.waterProgress > 0),
+    );
+    final title = plantedAndWatered
+        ? 'Your space has started growing'
+        : selectedPot == null
+        ? 'Let’s plant your first seed'
+        : selectedPot.isEmpty
+        ? 'Choose Daisy'
+        : 'Bring it to life';
+    final body = plantedAndWatered
+        ? 'Keep focusing to grow your plant and unlock more for your space.'
+        : selectedPot == null
+        ? 'Tap an empty pot. Your Waterdrops are ready.'
+        : selectedPot.isEmpty
+        ? 'Use your Waterdrops to bring your first plant to life.'
+        : 'Give the seed its first Waterdrop.';
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      child: DecoratedBox(
+        key: ValueKey(title),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .94),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .09),
+              blurRadius: 28,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted.withValues(alpha: .68),
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox.square(
+                  dimension: 38,
+                  child: Icon(
+                    CupertinoIcons.drop_fill,
+                    color: AppColors.charcoal,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.charcoal,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.grayWarm,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (plantedAndWatered) ...[
+                const SizedBox(width: AppSpacing.sm),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onCompleted,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.charcoal,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Text(
+                        'Done',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.surface,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

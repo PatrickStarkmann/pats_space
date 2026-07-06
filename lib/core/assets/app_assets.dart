@@ -51,6 +51,10 @@ class AppAssets {
       'assets/images/focus_pairs/pair_06/break_2.png';
   static const focusStampCharacter =
       'assets/images/focus/stamps/character/stamp_1.png';
+  static const onboardingPatTalking01 =
+      'assets/images/onboarding/pat_talking/talking_1.png';
+  static const onboardingPatTalking02 =
+      'assets/images/onboarding/pat_talking/talking_2.png';
   static const googleLogo = 'assets/images/ui/google.png';
 
   static const socialFocusDesk =
@@ -159,6 +163,11 @@ class AppAssets {
   static const focusPair06Focus = [focusPair06Focus01, focusPair06Focus02];
 
   static const focusPair06Break = [focusPair06Break01, focusPair06Break02];
+
+  static const onboardingPatTalking = [
+    onboardingPatTalking01,
+    onboardingPatTalking02,
+  ];
 
   static const socialFocusReading = [
     socialFocusReading01,

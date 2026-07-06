@@ -17,6 +17,7 @@ import 'package:pats_space/features/focus/repositories/focus_settings_repository
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
 import 'package:pats_space/features/home/home_screen.dart';
+import 'package:pats_space/features/onboarding/onboarding_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/settings_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
@@ -42,12 +43,18 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  static const _onboardingCompletedKey = 'onboarding.completed.v1';
+  static const _onboardingSourceKey = 'onboarding.source.v1';
+  static const _gardenTutorialCompletedKey =
+      'onboarding.garden_tutorial_completed.v1';
+
   AppTab _selectedTab = AppTab.home;
   late Future<_AppPersistenceBundle> _persistenceFuture;
   StreamSubscription<User?>? _authSubscription;
   String? _requestedPersistenceUid;
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
+  bool _gardenTutorialActive = false;
 
   @override
   void initState() {
@@ -101,6 +108,11 @@ class _AppShellState extends State<AppShell> {
           onTabSelected: (tab) {
             setState(() => _selectedTab = tab);
           },
+          onOnboardingFinished: _handleOnboardingFinished,
+          gardenTutorialActive: _gardenTutorialActive,
+          onGardenTutorialCompleted: () {
+            _handleGardenTutorialCompleted();
+          },
           bundle: bundle,
           language: widget.language,
           onLanguageChanged: widget.onLanguageChanged,
@@ -147,10 +159,14 @@ class _AppShellState extends State<AppShell> {
       repository: gardenRepository,
       initialState: gardenState,
     );
+    const onboardingCompleted = false;
+    _gardenTutorialActive = false;
     _historyController = historyController;
     _gardenController = gardenController;
 
     return _AppPersistenceBundle(
+      preferences: preferences,
+      onboardingCompleted: onboardingCompleted,
       settings: settings,
       settingsRepository: settingsRepository,
       historyController: historyController,
@@ -201,12 +217,48 @@ class _AppShellState extends State<AppShell> {
     await localRepository.clearState();
     return localState;
   }
+
+  Future<void> _handleOnboardingFinished(
+    String? source,
+    int waterReward,
+  ) async {
+    final bundle = await _persistenceFuture;
+    if (source != null) {
+      await bundle.preferences.setString(_onboardingSourceKey, source);
+    }
+    await bundle.preferences.setBool(_onboardingCompletedKey, true);
+    await bundle.preferences.setBool(_gardenTutorialCompletedKey, false);
+    bundle.gardenController.addWater(waterReward);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedTab = AppTab.space;
+      _gardenTutorialActive = true;
+      _persistenceFuture = Future.value(bundle.copyWithOnboardingCompleted());
+    });
+  }
+
+  Future<void> _handleGardenTutorialCompleted() async {
+    final bundle = await _persistenceFuture;
+    await bundle.preferences.setBool(_gardenTutorialCompletedKey, true);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _gardenTutorialActive = false);
+  }
 }
 
 class _AppShellContent extends StatelessWidget {
   const _AppShellContent({
     required this.selectedTab,
     required this.onTabSelected,
+    required this.onOnboardingFinished,
+    required this.gardenTutorialActive,
+    required this.onGardenTutorialCompleted,
     required this.bundle,
     required this.language,
     required this.onLanguageChanged,
@@ -214,12 +266,20 @@ class _AppShellContent extends StatelessWidget {
 
   final AppTab selectedTab;
   final ValueChanged<AppTab> onTabSelected;
+  final Future<void> Function(String? source, int waterReward)
+  onOnboardingFinished;
+  final bool gardenTutorialActive;
+  final VoidCallback onGardenTutorialCompleted;
   final _AppPersistenceBundle bundle;
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
 
   @override
   Widget build(BuildContext context) {
+    if (!bundle.onboardingCompleted) {
+      return OnboardingScreen(onFinished: onOnboardingFinished);
+    }
+
     return AppScaffold(
       backgroundColor:
           selectedTab == AppTab.stats || selectedTab == AppTab.settings
@@ -245,7 +305,11 @@ class _AppShellContent extends StatelessWidget {
             settingsRepository: bundle.settingsRepository,
             onOpenSpace: () => onTabSelected(AppTab.space),
           ),
-          SpaceScreen(gardenController: bundle.gardenController),
+          SpaceScreen(
+            gardenController: bundle.gardenController,
+            tutorialActive: gardenTutorialActive,
+            onTutorialCompleted: onGardenTutorialCompleted,
+          ),
           StatsScreen(historyController: bundle.historyController),
           SettingsScreen(
             language: language,
@@ -259,14 +323,29 @@ class _AppShellContent extends StatelessWidget {
 
 class _AppPersistenceBundle {
   const _AppPersistenceBundle({
+    required this.preferences,
+    required this.onboardingCompleted,
     required this.settings,
     required this.settingsRepository,
     required this.historyController,
     required this.gardenController,
   });
 
+  final SharedPreferences preferences;
+  final bool onboardingCompleted;
   final FocusTimerSettings settings;
   final FocusSettingsRepository settingsRepository;
   final FocusHistoryController historyController;
   final GardenController gardenController;
+
+  _AppPersistenceBundle copyWithOnboardingCompleted() {
+    return _AppPersistenceBundle(
+      preferences: preferences,
+      onboardingCompleted: true,
+      settings: settings,
+      settingsRepository: settingsRepository,
+      historyController: historyController,
+      gardenController: gardenController,
+    );
+  }
 }

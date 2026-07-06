@@ -9,12 +9,14 @@ class LoopingAssetAnimation extends StatefulWidget {
     this.frameDuration = const Duration(milliseconds: 1100),
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
+    this.playing = true,
   });
 
   final List<String> frames;
   final Duration frameDuration;
   final BoxFit fit;
   final Alignment alignment;
+  final bool playing;
 
   @override
   State<LoopingAssetAnimation> createState() => _LoopingAssetAnimationState();
@@ -37,6 +39,8 @@ class _LoopingAssetAnimationState extends State<LoopingAssetAnimation> {
         oldWidget.frameDuration != widget.frameDuration) {
       _frameIndex = 0;
       _start();
+    } else if (oldWidget.playing != widget.playing) {
+      _start();
     }
   }
 
@@ -48,7 +52,7 @@ class _LoopingAssetAnimationState extends State<LoopingAssetAnimation> {
 
   void _start() {
     _timer?.cancel();
-    if (widget.frames.length < 2) {
+    if (!widget.playing || widget.frames.length < 2) {
       return;
     }
 
