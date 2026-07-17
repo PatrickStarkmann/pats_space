@@ -346,12 +346,12 @@
   "saveYourSpaceTitle": "Save your space",
   "saveYourSpaceBody": "Keep your plants, Waterdrops, and focus history safe across devices.",
   "notNow": "Not now",
-  "gardenTutorialPickHomeTitle": "Pick a home",
-  "gardenTutorialPickHomeBody": "Tap the glowing pot to start your garden.",
-  "gardenTutorialPlantDaisyTitle": "Plant Daisy",
-  "gardenTutorialPlantDaisyBody": "Daisy is selected for you. Use one Waterdrop to plant it.",
+  "gardenTutorialPickHomeTitle": "Pick a pot",
+  "gardenTutorialPickHomeBody": "Tap the glowing pot.",
+  "gardenTutorialPlantDaisyTitle": "Plant your seed",
+  "gardenTutorialPlantDaisyBody": "Daisy is ready. Plant it here.",
   "gardenTutorialGiveWaterTitle": "Give it water",
-  "gardenTutorialGiveWaterBody": "Tap the drop bubble until your seed sprouts.",
-  "gardenTutorialSpaceGrowingTitle": "Your space is growing",
-  "gardenTutorialSpaceGrowingBody": "Nice. Keep focusing to earn more Waterdrops and grow this plant."
+  "gardenTutorialGiveWaterBody": "Tap the drop until it sprouts.",
+  "gardenTutorialSpaceGrowingTitle": "It sprouted",
+  "gardenTutorialSpaceGrowingBody": "Your space has begun."
 }

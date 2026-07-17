@@ -913,30 +913,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notNow => 'Not now';
 
   @override
-  String get gardenTutorialPickHomeTitle => 'Pick a home';
+  String get gardenTutorialPickHomeTitle => 'Pick a pot';
 
   @override
-  String get gardenTutorialPickHomeBody =>
-      'Tap the glowing pot to start your garden.';
+  String get gardenTutorialPickHomeBody => 'Tap the glowing pot.';
 
   @override
-  String get gardenTutorialPlantDaisyTitle => 'Plant Daisy';
+  String get gardenTutorialPlantDaisyTitle => 'Plant your seed';
 
   @override
-  String get gardenTutorialPlantDaisyBody =>
-      'Daisy is selected for you. Use one Waterdrop to plant it.';
+  String get gardenTutorialPlantDaisyBody => 'Daisy is ready. Plant it here.';
 
   @override
   String get gardenTutorialGiveWaterTitle => 'Give it water';
 
   @override
-  String get gardenTutorialGiveWaterBody =>
-      'Tap the drop bubble until your seed sprouts.';
+  String get gardenTutorialGiveWaterBody => 'Tap the drop until it sprouts.';
 
   @override
-  String get gardenTutorialSpaceGrowingTitle => 'Your space is growing';
+  String get gardenTutorialSpaceGrowingTitle => 'It sprouted';
 
   @override
-  String get gardenTutorialSpaceGrowingBody =>
-      'Nice. Keep focusing to earn more Waterdrops and grow this plant.';
+  String get gardenTutorialSpaceGrowingBody => 'Your space has begun.';
 }

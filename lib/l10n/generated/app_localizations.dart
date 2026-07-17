@@ -1787,25 +1787,25 @@ abstract class AppLocalizations {
   /// No description provided for @gardenTutorialPickHomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Pick a home'**
+  /// **'Pick a pot'**
   String get gardenTutorialPickHomeTitle;
 
   /// No description provided for @gardenTutorialPickHomeBody.
   ///
   /// In en, this message translates to:
-  /// **'Tap the glowing pot to start your garden.'**
+  /// **'Tap the glowing pot.'**
   String get gardenTutorialPickHomeBody;
 
   /// No description provided for @gardenTutorialPlantDaisyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Plant Daisy'**
+  /// **'Plant your seed'**
   String get gardenTutorialPlantDaisyTitle;
 
   /// No description provided for @gardenTutorialPlantDaisyBody.
   ///
   /// In en, this message translates to:
-  /// **'Daisy is selected for you. Use one Waterdrop to plant it.'**
+  /// **'Daisy is ready. Plant it here.'**
   String get gardenTutorialPlantDaisyBody;
 
   /// No description provided for @gardenTutorialGiveWaterTitle.
@@ -1817,19 +1817,19 @@ abstract class AppLocalizations {
   /// No description provided for @gardenTutorialGiveWaterBody.
   ///
   /// In en, this message translates to:
-  /// **'Tap the drop bubble until your seed sprouts.'**
+  /// **'Tap the drop until it sprouts.'**
   String get gardenTutorialGiveWaterBody;
 
   /// No description provided for @gardenTutorialSpaceGrowingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your space is growing'**
+  /// **'It sprouted'**
   String get gardenTutorialSpaceGrowingTitle;
 
   /// No description provided for @gardenTutorialSpaceGrowingBody.
   ///
   /// In en, this message translates to:
-  /// **'Nice. Keep focusing to earn more Waterdrops and grow this plant.'**
+  /// **'Your space has begun.'**
   String get gardenTutorialSpaceGrowingBody;
 }
 

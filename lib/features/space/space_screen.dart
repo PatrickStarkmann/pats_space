@@ -646,16 +646,15 @@ class _GardenTutorialLayer extends StatelessWidget {
     }
 
     final safeArea = MediaQuery.paddingOf(context);
-    final card = _GardenTutorialCard(step: step, onCompleted: onCompleted);
 
     return Stack(
       children: [
         Positioned(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          top: safeArea.top + 112,
+          left: AppSpacing.xl,
+          right: AppSpacing.xl,
+          top: safeArea.top + 126,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
+            duration: const Duration(milliseconds: 260),
             switchInCurve: Curves.easeOutCubic,
             switchOutCurve: Curves.easeOutCubic,
             transitionBuilder: (child, animation) {
@@ -663,7 +662,7 @@ class _GardenTutorialLayer extends StatelessWidget {
                 opacity: animation,
                 child: SlideTransition(
                   position: Tween<Offset>(
-                    begin: const Offset(0, -.04),
+                    begin: const Offset(0, -.08),
                     end: Offset.zero,
                   ).animate(animation),
                   child: child,
@@ -671,8 +670,15 @@ class _GardenTutorialLayer extends StatelessWidget {
               );
             },
             child: step == _GardenTutorialStep.complete
-                ? card
-                : IgnorePointer(key: ValueKey(step), child: card),
+                ? _GardenTutorialCompleteCard(
+                    key: ValueKey(step),
+                    step: step,
+                    onCompleted: onCompleted,
+                  )
+                : IgnorePointer(
+                    key: ValueKey(step),
+                    child: _GardenTutorialNudge(step: step),
+                  ),
           ),
         ),
       ],
@@ -680,8 +686,78 @@ class _GardenTutorialLayer extends StatelessWidget {
   }
 }
 
-class _GardenTutorialCard extends StatelessWidget {
-  const _GardenTutorialCard({required this.step, required this.onCompleted});
+class _GardenTutorialNudge extends StatelessWidget {
+  const _GardenTutorialNudge({required this.step});
+
+  final _GardenTutorialStep step;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .5)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .08),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          children: [
+            _GardenTutorialIcon(icon: step.icon, emphasized: false),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    step.title(l10n),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.charcoal,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    step.body(l10n),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.grayWarm,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GardenTutorialCompleteCard extends StatelessWidget {
+  const _GardenTutorialCompleteCard({
+    super.key,
+    required this.step,
+    required this.onCompleted,
+  });
 
   final _GardenTutorialStep step;
   final VoidCallback? onCompleted;
@@ -689,85 +765,74 @@ class _GardenTutorialCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final completed = step == _GardenTutorialStep.complete;
 
     return DecoratedBox(
-      key: ValueKey(step),
       decoration: BoxDecoration(
         color: AppColors.surface.withValues(alpha: .96),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: AppColors.graySoft.withValues(alpha: .5)),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .52)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.charcoal.withValues(alpha: .09),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            color: AppColors.charcoal.withValues(alpha: .1),
+            blurRadius: 30,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                _GardenTutorialIcon(icon: step.icon, completed: completed),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        step.title(l10n),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.charcoal,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        step.body(l10n),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.grayWarm,
-                          height: 1.25,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _GardenTutorialProgress(activeIndex: step.progressIndex),
-            if (completed) ...[
-              const SizedBox(height: AppSpacing.md),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onCompleted,
-                child: Container(
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.charcoal,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  child: Text(
-                    l10n.done,
+            _GardenTutorialIcon(icon: step.icon, emphasized: true),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    step.title(l10n),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.body.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.w800,
+                      color: AppColors.charcoal,
+                      fontWeight: FontWeight.w900,
                     ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    step.body(l10n),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.grayWarm,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onCompleted,
+              child: Container(
+                height: 42,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.charcoal,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+                child: Text(
+                  l10n.done,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.surface,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -776,58 +841,28 @@ class _GardenTutorialCard extends StatelessWidget {
 }
 
 class _GardenTutorialIcon extends StatelessWidget {
-  const _GardenTutorialIcon({required this.icon, required this.completed});
+  const _GardenTutorialIcon({required this.icon, required this.emphasized});
 
   final IconData icon;
-  final bool completed;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: completed
+        color: emphasized
             ? AppColors.charcoal
-            : AppColors.surfaceMuted.withValues(alpha: .82),
+            : AppColors.surfaceMuted.withValues(alpha: .72),
         shape: BoxShape.circle,
       ),
       child: SizedBox.square(
-        dimension: 42,
+        dimension: emphasized ? 46 : 38,
         child: PhosphorIcon(
           icon,
-          color: completed ? AppColors.surface : AppColors.charcoal,
-          size: 20,
+          color: emphasized ? AppColors.surface : AppColors.charcoal,
+          size: emphasized ? 22 : 19,
         ),
       ),
-    );
-  }
-}
-
-class _GardenTutorialProgress extends StatelessWidget {
-  const _GardenTutorialProgress({required this.activeIndex});
-
-  final int activeIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var index = 0; index < 4; index++) ...[
-          Expanded(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              height: 3,
-              decoration: BoxDecoration(
-                color: index <= activeIndex
-                    ? AppColors.charcoal
-                    : AppColors.graySoft.withValues(alpha: .7),
-                borderRadius: BorderRadius.circular(AppRadii.pill),
-              ),
-            ),
-          ),
-          if (index != 3) const SizedBox(width: AppSpacing.xs),
-        ],
-      ],
     );
   }
 }

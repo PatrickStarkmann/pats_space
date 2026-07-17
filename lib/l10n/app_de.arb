@@ -346,12 +346,12 @@
   "saveYourSpaceTitle": "Sichere deinen Space",
   "saveYourSpaceBody": "Bewahre deine Pflanzen, Waterdrops und Fokus-Historie sicher auf allen Geräten.",
   "notNow": "Nicht jetzt",
-  "gardenTutorialPickHomeTitle": "Wähle ein Zuhause",
-  "gardenTutorialPickHomeBody": "Tippe auf den leuchtenden Topf, um deinen Garten zu starten.",
-  "gardenTutorialPlantDaisyTitle": "Daisy pflanzen",
-  "gardenTutorialPlantDaisyBody": "Daisy ist schon ausgewählt. Nutze einen Waterdrop, um sie zu pflanzen.",
+  "gardenTutorialPickHomeTitle": "Wähl einen Topf",
+  "gardenTutorialPickHomeBody": "Tippe auf den leuchtenden Topf.",
+  "gardenTutorialPlantDaisyTitle": "Pflanz deinen Seed",
+  "gardenTutorialPlantDaisyBody": "Daisy ist bereit. Pflanz sie hier.",
   "gardenTutorialGiveWaterTitle": "Gieß sie",
-  "gardenTutorialGiveWaterBody": "Tippe auf die Drop-Bubble, bis dein Seed sprießt.",
-  "gardenTutorialSpaceGrowingTitle": "Dein Space wächst",
-  "gardenTutorialSpaceGrowingBody": "Nice. Fokussiere weiter, um mehr Waterdrops zu sammeln und deine Pflanze wachsen zu lassen."
+  "gardenTutorialGiveWaterBody": "Tippe auf den Drop, bis sie sprießt.",
+  "gardenTutorialSpaceGrowingTitle": "Sie sprießt",
+  "gardenTutorialSpaceGrowingBody": "Dein Space wächst."
 }
