@@ -36,6 +36,8 @@ class GardenStage extends StatelessWidget {
     required this.arrangingDecorations,
     required this.selectedDecoration,
     required this.selectedArrangedPotIndex,
+    this.tutorialHighlightedPotIndex,
+    this.tutorialInteractivePotIndex,
     required this.onPotSelected,
     required this.onPotAction,
     required this.onCoinCollected,
@@ -57,6 +59,8 @@ class GardenStage extends StatelessWidget {
   final bool arrangingDecorations;
   final GardenDecoration? selectedDecoration;
   final int? selectedArrangedPotIndex;
+  final int? tutorialHighlightedPotIndex;
+  final int? tutorialInteractivePotIndex;
   final ValueChanged<int> onPotSelected;
   final ValueChanged<int> onPotAction;
   final CoinCollectedCallback onCoinCollected;
@@ -236,6 +240,13 @@ class GardenStage extends StatelessWidget {
                 arranging: arrangingDecorations,
                 movable: !_isFixedPotSlot(index),
                 selected: selectedArrangedPotIndex == index,
+                tutorialHighlighted:
+                    !arrangingDecorations &&
+                    tutorialHighlightedPotIndex == index,
+                tutorialLocked:
+                    !arrangingDecorations &&
+                    tutorialInteractivePotIndex != null &&
+                    tutorialInteractivePotIndex != index,
                 onTap: () => arrangingDecorations
                     ? onPotArrangeSelected(index)
                     : onPotSelected(index),
@@ -467,6 +478,8 @@ class _PositionedPot extends StatefulWidget {
     required this.arranging,
     required this.movable,
     required this.selected,
+    required this.tutorialHighlighted,
+    required this.tutorialLocked,
     required this.onTap,
     required this.onMoved,
     required this.onMoveEnded,
@@ -485,6 +498,8 @@ class _PositionedPot extends StatefulWidget {
   final bool arranging;
   final bool movable;
   final bool selected;
+  final bool tutorialHighlighted;
+  final bool tutorialLocked;
   final VoidCallback onTap;
   final void Function(double alignmentX, double alignmentY) onMoved;
   final void Function(double alignmentX, double alignmentY) onMoveEnded;
@@ -500,6 +515,7 @@ class _PositionedPotState extends State<_PositionedPot>
   late final AnimationController _feedbackController;
   late final AnimationController _readyController;
   late final AnimationController _shakeController;
+  late final AnimationController _tutorialController;
   Timer? _wateringTimer;
   _PotFeedbackKind _feedbackKind = _PotFeedbackKind.water;
   String? _bubbleProgressText;
@@ -522,7 +538,12 @@ class _PositionedPotState extends State<_PositionedPot>
       vsync: this,
       duration: const Duration(milliseconds: 260),
     );
+    _tutorialController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
     _syncReadyPulse();
+    _syncTutorialPulse();
   }
 
   @override
@@ -537,6 +558,7 @@ class _PositionedPotState extends State<_PositionedPot>
 
     if (!changed) {
       _syncReadyPulse();
+      _syncTutorialPulse();
       return;
     }
 
@@ -566,6 +588,7 @@ class _PositionedPotState extends State<_PositionedPot>
       );
     }
     _syncReadyPulse();
+    _syncTutorialPulse();
     _feedbackController.forward(from: 0);
   }
 
@@ -575,6 +598,7 @@ class _PositionedPotState extends State<_PositionedPot>
     _feedbackController.dispose();
     _readyController.dispose();
     _shakeController.dispose();
+    _tutorialController.dispose();
     super.dispose();
   }
 
@@ -590,6 +614,20 @@ class _PositionedPotState extends State<_PositionedPot>
       _readyController.stop();
     }
     _readyController.value = 0;
+  }
+
+  void _syncTutorialPulse() {
+    if (widget.tutorialHighlighted) {
+      if (!_tutorialController.isAnimating) {
+        _tutorialController.repeat();
+      }
+      return;
+    }
+
+    if (_tutorialController.isAnimating) {
+      _tutorialController.stop();
+    }
+    _tutorialController.value = 0;
   }
 
   bool get _canWaterCurrentPot {
@@ -678,7 +716,9 @@ class _PositionedPotState extends State<_PositionedPot>
         : !stage.needsWater || widget.water > 0;
     final canMove = widget.arranging && widget.movable;
     final showActionBubble =
-        !widget.arranging && (!stage.hasCoins || pot.hasCollectableCoins);
+        !widget.arranging &&
+        !widget.tutorialLocked &&
+        (!stage.hasCoins || pot.hasCollectableCoins);
     final isReadyForCoins = pot.hasCollectableCoins;
 
     return Positioned(
@@ -696,7 +736,7 @@ class _PositionedPotState extends State<_PositionedPot>
             height: potSize,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: widget.onTap,
+              onTap: widget.tutorialLocked ? null : widget.onTap,
               onPanStart: canMove
                   ? (_) {
                       widget.onTap();
@@ -772,6 +812,11 @@ class _PositionedPotState extends State<_PositionedPot>
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
+                    if (widget.tutorialHighlighted)
+                      _TutorialPotPulse(
+                        controller: _tutorialController,
+                        potSize: potSize,
+                      ),
                     GardenPlantedPotView(
                       pot: pot,
                       size: potSize,
@@ -863,6 +908,57 @@ class _PositionedPotState extends State<_PositionedPot>
 }
 
 enum _PotFeedbackKind { water, growth, coin }
+
+class _TutorialPotPulse extends StatelessWidget {
+  const _TutorialPotPulse({required this.controller, required this.potSize});
+
+  final Animation<double> controller;
+  final double potSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final wave = Curves.easeOutCubic.transform(controller.value);
+            final scale = 1.02 + wave * .22;
+            final opacity = (1 - wave).clamp(0.0, 1.0);
+
+            return Center(
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: potSize * 1.08,
+                  height: potSize * 1.08,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.charcoal.withValues(
+                        alpha: .26 * opacity,
+                      ),
+                      width: 1.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.charcoal.withValues(
+                          alpha: .06 * opacity,
+                        ),
+                        blurRadius: 18,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
 
 class _BubbleProgressToast extends StatelessWidget {
   const _BubbleProgressToast({

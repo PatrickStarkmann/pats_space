@@ -8,6 +8,7 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/looping_asset_animation.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _challengeDuration = Duration(seconds: 45);
+  static const _challengeDuration = Duration(seconds: 30);
   static const _screenCount = 6;
 
   int _screenIndex = 0;
@@ -57,17 +58,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 AppSpacing.lg,
               ),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeOutCubic,
+                duration: const Duration(milliseconds: 360),
                 transitionBuilder: (child, animation) {
+                  final opacity = CurvedAnimation(
+                    parent: animation,
+                    curve: const Interval(.48, 1, curve: Curves.easeOutCubic),
+                  );
                   return FadeTransition(
-                    opacity: animation,
+                    opacity: opacity,
                     child: SlideTransition(
                       position: Tween<Offset>(
-                        begin: const Offset(.025, 0),
+                        begin: const Offset(.018, 0),
                         end: Offset.zero,
-                      ).animate(animation),
+                      ).animate(opacity),
                       child: child,
                     ),
                   );
@@ -82,14 +85,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildScreen() {
+    final l10n = AppLocalizations.of(context);
     return switch (_screenIndex) {
       0 => _SpokenOnboardingScreen(
         key: const ValueKey('welcome'),
         progressIndex: _screenIndex,
-        title: 'Welcome to Patsspace',
-        body: 'A cozy little focus app that helps your space grow.',
-        actionLabel: 'Continue',
-        visualBuilder: (speaking) => _PatTalkingVisual(speaking: speaking),
+        title: l10n.onboardingWelcomeTitle,
+        body: l10n.onboardingWelcomeBody,
+        actionLabel: l10n.continueAction,
+        visualBuilder: (_) => const SizedBox.shrink(),
+        visualFlex: 1,
+        bodyFlex: 8,
+        bodyAlignment: const Alignment(0, -.12),
         onContinue: _nextScreen,
       ),
       1 => _PatIntroScreen(
@@ -97,19 +104,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         progressIndex: _screenIndex,
         onContinue: _nextScreen,
       ),
-      2 => _SpokenOnboardingScreen(
+      2 => _FocusEarnGrowScreen(
         key: const ValueKey('loop'),
         progressIndex: _screenIndex,
-        title: 'Focus, earn, grow',
-        body:
-            'Stay focused, earn Waterdrops, and use them to grow plants in your space.',
-        actionLabel: 'Continue',
-        visualBuilder: (_) => const _FocusEarnGrowVisual(),
-        bodyBeforeVisual: true,
-        bodyAlignment: Alignment.topCenter,
-        visualAlignment: Alignment.topCenter,
-        bodyFlex: 3,
-        visualFlex: 6,
         onContinue: _nextScreen,
       ),
       3 => _SourceScreen(
@@ -125,10 +122,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       4 => _SpokenOnboardingScreen(
         key: const ValueKey('challenge-start'),
         progressIndex: _screenIndex,
-        title: 'Let’s start small',
-        body: 'Try a 45-second focus challenge with me.',
-        actionLabel: 'Start challenge',
+        title: l10n.onboardingStartSmallTitle,
+        body: l10n.onboardingStartSmallBody,
+        actionLabel: l10n.onboardingStartChallenge,
         visualBuilder: (_) => const _FocusChallengePreview(),
+        visualAlignment: const Alignment(0, .45),
         onContinue: _startChallengeFromIntro,
       ),
       _ => _ChallengeScreen(
@@ -233,12 +231,13 @@ class _PatIntroScreenState extends State<_PatIntroScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _OnboardingFrame(
       progressIndex: widget.progressIndex,
       visual: _PatTalkingVisual(speaking: _speaking),
       body: _SpokenCopy(
-        title: 'Hi, I’m Pat.',
-        body: 'I’ll show you around.',
+        title: l10n.onboardingPatTitle,
+        body: l10n.onboardingPatBody,
         onSpeakingChanged: (speaking) {
           if (mounted) {
             setState(() => _speaking = speaking);
@@ -250,7 +249,7 @@ class _PatIntroScreenState extends State<_PatIntroScreen> {
           }
         },
       ),
-      actionLabel: 'Hi Pat',
+      actionLabel: l10n.onboardingPatAction,
       actionEnabled: _ready,
       onAction: widget.onContinue,
     );
@@ -266,7 +265,6 @@ class _SpokenOnboardingScreen extends StatefulWidget {
     required this.actionLabel,
     required this.visualBuilder,
     required this.onContinue,
-    this.bodyBeforeVisual = false,
     this.visualAlignment = Alignment.center,
     this.bodyAlignment = Alignment.center,
     this.visualFlex = 5,
@@ -279,7 +277,6 @@ class _SpokenOnboardingScreen extends StatefulWidget {
   final String actionLabel;
   final Widget Function(bool speaking) visualBuilder;
   final VoidCallback onContinue;
-  final bool bodyBeforeVisual;
   final Alignment visualAlignment;
   final Alignment bodyAlignment;
   final int visualFlex;
@@ -299,7 +296,6 @@ class _SpokenOnboardingScreenState extends State<_SpokenOnboardingScreen> {
     return _OnboardingFrame(
       progressIndex: widget.progressIndex,
       visual: widget.visualBuilder(_speaking),
-      bodyBeforeVisual: widget.bodyBeforeVisual,
       visualAlignment: widget.visualAlignment,
       bodyAlignment: widget.bodyAlignment,
       visualFlex: widget.visualFlex,
@@ -325,6 +321,70 @@ class _SpokenOnboardingScreenState extends State<_SpokenOnboardingScreen> {
   }
 }
 
+class _FocusEarnGrowScreen extends StatefulWidget {
+  const _FocusEarnGrowScreen({
+    super.key,
+    required this.progressIndex,
+    required this.onContinue,
+  });
+
+  final int progressIndex;
+  final VoidCallback onContinue;
+
+  @override
+  State<_FocusEarnGrowScreen> createState() => _FocusEarnGrowScreenState();
+}
+
+class _FocusEarnGrowScreenState extends State<_FocusEarnGrowScreen> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 650), () {
+      if (mounted) {
+        setState(() => _ready = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _OnboardingFrame(
+      progressIndex: widget.progressIndex,
+      bodyBeforeVisual: true,
+      bodyFlex: 3,
+      visualFlex: 6,
+      bodyAlignment: const Alignment(0, .32),
+      visualAlignment: Alignment.topCenter,
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.onboardingFocusEarnGrowTitle,
+            style: AppTextStyles.title,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.onboardingFocusEarnGrowBody,
+            style: AppTextStyles.bodyMuted,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      visual: Transform.translate(
+        offset: const Offset(0, -34),
+        child: const _FocusEarnGrowVisual(),
+      ),
+      actionLabel: l10n.continueAction,
+      actionEnabled: _ready,
+      onAction: widget.onContinue,
+    );
+  }
+}
+
 class _SourceScreen extends StatelessWidget {
   const _SourceScreen({
     super.key,
@@ -341,6 +401,7 @@ class _SourceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _OnboardingFrame(
       progressIndex: progressIndex,
       visual: const _AlmostThereLabel(),
@@ -350,7 +411,7 @@ class _SourceScreen extends StatelessWidget {
       body: Column(
         children: [
           Text(
-            'One quick question',
+            l10n.onboardingSourceEyebrow,
             style: AppTextStyles.caption.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -359,13 +420,13 @@ class _SourceScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Where did you first hear about Patsspace?',
+            l10n.onboardingSourceTitle,
             style: AppTextStyles.title.copyWith(fontSize: 27),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'This helps us understand what’s working.',
+            l10n.onboardingSourceBody,
             style: AppTextStyles.bodyMuted,
             textAlign: TextAlign.center,
           ),
@@ -376,7 +437,7 @@ class _SourceScreen extends StatelessWidget {
           ),
         ],
       ),
-      actionLabel: 'Continue',
+      actionLabel: l10n.continueAction,
       actionEnabled: selectedSource != null,
       onAction: onContinue,
     );
@@ -407,27 +468,36 @@ class _ChallengeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final halfway = remaining <= duration ~/ 2;
     final title = completed
-        ? 'Nice work!'
+        ? l10n.onboardingChallengeNiceWorkTitle
         : running
-        ? 'Stay with it'
-        : 'Ready when you are';
+        ? halfway
+              ? l10n.onboardingChallengeAlmostThereTitle
+              : l10n.onboardingChallengeStayTitle
+        : l10n.onboardingChallengeReadyTitle;
     final body = completed
-        ? 'You completed your first focus challenge.'
+        ? l10n.onboardingChallengeNiceWorkBody
         : running
-        ? 'You’re doing great.'
-        : 'Tap start and stay with Pat until the timer ends.';
+        ? halfway
+              ? l10n.onboardingChallengeAlmostThereBody
+              : l10n.onboardingChallengeStayBody
+        : l10n.onboardingChallengeReadyBody;
     final actionLabel = completed
-        ? finishing
-              ? 'Opening Garden...'
-              : 'Plant your first seed'
+        ? l10n.onboardingChallengePlantFirstSeed
         : running
-        ? 'Stay focused'
-        : 'Start';
+        ? l10n.onboardingChallengeStayFocused
+        : l10n.onboardingChallengeStart;
 
     return _OnboardingFrame(
       progressIndex: progressIndex,
+      visualFlex: 6,
+      bodyFlex: 3,
       visualAlignment: Alignment.bottomCenter,
+      bodyAlignment: completed
+          ? const Alignment(0, .55)
+          : const Alignment(0, .35),
       visual: _ChallengeVisual(
         running: running,
         completed: completed,
@@ -456,7 +526,7 @@ class _ChallengeScreen extends StatelessWidget {
         ],
       ),
       actionLabel: actionLabel,
-      actionEnabled: !running,
+      actionEnabled: !running && !finishing,
       onAction: completed ? onFinish : onStart,
     );
   }
@@ -631,25 +701,62 @@ class _SpokenCopyState extends State<_SpokenCopy> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.title.characters.take(_titleCharacters).toString();
-    final body = widget.body.characters.take(_bodyCharacters).toString();
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: AppTextStyles.title, textAlign: TextAlign.center),
+        _ProgressiveText(
+          text: widget.title,
+          visibleCharacters: _titleCharacters,
+          style: AppTextStyles.title,
+        ),
         const SizedBox(height: AppSpacing.sm),
         AnimatedOpacity(
           duration: const Duration(milliseconds: 140),
           opacity: _bodyStarted ? 1 : 0,
-          child: Text(
-            body,
+          child: _ProgressiveText(
+            text: widget.body,
+            visibleCharacters: _bodyStarted ? _bodyCharacters : 0,
             style: AppTextStyles.bodyMuted,
-            textAlign: TextAlign.center,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ProgressiveText extends StatelessWidget {
+  const _ProgressiveText({
+    required this.text,
+    required this.visibleCharacters,
+    required this.style,
+  });
+
+  final String text;
+  final int visibleCharacters;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final characters = text.characters;
+    final visible = characters.take(visibleCharacters).toString();
+    final hidden = characters.skip(visibleCharacters).toString();
+    final baseColor =
+        style.color ??
+        DefaultTextStyle.of(context).style.color ??
+        AppColors.charcoal;
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: visible, style: style),
+          TextSpan(
+            text: hidden,
+            style: style.copyWith(color: baseColor.withValues(alpha: 0)),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }
@@ -662,7 +769,7 @@ class _PatTalkingVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(0, 18),
+      offset: const Offset(0, 66),
       child: LoopingAssetAnimation(
         frames: AppAssets.onboardingPatTalking,
         frameDuration: const Duration(milliseconds: 360),
@@ -678,11 +785,14 @@ class _FocusChallengePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 240,
-      child: LoopingAssetAnimation(
-        frames: AppAssets.focusPair02Focus,
-        frameDuration: Duration(milliseconds: 900),
+    return Transform.translate(
+      offset: const Offset(0, 68),
+      child: const SizedBox(
+        height: 330,
+        child: LoopingAssetAnimation(
+          frames: AppAssets.focusPair02Focus,
+          frameDuration: Duration(milliseconds: 900),
+        ),
       ),
     );
   }
@@ -706,38 +816,41 @@ class _ChallengeVisual extends StatelessWidget {
         final availableHeight = constraints.maxHeight.isFinite
             ? constraints.maxHeight
             : 320.0;
-        final timerHeight = (availableHeight * .28).clamp(56.0, 82.0);
-        final gap = (availableHeight * .06).clamp(12.0, 22.0);
+        final timerHeight = (availableHeight * .22).clamp(52.0, 74.0);
+        final gap = (availableHeight * .035).clamp(8.0, 14.0);
         final imageHeight = (availableHeight - timerHeight - gap).clamp(
-          150.0,
-          210.0,
+          250.0,
+          330.0,
         );
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: timerHeight,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  completed ? '00:00' : _formatRemaining(remaining),
-                  maxLines: 1,
-                  style: AppTextStyles.timer.copyWith(fontSize: 82),
+        return Transform.translate(
+          offset: const Offset(0, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: timerHeight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    completed ? '00:00' : _formatRemaining(remaining),
+                    maxLines: 1,
+                    style: AppTextStyles.timer.copyWith(fontSize: 82),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: gap),
-            SizedBox(
-              width: imageHeight * 1.24,
-              height: imageHeight,
-              child: LoopingAssetAnimation(
-                frames: AppAssets.focusPair02Focus,
-                frameDuration: const Duration(milliseconds: 900),
-                playing: running,
+              SizedBox(height: gap),
+              SizedBox(
+                width: imageHeight * 1.24,
+                height: imageHeight,
+                child: LoopingAssetAnimation(
+                  frames: AppAssets.focusPair02Focus,
+                  frameDuration: const Duration(milliseconds: 900),
+                  playing: running,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -749,26 +862,65 @@ class _ChallengeVisual extends StatelessWidget {
   }
 }
 
-class _FocusEarnGrowVisual extends StatelessWidget {
+class _FocusEarnGrowVisual extends StatefulWidget {
   const _FocusEarnGrowVisual();
 
   @override
+  State<_FocusEarnGrowVisual> createState() => _FocusEarnGrowVisualState();
+}
+
+class _FocusEarnGrowVisualState extends State<_FocusEarnGrowVisual> {
+  int _visibleSteps = 0;
+  Timer? _revealTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startReveal();
+  }
+
+  @override
+  void dispose() {
+    _revealTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startReveal() {
+    _revealTimer?.cancel();
+    setState(() => _visibleSteps = 0);
+    _revealTimer = Timer.periodic(const Duration(milliseconds: 420), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (_visibleSteps >= 3) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() => _visibleSteps += 1);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const items = [
+    final l10n = AppLocalizations.of(context);
+    final items = [
       _LoopItem(
         icon: PhosphorIconsRegular.timer,
-        title: '1. Focus',
-        body: 'You focus with intention.',
+        title: l10n.onboardingStepFocusTitle,
+        body: l10n.onboardingStepFocusBody,
       ),
       _LoopItem(
         icon: PhosphorIconsRegular.drop,
-        title: '2. Earn',
-        body: 'You earn Waterdrops.',
+        title: l10n.onboardingStepEarnTitle,
+        body: l10n.onboardingStepEarnBody,
       ),
       _LoopItem(
         icon: PhosphorIconsRegular.plant,
-        title: '3. Grow',
-        body: 'Your plant grows as you keep going.',
+        title: l10n.onboardingStepGrowTitle,
+        body: l10n.onboardingStepGrowBody,
       ),
     ];
 
@@ -779,48 +931,94 @@ class _FocusEarnGrowVisual extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (var index = 0; index < items.length; index++) ...[
-              Row(
-                children: [
-                  _LoopIcon(icon: items[index].icon),
-                  const SizedBox(width: AppSpacing.lg),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          items[index].title,
-                          style: AppTextStyles.headline.copyWith(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+              _StepReveal(
+                visible: index < _visibleSteps,
+                child: Row(
+                  children: [
+                    _LoopIcon(icon: items[index].icon),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            items[index].title,
+                            style: AppTextStyles.headline.copyWith(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          items[index].body,
-                          style: AppTextStyles.bodyMuted.copyWith(
-                            fontSize: 15,
-                            height: 1.25,
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            items[index].body,
+                            style: AppTextStyles.bodyMuted.copyWith(
+                              fontSize: 15,
+                              height: 1.25,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (index < items.length - 1)
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 68,
-                      height: 28,
-                      child: CustomPaint(painter: _DashedLinePainter()),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    const Expanded(child: SizedBox.shrink()),
-                  ],
+                _StepReveal(
+                  visible: index + 1 < _visibleSteps,
+                  subtle: true,
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 68,
+                        height: 28,
+                        child: CustomPaint(painter: _DashedLinePainter()),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      const Expanded(child: SizedBox.shrink()),
+                    ],
+                  ),
                 ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepReveal extends StatelessWidget {
+  const _StepReveal({
+    required this.visible,
+    required this.child,
+    this.subtle = false,
+  });
+
+  final bool visible;
+  final Widget child;
+  final bool subtle;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = subtle
+        ? const Duration(milliseconds: 260)
+        : const Duration(milliseconds: 420);
+    return AnimatedSlide(
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      offset: visible ? Offset.zero : Offset(0, subtle ? .02 : .11),
+      child: AnimatedScale(
+        duration: duration,
+        curve: subtle ? Curves.easeOutCubic : Curves.easeOutBack,
+        scale: visible
+            ? 1
+            : subtle
+            ? 1
+            : .92,
+        child: AnimatedOpacity(
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          opacity: visible ? 1 : 0,
+          child: child,
         ),
       ),
     );
@@ -917,7 +1115,7 @@ class _AlmostThereLabel extends StatelessWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Text(
-        'Almost there!',
+        AppLocalizations.of(context).onboardingSourceAlmostThere,
         style: AppTextStyles.bodyMuted.copyWith(fontWeight: FontWeight.w700),
       ),
     );
@@ -933,18 +1131,49 @@ class _SourceGrid extends StatelessWidget {
   final String? selectedSource;
   final ValueChanged<String> onSourceSelected;
 
-  static const sources = [
-    _SourceOption('TikTok', PhosphorIconsRegular.tiktokLogo),
-    _SourceOption('Instagram', PhosphorIconsRegular.instagramLogo),
-    _SourceOption('YouTube', PhosphorIconsRegular.youtubeLogo),
-    _SourceOption('App Store', PhosphorIconsRegular.appStoreLogo),
-    _SourceOption('Friend', PhosphorIconsRegular.users),
-    _SourceOption('Search', PhosphorIconsRegular.magnifyingGlass),
-    _SourceOption('Other', PhosphorIconsRegular.dotsThree),
-  ];
+  List<_SourceOption> _sources(AppLocalizations l10n) {
+    return [
+      _SourceOption(
+        'tiktok',
+        l10n.onboardingSourceTikTok,
+        PhosphorIconsRegular.tiktokLogo,
+      ),
+      _SourceOption(
+        'instagram',
+        l10n.onboardingSourceInstagram,
+        PhosphorIconsRegular.instagramLogo,
+      ),
+      _SourceOption(
+        'youtube',
+        l10n.onboardingSourceYouTube,
+        PhosphorIconsRegular.youtubeLogo,
+      ),
+      _SourceOption(
+        'app_store',
+        l10n.onboardingSourceAppStore,
+        PhosphorIconsRegular.appStoreLogo,
+      ),
+      _SourceOption(
+        'friend',
+        l10n.onboardingSourceFriend,
+        PhosphorIconsRegular.users,
+      ),
+      _SourceOption(
+        'search',
+        l10n.onboardingSourceSearch,
+        PhosphorIconsRegular.magnifyingGlass,
+      ),
+      _SourceOption(
+        'other',
+        l10n.onboardingSourceOther,
+        PhosphorIconsRegular.dotsThree,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final sources = _sources(AppLocalizations.of(context));
     return LayoutBuilder(
       builder: (context, constraints) {
         final tileWidth = (constraints.maxWidth - AppSpacing.sm) / 2;
@@ -954,12 +1183,10 @@ class _SourceGrid extends StatelessWidget {
           children: [
             for (final source in sources)
               _SourceTile(
-                width: source.label == 'Other'
-                    ? constraints.maxWidth
-                    : tileWidth,
+                width: source.id == 'other' ? constraints.maxWidth : tileWidth,
                 source: source,
-                selected: selectedSource == source.label,
-                onTap: () => onSourceSelected(source.label),
+                selected: selectedSource == source.id,
+                onTap: () => onSourceSelected(source.id),
               ),
           ],
         );
@@ -969,8 +1196,9 @@ class _SourceGrid extends StatelessWidget {
 }
 
 class _SourceOption {
-  const _SourceOption(this.label, this.icon);
+  const _SourceOption(this.id, this.label, this.icon);
 
+  final String id;
   final String label;
   final IconData icon;
 }

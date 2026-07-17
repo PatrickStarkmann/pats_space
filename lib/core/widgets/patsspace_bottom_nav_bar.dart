@@ -12,10 +12,12 @@ class PatsspaceBottomNavBar extends StatelessWidget {
     super.key,
     required this.selectedTab,
     required this.onTabSelected,
+    this.enabled = true,
   });
 
   final AppTab selectedTab;
   final ValueChanged<AppTab> onTabSelected;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +44,14 @@ class PatsspaceBottomNavBar extends StatelessWidget {
 
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    if (!selected) {
-                      AppHaptics.selection();
-                    }
-                    onTabSelected(tab);
-                  },
+                  onTap: enabled
+                      ? () {
+                          if (!selected) {
+                            AppHaptics.selection();
+                          }
+                          onTabSelected(tab);
+                        }
+                      : null,
                   child: SizedBox(
                     width: 52,
                     height: 44,

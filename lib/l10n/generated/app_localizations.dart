@@ -1531,6 +1531,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watering can'**
   String get decorWateringCan;
+
+  /// No description provided for @onboardingWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Patsspace'**
+  String get onboardingWelcomeTitle;
+
+  /// No description provided for @onboardingWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A cozy little focus app that helps your space grow.'**
+  String get onboardingWelcomeBody;
+
+  /// No description provided for @onboardingPatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I’m Pat.'**
+  String get onboardingPatTitle;
+
+  /// No description provided for @onboardingPatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'I’ll show you around.'**
+  String get onboardingPatBody;
+
+  /// No description provided for @onboardingPatAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi Pat'**
+  String get onboardingPatAction;
+
+  /// No description provided for @onboardingFocusEarnGrowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus, earn, grow'**
+  String get onboardingFocusEarnGrowTitle;
+
+  /// No description provided for @onboardingFocusEarnGrowBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay focused, earn Waterdrops, and use them to grow plants in your space.'**
+  String get onboardingFocusEarnGrowBody;
+
+  /// No description provided for @onboardingStepFocusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Focus'**
+  String get onboardingStepFocusTitle;
+
+  /// No description provided for @onboardingStepFocusBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You focus with intention.'**
+  String get onboardingStepFocusBody;
+
+  /// No description provided for @onboardingStepEarnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Earn'**
+  String get onboardingStepEarnTitle;
+
+  /// No description provided for @onboardingStepEarnBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You earn Waterdrops.'**
+  String get onboardingStepEarnBody;
+
+  /// No description provided for @onboardingStepGrowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Grow'**
+  String get onboardingStepGrowTitle;
+
+  /// No description provided for @onboardingStepGrowBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plant grows as you keep going.'**
+  String get onboardingStepGrowBody;
+
+  /// No description provided for @onboardingSourceEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'One quick question'**
+  String get onboardingSourceEyebrow;
+
+  /// No description provided for @onboardingSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where did you first hear about Patsspace?'**
+  String get onboardingSourceTitle;
+
+  /// No description provided for @onboardingSourceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This helps us understand what’s working.'**
+  String get onboardingSourceBody;
+
+  /// No description provided for @onboardingSourceAlmostThere.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there!'**
+  String get onboardingSourceAlmostThere;
+
+  /// No description provided for @onboardingSourceTikTok.
+  ///
+  /// In en, this message translates to:
+  /// **'TikTok'**
+  String get onboardingSourceTikTok;
+
+  /// No description provided for @onboardingSourceInstagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram'**
+  String get onboardingSourceInstagram;
+
+  /// No description provided for @onboardingSourceYouTube.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube'**
+  String get onboardingSourceYouTube;
+
+  /// No description provided for @onboardingSourceAppStore.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store'**
+  String get onboardingSourceAppStore;
+
+  /// No description provided for @onboardingSourceFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend'**
+  String get onboardingSourceFriend;
+
+  /// No description provided for @onboardingSourceSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get onboardingSourceSearch;
+
+  /// No description provided for @onboardingSourceOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get onboardingSourceOther;
+
+  /// No description provided for @onboardingStartSmallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s start small'**
+  String get onboardingStartSmallTitle;
+
+  /// No description provided for @onboardingStartSmallBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a 30-second focus challenge with me.'**
+  String get onboardingStartSmallBody;
+
+  /// No description provided for @onboardingStartChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Start challenge'**
+  String get onboardingStartChallenge;
+
+  /// No description provided for @onboardingChallengeNiceWorkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice work!'**
+  String get onboardingChallengeNiceWorkTitle;
+
+  /// No description provided for @onboardingChallengeNiceWorkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You completed your first focus challenge.'**
+  String get onboardingChallengeNiceWorkBody;
+
+  /// No description provided for @onboardingChallengeAlmostThereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there'**
+  String get onboardingChallengeAlmostThereTitle;
+
+  /// No description provided for @onboardingChallengeAlmostThereBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going. You’re nearly done.'**
+  String get onboardingChallengeAlmostThereBody;
+
+  /// No description provided for @onboardingChallengeStayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay with it'**
+  String get onboardingChallengeStayTitle;
+
+  /// No description provided for @onboardingChallengeStayBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re doing great.'**
+  String get onboardingChallengeStayBody;
+
+  /// No description provided for @onboardingChallengeReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready when you are'**
+  String get onboardingChallengeReadyTitle;
+
+  /// No description provided for @onboardingChallengeReadyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap start and stay with Pat until the timer ends.'**
+  String get onboardingChallengeReadyBody;
+
+  /// No description provided for @onboardingChallengeOpeningGarden.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Garden...'**
+  String get onboardingChallengeOpeningGarden;
+
+  /// No description provided for @onboardingChallengePlantFirstSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant your first seed'**
+  String get onboardingChallengePlantFirstSeed;
+
+  /// No description provided for @onboardingChallengeStayFocused.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay focused'**
+  String get onboardingChallengeStayFocused;
+
+  /// No description provided for @onboardingChallengeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get onboardingChallengeStart;
+
+  /// No description provided for @saveYourSpaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your space'**
+  String get saveYourSpaceTitle;
+
+  /// No description provided for @saveYourSpaceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your plants, Waterdrops, and focus history safe across devices.'**
+  String get saveYourSpaceBody;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
+
+  /// No description provided for @gardenTutorialPickHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a home'**
+  String get gardenTutorialPickHomeTitle;
+
+  /// No description provided for @gardenTutorialPickHomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the glowing pot to start your garden.'**
+  String get gardenTutorialPickHomeBody;
+
+  /// No description provided for @gardenTutorialPlantDaisyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant Daisy'**
+  String get gardenTutorialPlantDaisyTitle;
+
+  /// No description provided for @gardenTutorialPlantDaisyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Daisy is selected for you. Use one Waterdrop to plant it.'**
+  String get gardenTutorialPlantDaisyBody;
+
+  /// No description provided for @gardenTutorialGiveWaterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it water'**
+  String get gardenTutorialGiveWaterTitle;
+
+  /// No description provided for @gardenTutorialGiveWaterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the drop bubble until your seed sprouts.'**
+  String get gardenTutorialGiveWaterBody;
+
+  /// No description provided for @gardenTutorialSpaceGrowingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your space is growing'**
+  String get gardenTutorialSpaceGrowingTitle;
+
+  /// No description provided for @gardenTutorialSpaceGrowingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice. Keep focusing to earn more Waterdrops and grow this plant.'**
+  String get gardenTutorialSpaceGrowingBody;
 }
 
 class _AppLocalizationsDelegate

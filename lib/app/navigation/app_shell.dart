@@ -3,9 +3,15 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pats_space/app/navigation/app_tab.dart';
+import 'package:pats_space/core/auth/account_auth_service.dart';
+import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
+import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
+import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
+import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_scaffold.dart';
 import 'package:pats_space/core/widgets/patsspace_bottom_nav_bar.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
@@ -26,6 +32,7 @@ import 'package:pats_space/features/space/repositories/firebase_garden_repositor
 import 'package:pats_space/features/space/repositories/shared_preferences_garden_repository.dart';
 import 'package:pats_space/features/space/space_screen.dart';
 import 'package:pats_space/features/stats/stats_screen.dart';
+import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppShell extends StatefulWidget {
@@ -44,7 +51,6 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   static const _onboardingCompletedKey = 'onboarding.completed.v1';
-  static const _onboardingSourceKey = 'onboarding.source.v1';
   static const _gardenTutorialCompletedKey =
       'onboarding.garden_tutorial_completed.v1';
 
@@ -55,6 +61,11 @@ class _AppShellState extends State<AppShell> {
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
   bool _gardenTutorialActive = false;
+  late final AccountAuthService _accountAuthService =
+      FirebaseAccountAuthService(
+        auth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+      );
 
   @override
   void initState() {
@@ -224,7 +235,7 @@ class _AppShellState extends State<AppShell> {
   ) async {
     final bundle = await _persistenceFuture;
     if (source != null) {
-      await bundle.preferences.setString(_onboardingSourceKey, source);
+      await _saveOnboardingSource(source);
     }
     await bundle.preferences.setBool(_onboardingCompletedKey, true);
     await bundle.preferences.setBool(_gardenTutorialCompletedKey, false);
@@ -241,6 +252,23 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  Future<void> _saveOnboardingSource(String source) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      debugPrint('Could not save onboarding source: no Firebase user.');
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'onboardingSource': source,
+      }, SetOptions(merge: true));
+    } catch (error, stackTrace) {
+      debugPrint('Could not save onboarding source: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _handleGardenTutorialCompleted() async {
     final bundle = await _persistenceFuture;
     await bundle.preferences.setBool(_gardenTutorialCompletedKey, true);
@@ -249,6 +277,339 @@ class _AppShellState extends State<AppShell> {
     }
 
     setState(() => _gardenTutorialActive = false);
+    await _showSaveSpacePromptIfNeeded();
+  }
+
+  Future<void> _showSaveSpacePromptIfNeeded() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || !user.isAnonymous) {
+      return;
+    }
+
+    final method = await showCupertinoModalPopup<_SaveSpaceAuthMethod>(
+      context: context,
+      builder: (context) {
+        return _SaveSpaceSheet(
+          appleAvailable: _accountAuthService.isAppleSignInAvailable,
+        );
+      },
+    );
+
+    if (method == null) {
+      return;
+    }
+
+    switch (method) {
+      case _SaveSpaceAuthMethod.apple:
+        await _secureAccount(_accountAuthService.secureWithApple);
+      case _SaveSpaceAuthMethod.google:
+        await _secureAccount(_accountAuthService.secureWithGoogle);
+    }
+  }
+
+  Future<void> _secureAccount(
+    Future<AccountAuthResult> Function() secure,
+  ) async {
+    try {
+      final result = await secure();
+      final resolvedResult = await _resolveAccountAuthResult(result);
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(_successMessage(resolvedResult));
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(
+        _messageForAuthError(error, AppLocalizations.of(context)),
+      );
+    } on GoogleSignInException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      if (error.code != GoogleSignInExceptionCode.canceled) {
+        await _showMessage(AppLocalizations.of(context).accountSecureFailed);
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      await _showMessage(AppLocalizations.of(context).accountSecureFailed);
+    }
+  }
+
+  Future<AccountAuthResult> _resolveAccountAuthResult(
+    AccountAuthResult result,
+  ) async {
+    if (result is! GuestReplacementRequired) {
+      return result;
+    }
+
+    final shouldReplace = await _confirmReplaceGuestAccount();
+    if (shouldReplace != true) {
+      throw FirebaseAuthException(code: 'canceled');
+    }
+
+    return _accountAuthService.replaceGuestWithExistingAccount(result);
+  }
+
+  Future<bool?> _confirmReplaceGuestAccount() {
+    final l10n = AppLocalizations.of(context);
+    return showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(l10n.replaceGuestAccountTitle),
+          content: Text(l10n.replaceGuestAccountMessage),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.replaceGuestAccountAction),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _successMessage(AccountAuthResult result) {
+    final l10n = AppLocalizations.of(context);
+    return switch (result) {
+      ExistingAccountSignedIn() => l10n.existingAccountSignInSuccess,
+      _ => l10n.accountSecureSuccess,
+    };
+  }
+
+  String _messageForAuthError(
+    FirebaseAuthException error,
+    AppLocalizations l10n,
+  ) {
+    return switch (error.code) {
+      'provider-already-linked' => l10n.providerAlreadyLinked,
+      'credential-already-in-use' ||
+      'account-exists-with-different-credential' ||
+      'email-already-in-use' => l10n.accountProviderInUse,
+      'operation-not-allowed' => l10n.providerNotEnabled,
+      'web-context-cancelled' ||
+      'popup-closed-by-user' ||
+      'canceled' ||
+      'cancelled' => l10n.signInCancelled,
+      _ => l10n.accountSecureFailed,
+    };
+  }
+
+  Future<void> _showMessage(String message) {
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+enum _SaveSpaceAuthMethod { apple, google }
+
+class _SaveSpaceSheet extends StatelessWidget {
+  const _SaveSpaceSheet({required this.appleAvailable});
+
+  final bool appleAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(color: AppColors.graySoft.withValues(alpha: .5)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.charcoal.withValues(alpha: .12),
+                blurRadius: 34,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.saveYourSpaceTitle,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.headline.copyWith(
+                    fontWeight: FontWeight.w900,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  l10n.saveYourSpaceBody,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMuted.copyWith(
+                    height: 1.28,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (appleAvailable) ...[
+                  _SaveSpaceAuthButton(
+                    mark: '',
+                    label: l10n.continueWithApple,
+                    onTap: () {
+                      Navigator.of(context).pop(_SaveSpaceAuthMethod.apple);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                _SaveSpaceAuthButton(
+                  mark: 'G',
+                  label: l10n.continueWithGoogle,
+                  onTap: () {
+                    Navigator.of(context).pop(_SaveSpaceAuthMethod.google);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      l10n.notNow,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.grayWarm,
+                        fontWeight: FontWeight.w800,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SaveSpaceAuthButton extends StatefulWidget {
+  const _SaveSpaceAuthButton({
+    required this.mark,
+    required this.label,
+    required this.onTap,
+  });
+
+  final String mark;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_SaveSpaceAuthButton> createState() => _SaveSpaceAuthButtonState();
+}
+
+class _SaveSpaceAuthButtonState extends State<_SaveSpaceAuthButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? .985 : 1,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: AppColors.charcoal,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.charcoal.withValues(alpha: .16),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 24,
+                child: widget.mark == 'G'
+                    ? Center(
+                        child: Image.asset(
+                          AppAssets.googleLogo,
+                          width: 18,
+                          height: 18,
+                        ),
+                      )
+                    : Text(
+                        widget.mark,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.surface,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.surface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -293,6 +654,7 @@ class _AppShellContent extends StatelessWidget {
       },
       bottomNavigation: PatsspaceBottomNavBar(
         selectedTab: selectedTab,
+        enabled: !gardenTutorialActive,
         onTabSelected: onTabSelected,
       ),
       child: IndexedStack(

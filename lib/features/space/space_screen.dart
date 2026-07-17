@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
@@ -12,6 +13,8 @@ import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_decoration_placement.dart';
 import 'package:pats_space/features/space/models/garden_growth_stage.dart';
 import 'package:pats_space/features/space/models/garden_plant_type.dart';
+import 'package:pats_space/features/space/models/garden_pot.dart';
+import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/shop/shop_screen.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 import 'package:pats_space/features/space/widgets/garden_plant_card.dart';
@@ -258,11 +261,28 @@ class _SpaceScreenState extends State<SpaceScreen> {
       builder: (context, _) {
         final garden = widget.gardenController.state;
         final selectedPot = garden.selectedPot;
+        final tutorialStep = widget.tutorialActive
+            ? _GardenTutorialStep.resolve(garden)
+            : null;
+        final tutorialHighlightedPotIndex =
+            tutorialStep == _GardenTutorialStep.choosePot
+            ? garden.pots.indexWhere((pot) => pot.isEmpty)
+            : tutorialStep == _GardenTutorialStep.waterSeed
+            ? garden.pots.indexWhere(_GardenTutorialStep.isGrowingSeed)
+            : null;
+        final tutorialInteractivePotIndex =
+            tutorialStep == _GardenTutorialStep.choosePot ||
+                tutorialStep == _GardenTutorialStep.waterSeed
+            ? tutorialHighlightedPotIndex
+            : null;
         final visiblePotPlacements = {
           ...garden.potPlacements,
           ..._draftPotPlacements,
         };
-        final swipeEnabled = !_arrangingDecorations && selectedPot == null;
+        final swipeEnabled =
+            !widget.tutorialActive &&
+            !_arrangingDecorations &&
+            selectedPot == null;
 
         return Stack(
           children: [
@@ -300,6 +320,8 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   decorations: garden.placedDecorations,
                   decorationPlacements: garden.decorationPlacements,
                   potPlacements: visiblePotPlacements,
+                  tutorialHighlightedPotIndex: tutorialHighlightedPotIndex,
+                  tutorialInteractivePotIndex: tutorialInteractivePotIndex,
                   arrangingDecorations: _arrangingDecorations,
                   selectedDecoration: _selectedDecoration,
                   selectedArrangedPotIndex: _selectedArrangedPotIndex,
@@ -351,44 +373,47 @@ class _SpaceScreenState extends State<SpaceScreen> {
             Positioned(
               top: 48,
               left: AppSpacing.xl,
-              child: Row(
-                children: [
-                  if (garden.ownedDecorations.isNotEmpty ||
-                      garden.pots.isNotEmpty) ...[
-                    _ArrangeDecorButton(
-                      arranging: _arrangingDecorations,
-                      onTap: () {
-                        AppHaptics.selection();
-                        setState(() {
-                          _arrangingDecorations = !_arrangingDecorations;
-                          if (!_arrangingDecorations) {
-                            _selectedDecoration = null;
-                            _selectedArrangedPotIndex = null;
-                            _draftPotPlacements.clear();
-                          }
-                        });
-                      },
-                    ),
-                    if (_arrangingDecorations) ...[
-                      const SizedBox(width: AppSpacing.xs),
-                      _CleanUpGardenButton(onTap: _confirmCleanUpGarden),
+              child: IgnorePointer(
+                ignoring: widget.tutorialActive,
+                child: Row(
+                  children: [
+                    if (garden.ownedDecorations.isNotEmpty ||
+                        garden.pots.isNotEmpty) ...[
+                      _ArrangeDecorButton(
+                        arranging: _arrangingDecorations,
+                        onTap: () {
+                          AppHaptics.selection();
+                          setState(() {
+                            _arrangingDecorations = !_arrangingDecorations;
+                            if (!_arrangingDecorations) {
+                              _selectedDecoration = null;
+                              _selectedArrangedPotIndex = null;
+                              _draftPotPlacements.clear();
+                            }
+                          });
+                        },
+                      ),
+                      if (_arrangingDecorations) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        _CleanUpGardenButton(onTap: _confirmCleanUpGarden),
+                      ],
+                    ],
+                    if (!_arrangingDecorations) ...[
+                      if (garden.ownedDecorations.isNotEmpty ||
+                          garden.pots.isNotEmpty)
+                        const SizedBox(width: AppSpacing.xs),
+                      _SpaceShopButton(
+                        onTap: () {
+                          AppHaptics.selection();
+                          showShopSheet(
+                            context: context,
+                            gardenController: widget.gardenController,
+                          );
+                        },
+                      ),
                     ],
                   ],
-                  if (!_arrangingDecorations) ...[
-                    if (garden.ownedDecorations.isNotEmpty ||
-                        garden.pots.isNotEmpty)
-                      const SizedBox(width: AppSpacing.xs),
-                    _SpaceShopButton(
-                      onTap: () {
-                        AppHaptics.selection();
-                        showShopSheet(
-                          context: context,
-                          gardenController: widget.gardenController,
-                        );
-                      },
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
             Positioned(
@@ -477,7 +502,17 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   ownedPotStyles: garden.ownedPotStyles,
                   onPrimaryAction:
                       widget.gardenController.performSelectedPotAction,
-                  onPlantSelected: widget.gardenController.plantSelectedPot,
+                  onPlantSelected: (plantType) {
+                    final shouldCloseAfterPlanting =
+                        widget.tutorialActive &&
+                        selectedPot.isEmpty &&
+                        garden.water >= plantType.plantCost &&
+                        garden.unlockedPlantTypes.contains(plantType);
+                    widget.gardenController.plantSelectedPot(plantType);
+                    if (shouldCloseAfterPlanting) {
+                      widget.gardenController.closeSelectedPot();
+                    }
+                  },
                   onPotStyleSelected: widget.gardenController.styleSelectedPot,
                   onRemovePlant: widget.gardenController.removeSelectedPlant,
                   onClose: widget.gardenController.closeSelectedPot,
@@ -523,12 +558,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 ),
               ),
             if (widget.tutorialActive)
-              Positioned(
-                left: AppSpacing.lg,
-                right: AppSpacing.lg,
-                top: MediaQuery.paddingOf(context).top + 116,
-                child: _GardenTutorialCoach(
-                  gardenController: widget.gardenController,
+              Positioned.fill(
+                child: _GardenTutorialLayer(
+                  step: tutorialStep,
                   onCompleted: widget.onTutorialCompleted,
                 ),
               ),
@@ -539,130 +571,263 @@ class _SpaceScreenState extends State<SpaceScreen> {
   }
 }
 
-class _GardenTutorialCoach extends StatelessWidget {
-  const _GardenTutorialCoach({
-    required this.gardenController,
-    required this.onCompleted,
-  });
+enum _GardenTutorialStep {
+  choosePot,
+  plantSeed,
+  waterSeed,
+  complete;
 
-  final GardenController gardenController;
+  static _GardenTutorialStep resolve(GardenState garden) {
+    final plantedAndWatered = garden.pots.any(
+      (pot) => !pot.isEmpty && pot.stage != GardenGrowthStage.seed,
+    );
+    if (plantedAndWatered) {
+      return _GardenTutorialStep.complete;
+    }
+
+    if (garden.pots.any(isGrowingSeed)) {
+      return _GardenTutorialStep.waterSeed;
+    }
+
+    final selectedPot = garden.selectedPot;
+    if (selectedPot == null) {
+      return _GardenTutorialStep.choosePot;
+    }
+    if (selectedPot.isEmpty) {
+      return _GardenTutorialStep.plantSeed;
+    }
+    return _GardenTutorialStep.waterSeed;
+  }
+
+  static bool isGrowingSeed(GardenPot pot) {
+    return !pot.isEmpty && pot.stage == GardenGrowthStage.seed;
+  }
+
+  int get progressIndex => switch (this) {
+    _GardenTutorialStep.choosePot => 0,
+    _GardenTutorialStep.plantSeed => 1,
+    _GardenTutorialStep.waterSeed => 2,
+    _GardenTutorialStep.complete => 3,
+  };
+
+  String title(AppLocalizations l10n) => switch (this) {
+    _GardenTutorialStep.choosePot => l10n.gardenTutorialPickHomeTitle,
+    _GardenTutorialStep.plantSeed => l10n.gardenTutorialPlantDaisyTitle,
+    _GardenTutorialStep.waterSeed => l10n.gardenTutorialGiveWaterTitle,
+    _GardenTutorialStep.complete => l10n.gardenTutorialSpaceGrowingTitle,
+  };
+
+  String body(AppLocalizations l10n) => switch (this) {
+    _GardenTutorialStep.choosePot => l10n.gardenTutorialPickHomeBody,
+    _GardenTutorialStep.plantSeed => l10n.gardenTutorialPlantDaisyBody,
+    _GardenTutorialStep.waterSeed => l10n.gardenTutorialGiveWaterBody,
+    _GardenTutorialStep.complete => l10n.gardenTutorialSpaceGrowingBody,
+  };
+
+  IconData get icon => switch (this) {
+    _GardenTutorialStep.choosePot => PhosphorIconsRegular.pottedPlant,
+    _GardenTutorialStep.plantSeed => PhosphorIconsRegular.plant,
+    _GardenTutorialStep.waterSeed => PhosphorIconsFill.drop,
+    _GardenTutorialStep.complete => PhosphorIconsRegular.leaf,
+  };
+}
+
+class _GardenTutorialLayer extends StatelessWidget {
+  const _GardenTutorialLayer({required this.step, required this.onCompleted});
+
+  final _GardenTutorialStep? step;
   final VoidCallback? onCompleted;
 
   @override
   Widget build(BuildContext context) {
-    final garden = gardenController.state;
-    final selectedPot = garden.selectedPot;
-    final plantedAndWatered = garden.pots.any(
-      (pot) =>
-          !pot.isEmpty &&
-          (pot.stage != GardenGrowthStage.seed || pot.waterProgress > 0),
-    );
-    final title = plantedAndWatered
-        ? 'Your space has started growing'
-        : selectedPot == null
-        ? 'Let’s plant your first seed'
-        : selectedPot.isEmpty
-        ? 'Choose Daisy'
-        : 'Bring it to life';
-    final body = plantedAndWatered
-        ? 'Keep focusing to grow your plant and unlock more for your space.'
-        : selectedPot == null
-        ? 'Tap an empty pot. Your Waterdrops are ready.'
-        : selectedPot.isEmpty
-        ? 'Use your Waterdrops to bring your first plant to life.'
-        : 'Give the seed its first Waterdrop.';
+    final step = this.step;
+    if (step == null) {
+      return const SizedBox.shrink();
+    }
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      child: DecoratedBox(
-        key: ValueKey(title),
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: .94),
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.charcoal.withValues(alpha: .09),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
+    final safeArea = MediaQuery.paddingOf(context);
+    final card = _GardenTutorialCard(step: step, onCompleted: onCompleted);
+
+    return Stack(
+      children: [
+        Positioned(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: safeArea.top + 112,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeOutCubic,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -.04),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: step == _GardenTutorialStep.complete
+                ? card
+                : IgnorePointer(key: ValueKey(step), child: card),
+          ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted.withValues(alpha: .68),
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox.square(
-                  dimension: 38,
-                  child: Icon(
-                    CupertinoIcons.drop_fill,
-                    color: AppColors.charcoal,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.charcoal,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.grayWarm,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (plantedAndWatered) ...[
+      ],
+    );
+  }
+}
+
+class _GardenTutorialCard extends StatelessWidget {
+  const _GardenTutorialCard({required this.step, required this.onCompleted});
+
+  final _GardenTutorialStep step;
+  final VoidCallback? onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final completed = step == _GardenTutorialStep.complete;
+
+    return DecoratedBox(
+      key: ValueKey(step),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .96),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .5)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .09),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _GardenTutorialIcon(icon: step.icon, completed: completed),
                 const SizedBox(width: AppSpacing.sm),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onCompleted,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.charcoal,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      child: Text(
-                        'Done',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.surface,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        step.title(l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.charcoal,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        step.body(l10n),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.grayWarm,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _GardenTutorialProgress(activeIndex: step.progressIndex),
+            if (completed) ...[
+              const SizedBox(height: AppSpacing.md),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onCompleted,
+                child: Container(
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.charcoal,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  child: Text(
+                    l10n.done,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.surface,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _GardenTutorialIcon extends StatelessWidget {
+  const _GardenTutorialIcon({required this.icon, required this.completed});
+
+  final IconData icon;
+  final bool completed;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: completed
+            ? AppColors.charcoal
+            : AppColors.surfaceMuted.withValues(alpha: .82),
+        shape: BoxShape.circle,
+      ),
+      child: SizedBox.square(
+        dimension: 42,
+        child: PhosphorIcon(
+          icon,
+          color: completed ? AppColors.surface : AppColors.charcoal,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
+class _GardenTutorialProgress extends StatelessWidget {
+  const _GardenTutorialProgress({required this.activeIndex});
+
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var index = 0; index < 4; index++) ...[
+          Expanded(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              height: 3,
+              decoration: BoxDecoration(
+                color: index <= activeIndex
+                    ? AppColors.charcoal
+                    : AppColors.graySoft.withValues(alpha: .7),
+                borderRadius: BorderRadius.circular(AppRadii.pill),
+              ),
+            ),
+          ),
+          if (index != 3) const SizedBox(width: AppSpacing.xs),
+        ],
+      ],
     );
   }
 }

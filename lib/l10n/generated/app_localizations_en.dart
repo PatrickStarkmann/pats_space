@@ -777,4 +777,166 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get decorWateringCan => 'Watering can';
+
+  @override
+  String get onboardingWelcomeTitle => 'Welcome to Patsspace';
+
+  @override
+  String get onboardingWelcomeBody =>
+      'A cozy little focus app that helps your space grow.';
+
+  @override
+  String get onboardingPatTitle => 'Hi, I’m Pat.';
+
+  @override
+  String get onboardingPatBody => 'I’ll show you around.';
+
+  @override
+  String get onboardingPatAction => 'Hi Pat';
+
+  @override
+  String get onboardingFocusEarnGrowTitle => 'Focus, earn, grow';
+
+  @override
+  String get onboardingFocusEarnGrowBody =>
+      'Stay focused, earn Waterdrops, and use them to grow plants in your space.';
+
+  @override
+  String get onboardingStepFocusTitle => '1. Focus';
+
+  @override
+  String get onboardingStepFocusBody => 'You focus with intention.';
+
+  @override
+  String get onboardingStepEarnTitle => '2. Earn';
+
+  @override
+  String get onboardingStepEarnBody => 'You earn Waterdrops.';
+
+  @override
+  String get onboardingStepGrowTitle => '3. Grow';
+
+  @override
+  String get onboardingStepGrowBody => 'Your plant grows as you keep going.';
+
+  @override
+  String get onboardingSourceEyebrow => 'One quick question';
+
+  @override
+  String get onboardingSourceTitle =>
+      'Where did you first hear about Patsspace?';
+
+  @override
+  String get onboardingSourceBody => 'This helps us understand what’s working.';
+
+  @override
+  String get onboardingSourceAlmostThere => 'Almost there!';
+
+  @override
+  String get onboardingSourceTikTok => 'TikTok';
+
+  @override
+  String get onboardingSourceInstagram => 'Instagram';
+
+  @override
+  String get onboardingSourceYouTube => 'YouTube';
+
+  @override
+  String get onboardingSourceAppStore => 'App Store';
+
+  @override
+  String get onboardingSourceFriend => 'Friend';
+
+  @override
+  String get onboardingSourceSearch => 'Search';
+
+  @override
+  String get onboardingSourceOther => 'Other';
+
+  @override
+  String get onboardingStartSmallTitle => 'Let’s start small';
+
+  @override
+  String get onboardingStartSmallBody =>
+      'Try a 30-second focus challenge with me.';
+
+  @override
+  String get onboardingStartChallenge => 'Start challenge';
+
+  @override
+  String get onboardingChallengeNiceWorkTitle => 'Nice work!';
+
+  @override
+  String get onboardingChallengeNiceWorkBody =>
+      'You completed your first focus challenge.';
+
+  @override
+  String get onboardingChallengeAlmostThereTitle => 'Almost there';
+
+  @override
+  String get onboardingChallengeAlmostThereBody =>
+      'Keep going. You’re nearly done.';
+
+  @override
+  String get onboardingChallengeStayTitle => 'Stay with it';
+
+  @override
+  String get onboardingChallengeStayBody => 'You’re doing great.';
+
+  @override
+  String get onboardingChallengeReadyTitle => 'Ready when you are';
+
+  @override
+  String get onboardingChallengeReadyBody =>
+      'Tap start and stay with Pat until the timer ends.';
+
+  @override
+  String get onboardingChallengeOpeningGarden => 'Opening Garden...';
+
+  @override
+  String get onboardingChallengePlantFirstSeed => 'Plant your first seed';
+
+  @override
+  String get onboardingChallengeStayFocused => 'Stay focused';
+
+  @override
+  String get onboardingChallengeStart => 'Start';
+
+  @override
+  String get saveYourSpaceTitle => 'Save your space';
+
+  @override
+  String get saveYourSpaceBody =>
+      'Keep your plants, Waterdrops, and focus history safe across devices.';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get gardenTutorialPickHomeTitle => 'Pick a home';
+
+  @override
+  String get gardenTutorialPickHomeBody =>
+      'Tap the glowing pot to start your garden.';
+
+  @override
+  String get gardenTutorialPlantDaisyTitle => 'Plant Daisy';
+
+  @override
+  String get gardenTutorialPlantDaisyBody =>
+      'Daisy is selected for you. Use one Waterdrop to plant it.';
+
+  @override
+  String get gardenTutorialGiveWaterTitle => 'Give it water';
+
+  @override
+  String get gardenTutorialGiveWaterBody =>
+      'Tap the drop bubble until your seed sprouts.';
+
+  @override
+  String get gardenTutorialSpaceGrowingTitle => 'Your space is growing';
+
+  @override
+  String get gardenTutorialSpaceGrowingBody =>
+      'Nice. Keep focusing to earn more Waterdrops and grow this plant.';
 }
