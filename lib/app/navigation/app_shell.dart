@@ -139,6 +139,7 @@ class _AppShellState extends State<AppShell> {
                   onGardenTutorialCompleted: () {
                     _handleGardenTutorialCompleted();
                   },
+                  onAccountDeleted: _handleAccountDeleted,
                   bundle: bundle,
                   language: widget.language,
                   onLanguageChanged: widget.onLanguageChanged,
@@ -237,8 +238,11 @@ class _AppShellState extends State<AppShell> {
       repository: gardenRepository,
       initialState: gardenState,
     );
-    const onboardingCompleted = false;
-    _gardenTutorialActive = false;
+    final onboardingCompleted =
+        preferences.getBool(_onboardingCompletedKey) ?? false;
+    final gardenTutorialCompleted =
+        preferences.getBool(_gardenTutorialCompletedKey) ?? false;
+    _gardenTutorialActive = onboardingCompleted && !gardenTutorialCompleted;
     _historyController = historyController;
     _gardenController = gardenController;
 
@@ -345,6 +349,21 @@ class _AppShellState extends State<AppShell> {
 
     setState(() => _gardenTutorialActive = false);
     await _showSaveSpacePromptIfNeeded();
+  }
+
+  Future<void> _handleAccountDeleted() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_onboardingCompletedKey);
+    await preferences.remove(_gardenTutorialCompletedKey);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedTab = AppTab.home;
+      _gardenTutorialActive = false;
+      _persistenceFuture = _loadPersistence();
+    });
   }
 
   Future<void> _showSaveSpacePromptIfNeeded() async {
@@ -688,6 +707,7 @@ class _AppShellContent extends StatelessWidget {
     required this.onOnboardingFinished,
     required this.gardenTutorialActive,
     required this.onGardenTutorialCompleted,
+    required this.onAccountDeleted,
     required this.bundle,
     required this.language,
     required this.onLanguageChanged,
@@ -699,6 +719,7 @@ class _AppShellContent extends StatelessWidget {
   onOnboardingFinished;
   final bool gardenTutorialActive;
   final VoidCallback onGardenTutorialCompleted;
+  final Future<void> Function() onAccountDeleted;
   final _AppPersistenceBundle bundle;
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
@@ -744,6 +765,7 @@ class _AppShellContent extends StatelessWidget {
           SettingsScreen(
             language: language,
             onLanguageChanged: onLanguageChanged,
+            onAccountDeleted: onAccountDeleted,
           ),
         ],
       ),

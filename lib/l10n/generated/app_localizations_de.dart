@@ -797,7 +797,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get onboardingWelcomeBody =>
-      'Eine kleine, gemütliche Fokus-App, die deinen Space wachsen lässt.';
+      'Dein ruhiger Ort für Fokus, Wachstum und gute Gewohnheiten.';
 
   @override
   String get onboardingPatTitle => 'Hi, ich bin Pat.';

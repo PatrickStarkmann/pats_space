@@ -1541,7 +1541,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingWelcomeBody.
   ///
   /// In en, this message translates to:
-  /// **'A cozy little focus app that helps your space grow.'**
+  /// **'Your quiet place for focus, growth, and good habits.'**
   String get onboardingWelcomeBody;
 
   /// No description provided for @onboardingPatTitle.

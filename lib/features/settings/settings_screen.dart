@@ -40,10 +40,12 @@ class SettingsScreen extends StatefulWidget {
     super.key,
     required this.language,
     required this.onLanguageChanged,
+    required this.onAccountDeleted,
   });
 
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
+  final Future<void> Function() onAccountDeleted;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -125,6 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _settingsRoute(
                   (accountContext) => _AccountSettingsPage(
                     onBack: () => Navigator.of(accountContext).maybePop(),
+                    onAccountDeleted: widget.onAccountDeleted,
                   ),
                 ),
               );
@@ -1338,9 +1341,13 @@ class _IconFeedbackDemo extends StatelessWidget {
 }
 
 class _AccountSettingsPage extends StatefulWidget {
-  const _AccountSettingsPage({required this.onBack});
+  const _AccountSettingsPage({
+    required this.onBack,
+    required this.onAccountDeleted,
+  });
 
   final VoidCallback onBack;
+  final Future<void> Function() onAccountDeleted;
 
   @override
   State<_AccountSettingsPage> createState() => _AccountSettingsPageState();
@@ -1657,6 +1664,7 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
     setState(() => _linking = true);
     try {
       await _accountAuthService.deleteCurrentAccount();
+      await widget.onAccountDeleted();
       if (!mounted) {
         return;
       }
