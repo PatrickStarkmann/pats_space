@@ -13,6 +13,7 @@ import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_scaffold.dart';
+import 'package:pats_space/core/widgets/app_loading_screen.dart';
 import 'package:pats_space/core/widgets/patsspace_bottom_nav_bar.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
@@ -108,28 +109,58 @@ class _AppShellState extends State<AppShell> {
         final bundle = snapshot.connectionState == ConnectionState.done
             ? snapshot.data
             : null;
-        if (bundle == null) {
-          return const AppScaffold(
-            child: Center(child: CupertinoActivityIndicator()),
-          );
-        }
-
-        return _AppShellContent(
-          selectedTab: _selectedTab,
-          onTabSelected: (tab) {
-            setState(() => _selectedTab = tab);
-          },
-          onOnboardingFinished: _handleOnboardingFinished,
-          gardenTutorialActive: _gardenTutorialActive,
-          onGardenTutorialCompleted: () {
-            _handleGardenTutorialCompleted();
-          },
-          bundle: bundle,
-          language: widget.language,
-          onLanguageChanged: widget.onLanguageChanged,
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: _fullscreenSwitcherLayout,
+          transitionBuilder: _fadeInOnlyTransition,
+          child: bundle == null
+              ? const AppLoadingScreen(
+                  key: ValueKey('persistence-loading'),
+                  animateEntrance: false,
+                )
+              : _AppShellContent(
+                  key: const ValueKey('app-shell-content'),
+                  selectedTab: _selectedTab,
+                  onTabSelected: (tab) {
+                    setState(() => _selectedTab = tab);
+                  },
+                  onOnboardingFinished: _handleOnboardingFinished,
+                  gardenTutorialActive: _gardenTutorialActive,
+                  onGardenTutorialCompleted: () {
+                    _handleGardenTutorialCompleted();
+                  },
+                  bundle: bundle,
+                  language: widget.language,
+                  onLanguageChanged: widget.onLanguageChanged,
+                ),
         );
       },
     );
+  }
+
+  Widget _fullscreenSwitcherLayout(
+    Widget? currentChild,
+    List<Widget> previousChildren,
+  ) {
+    return Stack(
+      fit: StackFit.expand,
+      alignment: Alignment.center,
+      children: [
+        const ColoredBox(color: AppColors.background),
+        ...previousChildren,
+        ?currentChild,
+      ],
+    );
+  }
+
+  Widget _fadeInOnlyTransition(Widget child, Animation<double> animation) {
+    if (animation.status == AnimationStatus.reverse) {
+      return child;
+    }
+
+    return FadeTransition(opacity: animation, child: child);
   }
 
   Future<_AppPersistenceBundle> _loadPersistence() async {
@@ -615,6 +646,7 @@ class _SaveSpaceAuthButtonState extends State<_SaveSpaceAuthButton> {
 
 class _AppShellContent extends StatelessWidget {
   const _AppShellContent({
+    super.key,
     required this.selectedTab,
     required this.onTabSelected,
     required this.onOnboardingFinished,

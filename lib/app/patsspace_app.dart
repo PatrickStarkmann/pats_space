@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/app/navigation/app_shell.dart';
+import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_theme.dart';
+import 'package:pats_space/core/widgets/app_loading_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/repositories/shared_preferences_app_language_repository.dart';
 import 'package:pats_space/features/social_focus/repositories/firebase_presence_repository.dart';
@@ -17,6 +19,8 @@ class PatsspaceApp extends StatefulWidget {
 }
 
 class _PatsspaceAppState extends State<PatsspaceApp> {
+  static const _minimumIntroDuration = Duration(milliseconds: 1600);
+
   late final Future<SharedPreferences> _preferencesFuture;
   late final FirebasePresenceRepository _presenceRepository;
   SharedPreferencesAppLanguageRepository? _languageRepository;
@@ -29,7 +33,7 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
     )..start();
-    _preferencesFuture = _loadPreferences();
+    _preferencesFuture = _loadPreferencesWithIntro();
   }
 
   @override
@@ -51,6 +55,15 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
     return preferences;
   }
 
+  Future<SharedPreferences> _loadPreferencesWithIntro() async {
+    final preferencesFuture = _loadPreferences();
+    await Future.wait([
+      preferencesFuture,
+      Future<void>.delayed(_minimumIntroDuration),
+    ]);
+    return preferencesFuture;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -63,13 +76,19 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
       home: FutureBuilder<SharedPreferences>(
         future: _preferencesFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const SizedBox.shrink();
-          }
-
-          return AppShell(
-            language: _language,
-            onLanguageChanged: _handleLanguageChanged,
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder: _fullscreenSwitcherLayout,
+            transitionBuilder: _fadeInOnlyTransition,
+            child: snapshot.hasData
+                ? AppShell(
+                    key: const ValueKey('app-shell'),
+                    language: _language,
+                    onLanguageChanged: _handleLanguageChanged,
+                  )
+                : const AppLoadingScreen(key: ValueKey('app-intro')),
           );
         },
       ),
@@ -79,5 +98,28 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
   void _handleLanguageChanged(AppLanguage language) {
     setState(() => _language = language);
     _languageRepository?.saveLanguage(language);
+  }
+
+  Widget _fullscreenSwitcherLayout(
+    Widget? currentChild,
+    List<Widget> previousChildren,
+  ) {
+    return Stack(
+      fit: StackFit.expand,
+      alignment: Alignment.center,
+      children: [
+        const ColoredBox(color: AppColors.background),
+        ...previousChildren,
+        ?currentChild,
+      ],
+    );
+  }
+
+  Widget _fadeInOnlyTransition(Widget child, Animation<double> animation) {
+    if (animation.status == AnimationStatus.reverse) {
+      return child;
+    }
+
+    return FadeTransition(opacity: animation, child: child);
   }
 }
