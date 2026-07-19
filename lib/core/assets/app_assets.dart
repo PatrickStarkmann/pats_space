@@ -56,6 +56,10 @@ class AppAssets {
   static const onboardingPatTalking02 =
       'assets/images/onboarding/pat_talking/talking_2.png';
   static const googleLogo = 'assets/images/ui/google.png';
+  static const introCharacterPeek01 =
+      'assets/images/ui/intro_character_peek_1.png';
+  static const introCharacterPeek02 =
+      'assets/images/ui/intro_character_peek_2.png';
 
   static const socialFocusDesk =
       'assets/images/social_focus/furniture/desks/desk.png';
@@ -167,6 +171,11 @@ class AppAssets {
   static const onboardingPatTalking = [
     onboardingPatTalking01,
     onboardingPatTalking02,
+  ];
+
+  static const introCharacterPeek = [
+    introCharacterPeek01,
+    introCharacterPeek02,
   ];
 
   static const socialFocusReading = [

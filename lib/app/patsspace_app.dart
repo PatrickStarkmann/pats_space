@@ -19,12 +19,16 @@ class PatsspaceApp extends StatefulWidget {
 }
 
 class _PatsspaceAppState extends State<PatsspaceApp> {
-  static const _minimumIntroDuration = Duration(milliseconds: 1600);
+  static const _minimumIntroDuration = Duration(milliseconds: 2200);
+  static const _appShellMountDelay = Duration(milliseconds: 950);
 
   late final Future<SharedPreferences> _preferencesFuture;
   late final FirebasePresenceRepository _presenceRepository;
   SharedPreferencesAppLanguageRepository? _languageRepository;
   AppLanguage _language = AppLanguage.system;
+  bool _canMountAppShell = false;
+  bool _minimumIntroElapsed = false;
+  bool _initialAppShellReady = false;
 
   @override
   void initState() {
@@ -33,7 +37,19 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
     )..start();
-    _preferencesFuture = _loadPreferencesWithIntro();
+    _preferencesFuture = _loadPreferences();
+    Future<void>.delayed(_minimumIntroDuration, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _minimumIntroElapsed = true);
+    });
+    Future<void>.delayed(_appShellMountDelay, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _canMountAppShell = true);
+    });
   }
 
   @override
@@ -55,15 +71,6 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
     return preferences;
   }
 
-  Future<SharedPreferences> _loadPreferencesWithIntro() async {
-    final preferencesFuture = _loadPreferences();
-    await Future.wait([
-      preferencesFuture,
-      Future<void>.delayed(_minimumIntroDuration),
-    ]);
-    return preferencesFuture;
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -76,23 +83,41 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
       home: FutureBuilder<SharedPreferences>(
         future: _preferencesFuture,
         builder: (context, snapshot) {
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            layoutBuilder: _fullscreenSwitcherLayout,
-            transitionBuilder: _fadeInOnlyTransition,
-            child: snapshot.hasData
-                ? AppShell(
-                    key: const ValueKey('app-shell'),
-                    language: _language,
-                    onLanguageChanged: _handleLanguageChanged,
-                  )
-                : const AppLoadingScreen(key: ValueKey('app-intro')),
+          final canBuildAppShell = snapshot.hasData && _canMountAppShell;
+          final appReady = _minimumIntroElapsed && _initialAppShellReady;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              const ColoredBox(color: AppColors.background),
+              if (canBuildAppShell)
+                AppShell(
+                  language: _language,
+                  onLanguageChanged: _handleLanguageChanged,
+                  showInitialLoadingScreen: false,
+                  onInitialPersistenceLoaded: _handleInitialAppShellReady,
+                ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                layoutBuilder: _overlaySwitcherLayout,
+                transitionBuilder: _fadeTransition,
+                child: appReady
+                    ? const SizedBox.shrink(key: ValueKey('intro-complete'))
+                    : const AppLoadingScreen(key: ValueKey('app-intro')),
+              ),
+            ],
           );
         },
       ),
     );
+  }
+
+  void _handleInitialAppShellReady() {
+    if (_initialAppShellReady) {
+      return;
+    }
+    setState(() => _initialAppShellReady = true);
   }
 
   void _handleLanguageChanged(AppLanguage language) {
@@ -100,26 +125,18 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
     _languageRepository?.saveLanguage(language);
   }
 
-  Widget _fullscreenSwitcherLayout(
+  Widget _overlaySwitcherLayout(
     Widget? currentChild,
     List<Widget> previousChildren,
   ) {
     return Stack(
       fit: StackFit.expand,
       alignment: Alignment.center,
-      children: [
-        const ColoredBox(color: AppColors.background),
-        ...previousChildren,
-        ?currentChild,
-      ],
+      children: [...previousChildren, ?currentChild],
     );
   }
 
-  Widget _fadeInOnlyTransition(Widget child, Animation<double> animation) {
-    if (animation.status == AnimationStatus.reverse) {
-      return child;
-    }
-
+  Widget _fadeTransition(Widget child, Animation<double> animation) {
     return FadeTransition(opacity: animation, child: child);
   }
 }

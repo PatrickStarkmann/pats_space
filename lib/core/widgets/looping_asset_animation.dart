@@ -10,6 +10,8 @@ class LoopingAssetAnimation extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.playing = true,
+    this.loop = true,
+    this.initialFrameIndex = 0,
   });
 
   final List<String> frames;
@@ -17,6 +19,8 @@ class LoopingAssetAnimation extends StatefulWidget {
   final BoxFit fit;
   final Alignment alignment;
   final bool playing;
+  final bool loop;
+  final int initialFrameIndex;
 
   @override
   State<LoopingAssetAnimation> createState() => _LoopingAssetAnimationState();
@@ -29,6 +33,7 @@ class _LoopingAssetAnimationState extends State<LoopingAssetAnimation> {
   @override
   void initState() {
     super.initState();
+    _frameIndex = widget.initialFrameIndex;
     _start();
   }
 
@@ -36,8 +41,9 @@ class _LoopingAssetAnimationState extends State<LoopingAssetAnimation> {
   void didUpdateWidget(covariant LoopingAssetAnimation oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.frames != widget.frames ||
-        oldWidget.frameDuration != widget.frameDuration) {
-      _frameIndex = 0;
+        oldWidget.frameDuration != widget.frameDuration ||
+        oldWidget.initialFrameIndex != widget.initialFrameIndex) {
+      _frameIndex = widget.initialFrameIndex;
       _start();
     } else if (oldWidget.playing != widget.playing) {
       _start();
@@ -61,8 +67,14 @@ class _LoopingAssetAnimationState extends State<LoopingAssetAnimation> {
         return;
       }
 
+      final nextFrameIndex = _frameIndex + 1;
+      if (!widget.loop && nextFrameIndex >= widget.frames.length) {
+        _timer?.cancel();
+        return;
+      }
+
       setState(() {
-        _frameIndex = (_frameIndex + 1) % widget.frames.length;
+        _frameIndex = nextFrameIndex % widget.frames.length;
       });
     });
   }

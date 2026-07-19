@@ -41,10 +41,14 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.language,
     required this.onLanguageChanged,
+    this.showInitialLoadingScreen = true,
+    this.onInitialPersistenceLoaded,
   });
 
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
+  final bool showInitialLoadingScreen;
+  final VoidCallback? onInitialPersistenceLoaded;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -62,6 +66,8 @@ class _AppShellState extends State<AppShell> {
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
   bool _gardenTutorialActive = false;
+  bool _hasLoadedPersistence = false;
+  bool _reportedInitialPersistenceLoaded = false;
   late final AccountAuthService _accountAuthService =
       FirebaseAccountAuthService(
         auth: FirebaseAuth.instance,
@@ -109,6 +115,11 @@ class _AppShellState extends State<AppShell> {
         final bundle = snapshot.connectionState == ConnectionState.done
             ? snapshot.data
             : null;
+        if (bundle != null) {
+          _hasLoadedPersistence = true;
+          _reportInitialPersistenceLoaded();
+        }
+
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           switchInCurve: Curves.easeOutCubic,
@@ -116,10 +127,7 @@ class _AppShellState extends State<AppShell> {
           layoutBuilder: _fullscreenSwitcherLayout,
           transitionBuilder: _fadeInOnlyTransition,
           child: bundle == null
-              ? const AppLoadingScreen(
-                  key: ValueKey('persistence-loading'),
-                  animateEntrance: false,
-                )
+              ? _buildPersistenceFallback()
               : _AppShellContent(
                   key: const ValueKey('app-shell-content'),
                   selectedTab: _selectedTab,
@@ -138,6 +146,34 @@ class _AppShellState extends State<AppShell> {
         );
       },
     );
+  }
+
+  Widget _buildPersistenceFallback() {
+    if (!_hasLoadedPersistence && !widget.showInitialLoadingScreen) {
+      return const ColoredBox(
+        key: ValueKey('initial-persistence-background'),
+        color: AppColors.background,
+      );
+    }
+
+    return const AppLoadingScreen(
+      key: ValueKey('persistence-loading'),
+      animateEntrance: false,
+    );
+  }
+
+  void _reportInitialPersistenceLoaded() {
+    if (_reportedInitialPersistenceLoaded) {
+      return;
+    }
+
+    _reportedInitialPersistenceLoaded = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      widget.onInitialPersistenceLoaded?.call();
+    });
   }
 
   Widget _fullscreenSwitcherLayout(
