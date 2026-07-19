@@ -23,6 +23,19 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.7
+
+flutter_native_splash:
+  color: "#FEFFFF"
+  image: assets/images/ui/splash_character.png
+  color_dark: "#FEFFFF"
+  image_dark: assets/images/ui/splash_character.png
+  android_12:
+    color: "#FEFFFF"
+    image: assets/images/ui/splash_character.png
+    color_dark: "#FEFFFF"
+    image_dark: assets/images/ui/splash_character.png
+  web: false
 
 flutter:
   generate: true
