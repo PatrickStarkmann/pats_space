@@ -12,6 +12,7 @@ class GardenState {
     required this.coins,
     required List<GardenPot> pots,
     required Set<GardenPlantType> unlockedPlantTypes,
+    int totalBlooms = 0,
     this.activeArea = GardenArea.main,
     Map<GardenArea, List<GardenPot>>? potsByArea,
     Set<GardenPotStyle> ownedPotStyles = GardenPotStyle.initiallyOwned,
@@ -25,7 +26,8 @@ class GardenState {
     Map<int, GardenDecorationPlacement> potPlacements = const {},
     Map<GardenArea, Map<int, GardenDecorationPlacement>>? potPlacementsByArea,
     this.selectedPotIndex,
-  }) : unlockedPlantTypes = Set.unmodifiable({
+  }) : totalBlooms = totalBlooms < 0 ? 0 : totalBlooms,
+       unlockedPlantTypes = Set.unmodifiable({
          ...GardenPlantType.initiallyUnlocked,
          ...unlockedPlantTypes,
        }),
@@ -60,11 +62,13 @@ class GardenState {
   static const defaultCoins = 0;
   static const defaultPotCount = 4;
   static const maxPotCount = 9;
+  static const meadowUnlockBloomCount = 4;
 
   factory GardenState.initial() {
     return GardenState(
       water: defaultWater,
       coins: defaultCoins,
+      totalBlooms: 0,
       unlockedPlantTypes: GardenPlantType.initiallyUnlocked,
       activeArea: GardenArea.main,
       ownedPotStyles: GardenPotStyle.initiallyOwned,
@@ -80,6 +84,7 @@ class GardenState {
 
   final int water;
   final int coins;
+  final int totalBlooms;
   final GardenArea activeArea;
   final Map<GardenArea, List<GardenPot>> potsByArea;
   final Set<GardenPlantType> unlockedPlantTypes;
@@ -117,6 +122,20 @@ class GardenState {
     return pots.length;
   }
 
+  bool get meadowUnlocked => totalBlooms >= meadowUnlockBloomCount;
+
+  int get bloomsUntilMeadowUnlock {
+    final remaining = meadowUnlockBloomCount - totalBlooms;
+    return remaining < 0 ? 0 : remaining;
+  }
+
+  bool isAreaUnlocked(GardenArea area) {
+    return switch (area) {
+      GardenArea.main => true,
+      GardenArea.second => meadowUnlocked,
+    };
+  }
+
   List<GardenGrowthStage> get potStages {
     return List.unmodifiable(pots.map((pot) => pot.stage));
   }
@@ -124,6 +143,7 @@ class GardenState {
   GardenState copyWith({
     int? water,
     int? coins,
+    int? totalBlooms,
     GardenArea? activeArea,
     List<GardenPot>? pots,
     Map<GardenArea, List<GardenPot>>? potsByArea,
@@ -140,11 +160,13 @@ class GardenState {
     int? selectedPotIndex,
     bool clearSelectedPot = false,
   }) {
+    final nextTotalBlooms = totalBlooms ?? this.totalBlooms;
     final nextActiveArea = activeArea ?? this.activeArea;
 
     return GardenState(
       water: water ?? this.water,
       coins: coins ?? this.coins,
+      totalBlooms: nextTotalBlooms,
       activeArea: nextActiveArea,
       pots:
           pots ?? (potsByArea ?? this.potsByArea)[nextActiveArea] ?? this.pots,

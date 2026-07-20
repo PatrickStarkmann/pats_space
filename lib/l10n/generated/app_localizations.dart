@@ -1010,6 +1010,18 @@ abstract class AppLocalizations {
   /// **'Locked'**
   String get locked;
 
+  /// No description provided for @meadowLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A new space is waiting'**
+  String get meadowLockedTitle;
+
+  /// No description provided for @meadowLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining, plural, =1{Bloom 1 more plant to unlock it.} other{Bloom {remaining} more plants to unlock it.}}'**
+  String meadowLockedMessage(int remaining);
+
   /// No description provided for @needItem.
   ///
   /// In en, this message translates to:

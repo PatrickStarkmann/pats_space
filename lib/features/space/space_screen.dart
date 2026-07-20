@@ -215,7 +215,8 @@ class _SpaceScreenState extends State<SpaceScreen> {
   }
 
   void _selectArea(GardenArea selectedArea) {
-    if (selectedArea == widget.gardenController.state.activeArea) {
+    final garden = widget.gardenController.state;
+    if (selectedArea == garden.activeArea) {
       return;
     }
 
@@ -260,6 +261,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
       animation: widget.gardenController,
       builder: (context, _) {
         final garden = widget.gardenController.state;
+        final activeAreaUnlocked = garden.isAreaUnlocked(garden.activeArea);
         final selectedPot = garden.selectedPot;
         final tutorialStep = widget.tutorialActive
             ? _GardenTutorialStep.resolve(garden)
@@ -421,10 +423,15 @@ class _SpaceScreenState extends State<SpaceScreen> {
               left: 0,
               right: 0,
               child: IgnorePointer(
-                child: _GardenAreaIndicator(activeArea: garden.activeArea),
+                child: _GardenAreaIndicator(
+                  activeArea: garden.activeArea,
+                  meadowUnlocked: garden.meadowUnlocked,
+                ),
               ),
             ),
-            if (_arrangingDecorations && _selectedDecoration != null)
+            if (activeAreaUnlocked &&
+                _arrangingDecorations &&
+                _selectedDecoration != null)
               Positioned(
                 left: AppSpacing.lg,
                 right: AppSpacing.lg,
@@ -475,7 +482,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   },
                 ),
               ),
-            if (_arrangingDecorations && _selectedArrangedPotIndex != null)
+            if (activeAreaUnlocked &&
+                _arrangingDecorations &&
+                _selectedArrangedPotIndex != null)
               Positioned(
                 left: AppSpacing.xl,
                 right: AppSpacing.xl,
@@ -485,7 +494,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                     AppSpacing.xl,
                 child: const _PotArrangeHint(),
               ),
-            if (selectedPot != null && !_arrangingDecorations)
+            if (activeAreaUnlocked &&
+                selectedPot != null &&
+                !_arrangingDecorations)
               Positioned(
                 left: 0,
                 right: 0,
@@ -526,6 +537,30 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 coins: garden.coins,
               ),
             ),
+            if (!activeAreaUnlocked)
+              Positioned.fill(
+                child: _LockedSpaceOverlay(
+                  totalBlooms: garden.totalBlooms,
+                  onHorizontalDragStart: swipeEnabled
+                      ? (_) {
+                          _areaDragDx = 0;
+                        }
+                      : null,
+                  onHorizontalDragUpdate: swipeEnabled
+                      ? (details) {
+                          _areaDragDx += details.delta.dx;
+                        }
+                      : null,
+                  onHorizontalDragEnd: swipeEnabled
+                      ? _handleAreaSwipeEnd
+                      : null,
+                  onHorizontalDragCancel: swipeEnabled
+                      ? () {
+                          _areaDragDx = 0;
+                        }
+                      : null,
+                ),
+              ),
             Positioned.fill(
               child: IgnorePointer(
                 child: LayoutBuilder(
@@ -982,9 +1017,13 @@ class _PotArrangeHint extends StatelessWidget {
 }
 
 class _GardenAreaIndicator extends StatelessWidget {
-  const _GardenAreaIndicator({required this.activeArea});
+  const _GardenAreaIndicator({
+    required this.activeArea,
+    required this.meadowUnlocked,
+  });
 
   final GardenArea activeArea;
+  final bool meadowUnlocked;
 
   @override
   Widget build(BuildContext context) {
@@ -1001,17 +1040,9 @@ class _GardenAreaIndicator extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final area in GardenArea.values) ...[
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  width: area == activeArea ? 22 : 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: area == activeArea
-                        ? AppColors.charcoal
-                        : AppColors.grayWarm.withValues(alpha: .36),
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
+                _GardenAreaDot(
+                  active: area == activeArea,
+                  locked: area == GardenArea.second && !meadowUnlocked,
                 ),
                 if (area != GardenArea.values.last)
                   const SizedBox(width: AppSpacing.xs),
@@ -1019,6 +1050,191 @@ class _GardenAreaIndicator extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GardenAreaDot extends StatelessWidget {
+  const _GardenAreaDot({required this.active, required this.locked});
+
+  final bool active;
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = active
+        ? 22.0
+        : locked
+        ? 17.0
+        : 7.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      width: width,
+      height: locked ? 14 : 7,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: active
+            ? AppColors.charcoal
+            : AppColors.grayWarm.withValues(alpha: locked ? .18 : .36),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: locked
+          ? Icon(
+              PhosphorIconsRegular.lockSimple,
+              size: 8,
+              color: active
+                  ? AppColors.surface
+                  : AppColors.grayWarm.withValues(alpha: .82),
+            )
+          : null,
+    );
+  }
+}
+
+class _LockedSpaceOverlay extends StatelessWidget {
+  const _LockedSpaceOverlay({
+    required this.totalBlooms,
+    required this.onHorizontalDragStart,
+    required this.onHorizontalDragUpdate,
+    required this.onHorizontalDragEnd,
+    required this.onHorizontalDragCancel,
+  });
+
+  final int totalBlooms;
+  final GestureDragStartCallback? onHorizontalDragStart;
+  final GestureDragUpdateCallback? onHorizontalDragUpdate;
+  final GestureDragEndCallback? onHorizontalDragEnd;
+  final GestureDragCancelCallback? onHorizontalDragCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: onHorizontalDragStart,
+      onHorizontalDragUpdate: onHorizontalDragUpdate,
+      onHorizontalDragEnd: onHorizontalDragEnd,
+      onHorizontalDragCancel: onHorizontalDragCancel,
+      child: ColoredBox(
+        color: AppColors.charcoal.withValues(alpha: .4),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: _LockedSpaceMessage(totalBlooms: totalBlooms),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LockedSpaceMessage extends StatelessWidget {
+  const _LockedSpaceMessage({required this.totalBlooms});
+
+  final int totalBlooms;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final progress = totalBlooms.clamp(0, GardenState.meadowUnlockBloomCount);
+    final progressValue = progress / GardenState.meadowUnlockBloomCount;
+    final remaining = GardenState.meadowUnlockBloomCount - progress;
+
+    final shadow = [
+      Shadow(
+        color: AppColors.charcoal.withValues(alpha: .68),
+        blurRadius: 22,
+        offset: const Offset(0, 6),
+      ),
+      Shadow(
+        color: AppColors.charcoal.withValues(alpha: .48),
+        blurRadius: 5,
+        offset: const Offset(0, 1),
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            PhosphorIconsRegular.lockSimple,
+            color: AppColors.surface,
+            size: 34,
+            shadows: shadow,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            l10n.meadowLockedTitle,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.headline.copyWith(
+              color: AppColors.surface,
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              height: 1.02,
+              shadows: shadow,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: 310,
+            child: Text(
+              l10n.meadowLockedMessage(remaining),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.surface.withValues(alpha: .96),
+                fontWeight: FontWeight.w900,
+                height: 1.18,
+                shadows: shadow,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: 190,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$progress/${GardenState.meadowUnlockBloomCount}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.surface.withValues(alpha: .98),
+                    fontWeight: FontWeight.w900,
+                    shadows: shadow,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      child: ColoredBox(
+                        color: AppColors.surface.withValues(alpha: .32),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 260),
+                            curve: Curves.easeOutCubic,
+                            width: constraints.maxWidth * progressValue,
+                            height: 7,
+                            color: AppColors.surface,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

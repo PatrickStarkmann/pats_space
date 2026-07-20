@@ -193,6 +193,15 @@
   "equipped": "Ausgerüstet",
   "use": "Nutzen",
   "locked": "Gesperrt",
+  "meadowLockedTitle": "Ein neuer Space wartet",
+  "meadowLockedMessage": "{remaining, plural, =1{Bringe noch 1 Pflanze zum Blühen, um ihn freizuschalten.} other{Bringe noch {remaining} Pflanzen zum Blühen, um ihn freizuschalten.}}",
+  "@meadowLockedMessage": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
   "needItem": "Benötigt {item}",
   "@needItem": {
     "placeholders": {

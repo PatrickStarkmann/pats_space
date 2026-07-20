@@ -507,6 +507,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get locked => 'Gesperrt';
 
   @override
+  String get meadowLockedTitle => 'Ein neuer Space wartet';
+
+  @override
+  String meadowLockedMessage(int remaining) {
+    String _temp0 = intl.Intl.pluralLogic(
+      remaining,
+      locale: localeName,
+      other:
+          'Bringe noch $remaining Pflanzen zum Blühen, um ihn freizuschalten.',
+      one: 'Bringe noch 1 Pflanze zum Blühen, um ihn freizuschalten.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String needItem(Object item) {
     return 'Benötigt $item';
   }

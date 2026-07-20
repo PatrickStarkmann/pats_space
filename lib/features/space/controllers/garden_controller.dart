@@ -58,6 +58,10 @@ class GardenController extends ChangeNotifier {
   }
 
   void selectPot(int index) {
+    if (!_state.isAreaUnlocked(_state.activeArea)) {
+      return;
+    }
+
     if (index < 0 || index >= _state.pots.length) {
       return;
     }
@@ -249,6 +253,10 @@ class GardenController extends ChangeNotifier {
     required double alignmentX,
     required double alignmentY,
   }) {
+    if (!_state.isAreaUnlocked(_state.activeArea)) {
+      return;
+    }
+
     if (index < 0 || index >= _state.pots.length) {
       return;
     }
@@ -272,6 +280,10 @@ class GardenController extends ChangeNotifier {
   }
 
   void performPotAction(int index) {
+    if (!_state.isAreaUnlocked(_state.activeArea)) {
+      return;
+    }
+
     if (index < 0 || index >= _state.pots.length) {
       return;
     }
@@ -304,11 +316,15 @@ class GardenController extends ChangeNotifier {
     final updatedPot = _updatedPotAfterPrimaryAction(pot, DateTime.now());
     final updatedPots = [..._state.pots]..[index] = updatedPot;
     final unlockedPlantTypes = _unlockedPlantTypesAfterAction(pot, updatedPot);
+    final bloomCompleted = !pot.stage.hasCoins && updatedPot.stage.hasCoins;
 
     _setState(
       _state.copyWith(
         water: _waterAfterPrimaryAction(pot),
         coins: _coinsAfterPrimaryAction(pot),
+        totalBlooms: bloomCompleted
+            ? _state.totalBlooms + 1
+            : _state.totalBlooms,
         pots: updatedPots,
         unlockedPlantTypes: unlockedPlantTypes,
         selectedPotIndex: keepSelected ? index : null,
@@ -318,6 +334,10 @@ class GardenController extends ChangeNotifier {
   }
 
   void plantSelectedPot(GardenPlantType plantType) {
+    if (!_state.isAreaUnlocked(_state.activeArea)) {
+      return;
+    }
+
     final index = _state.selectedPotIndex;
     if (index == null) {
       return;
@@ -627,6 +647,7 @@ class GardenController extends ChangeNotifier {
   bool _sameGardenState(GardenState a, GardenState b) {
     if (a.water != b.water ||
         a.coins != b.coins ||
+        a.totalBlooms != b.totalBlooms ||
         a.activeArea != b.activeArea ||
         a.selectedPotIndex != b.selectedPotIndex ||
         !setEquals(a.unlockedPlantTypes, b.unlockedPlantTypes) ||

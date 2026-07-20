@@ -216,7 +216,10 @@ void main() {
 
     test('hanging flower grows from seed to sprout to bloom', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 40),
+        initialState: GardenState.initial().copyWith(
+          water: 40,
+          totalBlooms: GardenState.meadowUnlockBloomCount,
+        ),
       );
       addTearDown(controller.dispose);
 
@@ -361,6 +364,7 @@ void main() {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(
           coins: 500,
+          totalBlooms: GardenState.meadowUnlockBloomCount,
           pots: List.generate(
             GardenState.maxPotCount,
             (_) => const GardenPot.empty(),
@@ -380,9 +384,39 @@ void main() {
       expect(controller.state.pots, hasLength(GardenArea.second.potCount));
     });
 
+    test('meadow unlocks after four blooms', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 100),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectArea(GardenArea.second);
+      expect(controller.state.activeArea, GardenArea.second);
+      expect(controller.state.meadowUnlocked, isFalse);
+      controller.selectPot(0);
+      expect(controller.state.selectedPotIndex, isNull);
+
+      controller.selectArea(GardenArea.main);
+
+      for (var index = 0; index < GardenState.meadowUnlockBloomCount; index++) {
+        controller.selectPot(index);
+        controller.plantSelectedPot(GardenPlantType.daisy);
+        _performActions(controller, GardenPlantType.daisy.balance.waterToBloom);
+      }
+
+      expect(controller.state.totalBlooms, GardenState.meadowUnlockBloomCount);
+      expect(controller.state.meadowUnlocked, isTrue);
+
+      controller.selectArea(GardenArea.second);
+      expect(controller.state.activeArea, GardenArea.second);
+    });
+
     test('garden areas keep separate pots', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 20),
+        initialState: GardenState.initial().copyWith(
+          water: 20,
+          totalBlooms: GardenState.meadowUnlockBloomCount,
+        ),
       );
       addTearDown(controller.dispose);
 
@@ -410,7 +444,10 @@ void main() {
 
     test('hanging slots only accept hanging plants', () {
       final controller = GardenController(
-        initialState: GardenState.initial().copyWith(water: 20),
+        initialState: GardenState.initial().copyWith(
+          water: 20,
+          totalBlooms: GardenState.meadowUnlockBloomCount,
+        ),
       );
       addTearDown(controller.dispose);
 

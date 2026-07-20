@@ -53,6 +53,7 @@ class GardenStateJsonCodec {
         _intValue(json['coins']) ?? GardenState.defaultCoins,
         GardenState.defaultCoins,
       ),
+      totalBlooms: math.max(_intValue(json['totalBlooms']) ?? 0, 0),
       activeArea: activeArea,
       unlockedPlantTypes: _plantTypesFromJson(json['unlockedPlantTypes']),
       ownedPotStyles: _potStylesFromJson(json['ownedPotStyles']),
@@ -74,6 +75,7 @@ class GardenStateJsonCodec {
     return {
       'water': state.water,
       'coins': state.coins,
+      'totalBlooms': state.totalBlooms,
       'activeArea': state.activeArea.name,
       'unlockedPlantTypes': state.unlockedPlantTypes
           .map((plantType) => plantType.name)
