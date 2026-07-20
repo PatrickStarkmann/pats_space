@@ -13,13 +13,27 @@ class SocialFocusController extends ChangeNotifier {
 
   SocialFocusRoom? _activeRoom;
   SocialFocusLobbySnapshot? _lastLobbySnapshot;
+  bool _disposed = false;
 
   SocialFocusRoom? get activeRoom => _activeRoom;
   SocialFocusLobbySnapshot? get lastLobbySnapshot => _lastLobbySnapshot;
   bool get hasActiveRoom => _activeRoom != null;
 
   Future<SocialFocusLobbySnapshot> loadLobby() async {
-    final snapshot = await _repository.loadLobby();
+    final SocialFocusLobbySnapshot snapshot;
+    try {
+      snapshot = await _repository.loadLobby();
+    } catch (error, stackTrace) {
+      debugPrint('Could not load social focus lobby: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return _lastLobbySnapshot ??
+          const SocialFocusLobbySnapshot(openRooms: [], friends: []);
+    }
+
+    if (_disposed) {
+      return snapshot;
+    }
+
     _lastLobbySnapshot = snapshot;
     notifyListeners();
     return snapshot;
@@ -27,6 +41,10 @@ class SocialFocusController extends ChangeNotifier {
 
   Stream<SocialFocusLobbySnapshot> watchLobby() {
     return _repository.watchLobby().map((snapshot) {
+      if (_disposed) {
+        return snapshot;
+      }
+
       _lastLobbySnapshot = snapshot;
       notifyListeners();
       return snapshot;
@@ -34,7 +52,19 @@ class SocialFocusController extends ChangeNotifier {
   }
 
   Future<bool> restoreActiveRoom() async {
-    final room = await _repository.restoreActiveRoom();
+    final SocialFocusRoom? room;
+    try {
+      room = await _repository.restoreActiveRoom();
+    } catch (error, stackTrace) {
+      debugPrint('Could not restore social focus room: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
+    }
+
+    if (_disposed) {
+      return false;
+    }
+
     if (room == null) {
       return false;
     }
@@ -46,52 +76,140 @@ class SocialFocusController extends ChangeNotifier {
   }
 
   Future<void> createOpenRoom() async {
-    _activeRoom = await _repository.createOpenRoom();
-    _watchActiveRoom(_activeRoom!.id);
+    final SocialFocusRoom room;
+    try {
+      room = await _repository.createOpenRoom();
+    } catch (error, stackTrace) {
+      debugPrint('Could not create social focus room: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return;
+    }
+
+    if (_disposed) {
+      return;
+    }
+
+    _activeRoom = room;
+    _watchActiveRoom(room.id);
     notifyListeners();
   }
 
   Future<void> joinRoom(String roomId) async {
-    _activeRoom = await _repository.joinRoom(roomId);
+    final SocialFocusRoom room;
+    try {
+      room = await _repository.joinRoom(roomId);
+    } catch (error, stackTrace) {
+      debugPrint('Could not join social focus room: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return;
+    }
+
+    if (_disposed) {
+      return;
+    }
+
+    _activeRoom = room;
     _watchActiveRoom(roomId);
     notifyListeners();
   }
 
   Future<void> leaveRoom() async {
+    if (_disposed) {
+      return;
+    }
+
     final roomId = _activeRoom?.id;
     _activeRoom = null;
     await _activeRoomSubscription?.cancel();
     _activeRoomSubscription = null;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
 
     if (roomId != null) {
-      await _repository.leaveRoom(roomId);
+      try {
+        await _repository.leaveRoom(roomId);
+      } catch (error, stackTrace) {
+        debugPrint('Could not leave social focus room: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
     }
   }
 
+  void clearActiveRoomLocally() {
+    if (_disposed || _activeRoom == null) {
+      return;
+    }
+
+    _activeRoom = null;
+    _activeRoomSubscription?.cancel();
+    _activeRoomSubscription = null;
+    notifyListeners();
+  }
+
   Future<void> updateLocalActivity(SocialFocusActivity activity) async {
+    if (_disposed) {
+      return;
+    }
+
     final room = _activeRoom;
     if (room == null) {
       return;
     }
 
-    _activeRoom = await _repository.updateLocalActivity(room.id, activity);
+    final SocialFocusRoom updatedRoom;
+    try {
+      updatedRoom = await _repository.updateLocalActivity(room.id, activity);
+    } catch (error, stackTrace) {
+      debugPrint('Could not update social focus activity: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return;
+    }
+    if (_disposed) {
+      return;
+    }
+
+    _activeRoom = updatedRoom;
     notifyListeners();
   }
 
   Future<void> updateLocalStatus(SocialFocusMemberStatus status) async {
+    if (_disposed) {
+      return;
+    }
+
     final room = _activeRoom;
     if (room == null) {
       return;
     }
 
-    _activeRoom = await _repository.updateLocalStatus(room.id, status);
+    final SocialFocusRoom updatedRoom;
+    try {
+      updatedRoom = await _repository.updateLocalStatus(room.id, status);
+    } catch (error, stackTrace) {
+      debugPrint('Could not update social focus status: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return;
+    }
+    if (_disposed) {
+      return;
+    }
+
+    _activeRoom = updatedRoom;
     notifyListeners();
   }
 
   void _watchActiveRoom(String roomId) {
+    if (_disposed) {
+      return;
+    }
+
     _activeRoomSubscription?.cancel();
     _activeRoomSubscription = _repository.watchRoom(roomId).listen((room) {
+      if (_disposed) {
+        return;
+      }
+
       _activeRoom = room;
       notifyListeners();
     });
@@ -99,6 +217,7 @@ class SocialFocusController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _activeRoomSubscription?.cancel();
     super.dispose();
   }

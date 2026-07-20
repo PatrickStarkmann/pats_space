@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
+import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
@@ -20,6 +21,7 @@ import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
+import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
@@ -34,6 +36,7 @@ import 'package:pats_space/features/social_focus/controllers/social_focus_contro
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/social_focus/repositories/firebase_social_focus_repository.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -42,6 +45,9 @@ class HomeScreen extends StatefulWidget {
     required this.gardenController,
     required this.initialSettings,
     required this.settingsRepository,
+    required this.pendingRewardRepository,
+    required this.gardenOnline,
+    required this.onEnsureOnlineAction,
     required this.onOpenSpace,
   });
 
@@ -49,6 +55,9 @@ class HomeScreen extends StatefulWidget {
   final GardenController gardenController;
   final FocusTimerSettings initialSettings;
   final FocusSettingsRepository settingsRepository;
+  final PendingFocusRewardRepository pendingRewardRepository;
+  final bool gardenOnline;
+  final Future<bool> Function() onEnsureOnlineAction;
   final VoidCallback onOpenSpace;
 
   @override
@@ -81,7 +90,26 @@ class _HomeScreenState extends State<HomeScreen> {
       onFocusRoundCompleted: _handleFocusRoundCompleted,
     )..addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
-    _restoreSocialFocusRoom();
+    if (widget.gardenOnline) {
+      _restoreSocialFocusRoom();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gardenOnline && !widget.gardenOnline) {
+      _lastSyncedSocialFocusStatus = null;
+      _socialFocusController.clearActiveRoomLocally();
+      if (_focusViewMode == _FocusViewMode.group) {
+        setState(() => _focusViewMode = _FocusViewMode.solo);
+      }
+      return;
+    }
+
+    if (!oldWidget.gardenOnline && widget.gardenOnline) {
+      _restoreSocialFocusRoom();
+    }
   }
 
   @override
@@ -281,6 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   left: 0,
                   child: _FocusViewModeToggle(
                     selectedMode: _focusViewMode,
+                    socialOnline: widget.gardenOnline,
                     onChanged: _handleFocusViewModeChanged,
                   ),
                 ),
@@ -359,6 +388,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    if (!await widget.onEnsureOnlineAction()) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _focusViewMode = _FocusViewMode.solo);
+      return;
+    }
+
     final snapshot = await _socialFocusController.loadLobby();
     if (!mounted) {
       return;
@@ -384,6 +422,12 @@ class _HomeScreenState extends State<HomeScreen> {
       await _socialFocusController.joinRoom(selection.roomId!);
     }
     if (!mounted) {
+      return;
+    }
+
+    if (!_socialFocusController.hasActiveRoom) {
+      AppHaptics.error();
+      setState(() => _focusViewMode = _FocusViewMode.solo);
       return;
     }
 
@@ -428,6 +472,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openGroupRoomSheet() async {
+    if (!widget.gardenOnline) {
+      _lastSyncedSocialFocusStatus = null;
+      _socialFocusController.clearActiveRoomLocally();
+      setState(() => _focusViewMode = _FocusViewMode.solo);
+      return;
+    }
+
     final room = _socialFocusController.activeRoom;
     if (room == null) {
       return;
@@ -593,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _timerController.cancelFocusRound();
     if (waterReward > 0) {
-      widget.gardenController.addWater(waterReward);
+      _applyOrStoreWaterReward(waterReward, storeOffline: true);
     }
 
     _clearPendingRoundReward();
@@ -727,10 +778,17 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.historyController.addRecord(
         record.copyWith(waterReward: waterReward),
       );
+      if (!widget.gardenOnline) {
+        unawaited(
+          widget.pendingRewardRepository.addSessionReward(
+            record.copyWith(waterReward: waterReward),
+          ),
+        );
+      }
     }
 
     if (record.mode == FocusMode.stopwatch) {
-      if (waterReward > 0) {
+      if (waterReward > 0 && widget.gardenOnline) {
         widget.gardenController.addWater(waterReward);
       }
       _showCompletionReward(
@@ -749,7 +807,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final focusDuration = _pendingRewardDuration;
 
     if (waterReward > 0) {
-      widget.gardenController.addWater(waterReward);
+      if (widget.gardenOnline) {
+        widget.gardenController.addWater(waterReward);
+      }
     }
 
     _clearPendingRoundReward();
@@ -778,6 +838,21 @@ class _HomeScreenState extends State<HomeScreen> {
         waterReward: waterReward,
       );
     });
+  }
+
+  void _applyOrStoreWaterReward(int waterReward, {required bool storeOffline}) {
+    if (waterReward <= 0) {
+      return;
+    }
+
+    if (widget.gardenOnline) {
+      widget.gardenController.addWater(waterReward);
+      return;
+    }
+
+    if (storeOffline) {
+      unawaited(widget.pendingRewardRepository.addWaterReward(waterReward));
+    }
   }
 
   void _dismissCompletionReward() {
@@ -872,41 +947,54 @@ class _GroupRoomPill extends StatelessWidget {
 class _FocusViewModeToggle extends StatelessWidget {
   const _FocusViewModeToggle({
     required this.selectedMode,
+    required this.socialOnline,
     required this.onChanged,
   });
 
   final _FocusViewMode selectedMode;
+  final bool socialOnline;
   final FutureOr<void> Function(_FocusViewMode) onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2F1EE),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _FocusViewModeButton(
-            icon: CupertinoIcons.person,
-            selected: selectedMode == _FocusViewMode.solo,
-            semanticLabel: 'Solo focus',
-            onPressed: () {
-              onChanged(_FocusViewMode.solo);
-            },
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F1EE),
+            borderRadius: BorderRadius.circular(999),
           ),
-          _FocusViewModeButton(
-            icon: CupertinoIcons.person_2,
-            selected: selectedMode == _FocusViewMode.group,
-            semanticLabel: 'Group focus',
-            onPressed: () {
-              onChanged(_FocusViewMode.group);
-            },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _FocusViewModeButton(
+                icon: CupertinoIcons.person,
+                selected: selectedMode == _FocusViewMode.solo,
+                semanticLabel: 'Solo focus',
+                onPressed: () {
+                  onChanged(_FocusViewMode.solo);
+                },
+              ),
+              _FocusViewModeButton(
+                icon: CupertinoIcons.person_2,
+                selected: selectedMode == _FocusViewMode.group,
+                semanticLabel: socialOnline
+                    ? 'Group focus'
+                    : 'Group focus unavailable offline',
+                onPressed: () {
+                  onChanged(_FocusViewMode.group);
+                },
+              ),
+            ],
           ),
+        ),
+        if (!socialOnline) ...[
+          const SizedBox(width: AppSpacing.xs),
+          const _FocusSocialOfflineIcon(),
         ],
-      ),
+      ],
     );
   }
 }
@@ -953,6 +1041,36 @@ class _FocusViewModeButton extends StatelessWidget {
             size: 22,
             color: selected ? Colors.white : const Color(0xFF303030),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FocusSocialOfflineIcon extends StatelessWidget {
+  const _FocusSocialOfflineIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .9),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.graySoft.withValues(alpha: .46)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: .06),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(9),
+        child: Icon(
+          PhosphorIconsRegular.cloudSlash,
+          size: 19,
+          color: AppColors.grayWarm,
         ),
       ),
     );

@@ -38,6 +38,10 @@ class FocusHistoryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> persist() async {
+    await _repository?.saveRecords(_records);
+  }
+
   void clear() {
     if (_records.isEmpty) {
       return;

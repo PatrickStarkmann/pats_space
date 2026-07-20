@@ -411,6 +411,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offline => 'offline';
 
   @override
+  String get connectionOfflineMessage =>
+      'Offline. Some actions are unavailable.';
+
+  @override
+  String get connectionOnlineMessage => 'Back online.';
+
+  @override
+  String get settingsOnlineRequired => 'Reconnect to use this action.';
+
+  @override
   String get focusing => 'focusing';
 
   @override
@@ -493,6 +503,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locked => 'Locked';
+
+  @override
+  String get gardenOfflineTitle => 'Garden is offline';
+
+  @override
+  String get gardenOfflineMessage => 'Reconnect to use the garden and shop.';
 
   @override
   String get meadowLockedTitle => 'A new space is waiting';

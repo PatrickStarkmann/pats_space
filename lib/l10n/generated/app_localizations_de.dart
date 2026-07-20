@@ -423,6 +423,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offline => 'offline';
 
   @override
+  String get connectionOfflineMessage =>
+      'Offline. Einige Aktionen sind nicht verfügbar.';
+
+  @override
+  String get connectionOnlineMessage => 'Wieder online.';
+
+  @override
+  String get settingsOnlineRequired =>
+      'Verbinde dich wieder, um diese Aktion zu nutzen.';
+
+  @override
   String get focusing => 'fokussiert';
 
   @override
@@ -505,6 +516,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get locked => 'Gesperrt';
+
+  @override
+  String get gardenOfflineTitle => 'Garden ist offline';
+
+  @override
+  String get gardenOfflineMessage =>
+      'Verbinde dich wieder, um Garden und Shop zu nutzen.';
 
   @override
   String get meadowLockedTitle => 'Ein neuer Space wartet';

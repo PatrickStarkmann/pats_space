@@ -144,6 +144,9 @@
   "available": "Verfügbar",
   "online": "online",
   "offline": "offline",
+  "connectionOfflineMessage": "Offline. Einige Aktionen sind nicht verfügbar.",
+  "connectionOnlineMessage": "Wieder online.",
+  "settingsOnlineRequired": "Verbinde dich wieder, um diese Aktion zu nutzen.",
   "focusing": "fokussiert",
   "chooseActivity": "Aktivität wählen",
   "reading": "lesen",
@@ -193,6 +196,8 @@
   "equipped": "Ausgerüstet",
   "use": "Nutzen",
   "locked": "Gesperrt",
+  "gardenOfflineTitle": "Garden ist offline",
+  "gardenOfflineMessage": "Verbinde dich wieder, um Garden und Shop zu nutzen.",
   "meadowLockedTitle": "Ein neuer Space wartet",
   "meadowLockedMessage": "{remaining, plural, =1{Bringe noch 1 Pflanze zum Blühen, um ihn freizuschalten.} other{Bringe noch {remaining} Pflanzen zum Blühen, um ihn freizuschalten.}}",
   "@meadowLockedMessage": {

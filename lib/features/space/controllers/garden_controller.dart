@@ -89,6 +89,10 @@ class GardenController extends ChangeNotifier {
     _setState(_state.copyWith(coins: _state.coins + amount));
   }
 
+  Future<void> persist() async {
+    await _repository?.saveState(_state);
+  }
+
   bool buyNextPotSlot() {
     return false;
   }

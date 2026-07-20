@@ -872,6 +872,24 @@ abstract class AppLocalizations {
   /// **'offline'**
   String get offline;
 
+  /// No description provided for @connectionOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Some actions are unavailable.'**
+  String get connectionOfflineMessage;
+
+  /// No description provided for @connectionOnlineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Back online.'**
+  String get connectionOnlineMessage;
+
+  /// No description provided for @settingsOnlineRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to use this action.'**
+  String get settingsOnlineRequired;
+
   /// No description provided for @focusing.
   ///
   /// In en, this message translates to:
@@ -1009,6 +1027,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Locked'**
   String get locked;
+
+  /// No description provided for @gardenOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Garden is offline'**
+  String get gardenOfflineTitle;
+
+  /// No description provided for @gardenOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to use the garden and shop.'**
+  String get gardenOfflineMessage;
 
   /// No description provided for @meadowLockedTitle.
   ///

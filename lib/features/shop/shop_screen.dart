@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
@@ -14,6 +16,7 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 Future<void> showShopSheet({
   required BuildContext context,
   required GardenController gardenController,
+  required Future<bool> Function() onEnsureShopActionOnline,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -26,6 +29,7 @@ Future<void> showShopSheet({
           borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
           child: ShopScreen(
             gardenController: gardenController,
+            onEnsureShopActionOnline: onEnsureShopActionOnline,
             onClose: () => Navigator.of(context).pop(),
             onOpenSpace: () => Navigator.of(context).pop(),
           ),
@@ -39,11 +43,13 @@ class ShopScreen extends StatelessWidget {
   const ShopScreen({
     super.key,
     required this.gardenController,
+    required this.onEnsureShopActionOnline,
     this.onClose,
     this.onOpenSpace,
   });
 
   final GardenController gardenController;
+  final Future<bool> Function() onEnsureShopActionOnline;
   final VoidCallback? onClose;
   final VoidCallback? onOpenSpace;
 
@@ -91,18 +97,20 @@ class ShopScreen extends StatelessWidget {
                     },
                     coins: garden.coins,
                     onPrimaryAction: (style) {
-                      final owned = garden.ownedPotStyles.contains(style);
-                      if (owned) {
-                        AppHaptics.error();
-                        return;
-                      }
+                      _runShopAction(() {
+                        final owned = garden.ownedPotStyles.contains(style);
+                        if (owned) {
+                          AppHaptics.error();
+                          return;
+                        }
 
-                      final success = gardenController.buyPotStyle(style);
-                      if (success) {
-                        AppHaptics.purchase();
-                      } else {
-                        AppHaptics.error();
-                      }
+                        final success = gardenController.buyPotStyle(style);
+                        if (success) {
+                          AppHaptics.purchase();
+                        } else {
+                          AppHaptics.error();
+                        }
+                      });
                     },
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -136,18 +144,20 @@ class ShopScreen extends StatelessWidget {
                     },
                     coins: garden.coins,
                     onPrimaryAction: (decoration) {
-                      final success = gardenController.buyDecoration(
-                        decoration,
-                      );
-                      if (success) {
-                        AppHaptics.purchase();
-                        gardenController.requestDecorationArrangement(
+                      _runShopAction(() {
+                        final success = gardenController.buyDecoration(
                           decoration,
                         );
-                        onOpenSpace?.call();
-                      } else {
-                        AppHaptics.error();
-                      }
+                        if (success) {
+                          AppHaptics.purchase();
+                          gardenController.requestDecorationArrangement(
+                            decoration,
+                          );
+                          onOpenSpace?.call();
+                        } else {
+                          AppHaptics.error();
+                        }
+                      });
                     },
                   ),
                 ],
@@ -157,6 +167,16 @@ class ShopScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _runShopAction(VoidCallback action) {
+    unawaited(() async {
+      if (!await onEnsureShopActionOnline()) {
+        return;
+      }
+
+      action();
+    }());
   }
 }
 

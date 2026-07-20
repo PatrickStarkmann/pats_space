@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -8,6 +9,7 @@ import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/auth/account_auth_service.dart';
 import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
+import 'package:pats_space/core/network/remote_availability_service.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
@@ -21,6 +23,8 @@ import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/firebase_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
+import 'package:pats_space/features/focus/repositories/mirrored_focus_history_repository.dart';
+import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
 import 'package:pats_space/features/home/home_screen.dart';
@@ -30,6 +34,7 @@ import 'package:pats_space/features/settings/settings_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/space/repositories/firebase_garden_repository.dart';
+import 'package:pats_space/features/space/repositories/mirrored_garden_repository.dart';
 import 'package:pats_space/features/space/repositories/shared_preferences_garden_repository.dart';
 import 'package:pats_space/features/space/space_screen.dart';
 import 'package:pats_space/features/stats/stats_screen.dart';
@@ -62,16 +67,31 @@ class _AppShellState extends State<AppShell> {
   AppTab _selectedTab = AppTab.home;
   late Future<_AppPersistenceBundle> _persistenceFuture;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<bool>? _networkSubscription;
+  Timer? _remoteAvailabilityTimer;
+  Timer? _connectivityNoticeTimer;
+  Timer? _connectivityNoticeReadinessTimer;
+  Timer? _networkOfflineConfirmationTimer;
   String? _requestedPersistenceUid;
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
+  _ConnectivityNotice? _connectivityNotice;
   bool _gardenTutorialActive = false;
   bool _hasLoadedPersistence = false;
   bool _reportedInitialPersistenceLoaded = false;
+  bool _connectivityNoticesReady = false;
+  bool _showedOfflineNoticeInSession = false;
+  bool _syncingPendingRewards = false;
   late final AccountAuthService _accountAuthService =
       FirebaseAccountAuthService(
         auth: FirebaseAuth.instance,
         firestore: FirebaseFirestore.instance,
+      );
+  late final RemoteAvailabilityService _remoteAvailabilityService =
+      RemoteAvailabilityService(
+        auth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+        connectivity: Connectivity(),
       );
 
   @override
@@ -79,6 +99,12 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _requestedPersistenceUid = FirebaseAuth.instance.currentUser?.uid;
     _persistenceFuture = _loadPersistence();
+    _remoteAvailabilityTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _refreshRemoteAvailability(),
+    );
+    _networkSubscription = _remoteAvailabilityService.hasNetworkConnection
+        .listen(_handleNetworkConnectionChanged);
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       final uid = user?.uid;
       if (uid == null) {
@@ -102,6 +128,11 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _networkSubscription?.cancel();
+    _remoteAvailabilityTimer?.cancel();
+    _connectivityNoticeTimer?.cancel();
+    _connectivityNoticeReadinessTimer?.cancel();
+    _networkOfflineConfirmationTimer?.cancel();
     _historyController?.dispose();
     _gardenController?.dispose();
     super.dispose();
@@ -118,6 +149,7 @@ class _AppShellState extends State<AppShell> {
         if (bundle != null) {
           _hasLoadedPersistence = true;
           _reportInitialPersistenceLoaded();
+          _scheduleConnectivityNoticeReadiness();
         }
 
         return AnimatedSwitcher(
@@ -140,6 +172,10 @@ class _AppShellState extends State<AppShell> {
                     _handleGardenTutorialCompleted();
                   },
                   onAccountDeleted: _handleAccountDeleted,
+                  connectivityNotice: _connectivityNotice,
+                  onConnectivityNoticeDismissed: _dismissConnectivityNotice,
+                  onEnsureGardenActionOnline:
+                      _ensureRemoteAvailableForGardenAction,
                   bundle: bundle,
                   language: widget.language,
                   onLanguageChanged: widget.onLanguageChanged,
@@ -177,6 +213,38 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  void _scheduleConnectivityNoticeReadiness() {
+    if (_connectivityNoticesReady ||
+        _connectivityNoticeReadinessTimer != null) {
+      return;
+    }
+
+    _connectivityNoticeReadinessTimer = Timer(
+      const Duration(seconds: 2),
+      () async {
+        if (!mounted) {
+          return;
+        }
+
+        await _persistenceFuture;
+        var hasNetworkConnection = await _remoteAvailabilityService
+            .checkNetworkConnection();
+        if (!hasNetworkConnection) {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          hasNetworkConnection = await _remoteAvailabilityService
+              .checkNetworkConnection();
+        }
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _connectivityNoticesReady = true;
+        });
+      },
+    );
+  }
+
   Widget _fullscreenSwitcherLayout(
     Widget? currentChild,
     List<Widget> previousChildren,
@@ -211,6 +279,7 @@ class _AppShellState extends State<AppShell> {
     final localGardenRepository = SharedPreferencesGardenRepository(
       preferences,
     );
+    final pendingRewardRepository = PendingFocusRewardRepository(preferences);
     final historyRepository = FirebaseFocusHistoryRepository(
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
@@ -222,20 +291,29 @@ class _AppShellState extends State<AppShell> {
     final settings =
         await settingsRepository.loadSettings() ??
         FocusTimerController.defaultSettings;
+    final remoteAvailable = await _checkRemoteAvailable();
     final records = await _loadMigratedFocusHistory(
       localRepository: localHistoryRepository,
       firebaseRepository: historyRepository,
+      remoteAvailable: remoteAvailable,
     );
     final gardenState = await _loadMigratedGardenState(
       localRepository: localGardenRepository,
       firebaseRepository: gardenRepository,
+      remoteAvailable: remoteAvailable,
     );
     final historyController = FocusHistoryController(
-      repository: historyRepository,
+      repository: MirroredFocusHistoryRepository(
+        localRepository: localHistoryRepository,
+        remoteRepository: historyRepository,
+      ),
       initialRecords: records,
     );
     final gardenController = GardenController(
-      repository: gardenRepository,
+      repository: MirroredGardenRepository(
+        localRepository: localGardenRepository,
+        remoteRepository: gardenRepository,
+      ),
       initialState: gardenState,
     );
     final onboardingCompleted =
@@ -246,26 +324,33 @@ class _AppShellState extends State<AppShell> {
     _historyController = historyController;
     _gardenController = gardenController;
 
-    return _AppPersistenceBundle(
+    final bundle = _AppPersistenceBundle(
       preferences: preferences,
       onboardingCompleted: onboardingCompleted,
       settings: settings,
       settingsRepository: settingsRepository,
       historyController: historyController,
       gardenController: gardenController,
+      pendingRewardRepository: pendingRewardRepository,
+      remoteAvailable: remoteAvailable,
     );
+    unawaited(_syncPendingFocusRewardsIfPossible(bundle));
+    return bundle;
   }
 
   Future<List<FocusSessionRecord>> _loadMigratedFocusHistory({
     required SharedPreferencesFocusHistoryRepository localRepository,
     required FirebaseFocusHistoryRepository firebaseRepository,
+    required bool remoteAvailable,
   }) async {
     final localRecords = await localRepository.loadRecords();
-    final firebaseRecords = await firebaseRepository.loadRecords();
+    if (!remoteAvailable) {
+      return localRecords;
+    }
+
+    final firebaseRecords = await _loadRemoteFocusHistory(firebaseRepository);
     if (firebaseRecords.isNotEmpty) {
-      if (localRecords.isNotEmpty) {
-        await localRepository.clearRecords();
-      }
+      await localRepository.saveRecords(firebaseRecords);
       return firebaseRecords;
     }
 
@@ -274,20 +359,22 @@ class _AppShellState extends State<AppShell> {
     }
 
     await firebaseRepository.saveRecords(localRecords);
-    await localRepository.clearRecords();
     return localRecords;
   }
 
   Future<GardenState?> _loadMigratedGardenState({
     required SharedPreferencesGardenRepository localRepository,
     required FirebaseGardenRepository firebaseRepository,
+    required bool remoteAvailable,
   }) async {
     final localState = await localRepository.loadState();
-    final firebaseState = await firebaseRepository.loadState();
+    if (!remoteAvailable) {
+      return localState;
+    }
+
+    final firebaseState = await _loadRemoteGardenState(firebaseRepository);
     if (firebaseState != null) {
-      if (localState != null) {
-        await localRepository.clearState();
-      }
+      await localRepository.saveState(firebaseState);
       return firebaseState;
     }
 
@@ -296,8 +383,235 @@ class _AppShellState extends State<AppShell> {
     }
 
     await firebaseRepository.saveState(localState);
-    await localRepository.clearState();
     return localState;
+  }
+
+  Future<List<FocusSessionRecord>> _loadRemoteFocusHistory(
+    FirebaseFocusHistoryRepository repository,
+  ) async {
+    try {
+      return await repository.loadRecords();
+    } catch (error, stackTrace) {
+      debugPrint('Could not load remote focus history: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return const [];
+    }
+  }
+
+  Future<GardenState?> _loadRemoteGardenState(
+    FirebaseGardenRepository repository,
+  ) async {
+    try {
+      return await repository.loadState();
+    } catch (error, stackTrace) {
+      debugPrint('Could not load remote garden state: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<bool> _checkRemoteAvailable() async {
+    return _remoteAvailabilityService.checkRemoteAvailable();
+  }
+
+  Future<void> _refreshRemoteAvailability() async {
+    final bundle = await _persistenceFuture;
+    final remoteAvailable = await _checkRemoteAvailable();
+    if (remoteAvailable) {
+      await _syncPendingFocusRewardsIfPossible(
+        bundle,
+        remoteAvailableOverride: true,
+      );
+      if (!mounted || bundle.remoteAvailable) {
+        return;
+      }
+
+      setState(() {
+        if (_shouldShowConnectivityNotice(_ConnectivityNotice.online)) {
+          _showConnectivityNotice(_ConnectivityNotice.online);
+        }
+        _persistenceFuture = Future.value(bundle.copyWithRemoteAvailable(true));
+      });
+    }
+  }
+
+  Future<void> _handleNetworkConnectionChanged(bool hasConnection) async {
+    if (!hasConnection) {
+      _networkOfflineConfirmationTimer?.cancel();
+      _networkOfflineConfirmationTimer = Timer(
+        const Duration(milliseconds: 1200),
+        () async {
+          final stillOffline = !await _remoteAvailabilityService
+              .checkNetworkConnection();
+          if (!mounted || !stillOffline) {
+            return;
+          }
+
+          await _updateRemoteAvailability(false, showNotice: true);
+        },
+      );
+      return;
+    }
+
+    _networkOfflineConfirmationTimer?.cancel();
+    await _updateRemoteAvailability(true, showNotice: true);
+    await _refreshRemoteAvailability();
+  }
+
+  Future<bool> _ensureRemoteAvailableForGardenAction() async {
+    var remoteAvailable = await _remoteAvailabilityService
+        .checkNetworkConnection();
+    if (!remoteAvailable) {
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      remoteAvailable = await _remoteAvailabilityService
+          .checkNetworkConnection();
+    }
+
+    await _updateRemoteAvailability(
+      remoteAvailable,
+      showNotice: true,
+      forceNotice: true,
+    );
+    return remoteAvailable;
+  }
+
+  Future<void> _updateRemoteAvailability(
+    bool remoteAvailable, {
+    required bool showNotice,
+    bool forceNotice = false,
+  }) async {
+    final bundle = await _persistenceFuture;
+    if (!mounted || remoteAvailable == bundle.remoteAvailable) {
+      if (mounted && remoteAvailable) {
+        _clearStaleOfflineNotice();
+      }
+      if (mounted &&
+          !remoteAvailable &&
+          showNotice &&
+          _shouldShowConnectivityNotice(
+            _ConnectivityNotice.offline,
+            force: forceNotice,
+          )) {
+        setState(() {
+          _showConnectivityNotice(_ConnectivityNotice.offline);
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      if (showNotice) {
+        if (_shouldShowConnectivityNotice(
+          remoteAvailable
+              ? _ConnectivityNotice.online
+              : _ConnectivityNotice.offline,
+          force: forceNotice,
+        )) {
+          _showConnectivityNotice(
+            remoteAvailable
+                ? _ConnectivityNotice.online
+                : _ConnectivityNotice.offline,
+          );
+        }
+      }
+      _persistenceFuture = Future.value(
+        bundle.copyWithRemoteAvailable(remoteAvailable),
+      );
+    });
+  }
+
+  bool _shouldShowConnectivityNotice(
+    _ConnectivityNotice notice, {
+    bool force = false,
+  }) {
+    if (!_connectivityNoticesReady && !force) {
+      return false;
+    }
+
+    return notice == _ConnectivityNotice.offline ||
+        _showedOfflineNoticeInSession;
+  }
+
+  void _showConnectivityNotice(_ConnectivityNotice notice) {
+    _connectivityNoticeTimer?.cancel();
+    _connectivityNotice = notice;
+    if (notice == _ConnectivityNotice.offline) {
+      _showedOfflineNoticeInSession = true;
+    }
+    if (notice == _ConnectivityNotice.online) {
+      _connectivityNoticeTimer = Timer(const Duration(seconds: 2), () {
+        if (!mounted || _connectivityNotice != _ConnectivityNotice.online) {
+          return;
+        }
+        setState(() {
+          _connectivityNotice = null;
+        });
+      });
+    }
+  }
+
+  void _clearStaleOfflineNotice() {
+    if (_connectivityNotice != _ConnectivityNotice.offline) {
+      return;
+    }
+
+    _connectivityNoticeTimer?.cancel();
+    setState(() {
+      _connectivityNotice = null;
+    });
+  }
+
+  void _dismissConnectivityNotice() {
+    _connectivityNoticeTimer?.cancel();
+    setState(() {
+      _connectivityNotice = null;
+    });
+  }
+
+  Future<void> _syncPendingFocusRewardsIfPossible(
+    _AppPersistenceBundle bundle, {
+    bool? remoteAvailableOverride,
+  }) async {
+    final remoteAvailable = remoteAvailableOverride ?? bundle.remoteAvailable;
+    if (!remoteAvailable || _syncingPendingRewards) {
+      return;
+    }
+
+    _syncingPendingRewards = true;
+    try {
+      final rewards = await bundle.pendingRewardRepository.loadRewards();
+      if (rewards.isEmpty) {
+        return;
+      }
+
+      final knownRecordIds = bundle.historyController.records
+          .map((record) => record.id)
+          .toSet();
+      var waterReward = 0;
+      var shouldPersistHistory = false;
+      for (final reward in rewards) {
+        waterReward += reward.waterReward;
+        final record = reward.record;
+        if (record != null) {
+          shouldPersistHistory = true;
+          if (!knownRecordIds.contains(record.id)) {
+            bundle.historyController.addRecord(record);
+            knownRecordIds.add(record.id);
+          }
+        }
+      }
+
+      if (shouldPersistHistory) {
+        await bundle.historyController.persist();
+      }
+      if (waterReward > 0) {
+        bundle.gardenController.addWater(waterReward);
+        await bundle.gardenController.persist();
+      }
+      await bundle.pendingRewardRepository.clearRewards();
+    } finally {
+      _syncingPendingRewards = false;
+    }
   }
 
   Future<void> _handleOnboardingFinished(
@@ -708,6 +1022,9 @@ class _AppShellContent extends StatelessWidget {
     required this.gardenTutorialActive,
     required this.onGardenTutorialCompleted,
     required this.onAccountDeleted,
+    required this.connectivityNotice,
+    required this.onConnectivityNoticeDismissed,
+    required this.onEnsureGardenActionOnline,
     required this.bundle,
     required this.language,
     required this.onLanguageChanged,
@@ -720,6 +1037,9 @@ class _AppShellContent extends StatelessWidget {
   final bool gardenTutorialActive;
   final VoidCallback onGardenTutorialCompleted;
   final Future<void> Function() onAccountDeleted;
+  final _ConnectivityNotice? connectivityNotice;
+  final VoidCallback onConnectivityNoticeDismissed;
+  final Future<bool> Function() onEnsureGardenActionOnline;
   final _AppPersistenceBundle bundle;
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
@@ -746,29 +1066,138 @@ class _AppShellContent extends StatelessWidget {
         enabled: !gardenTutorialActive,
         onTabSelected: onTabSelected,
       ),
-      child: IndexedStack(
-        index: selectedTab.index,
+      child: Stack(
         children: [
-          HomeScreen(
-            historyController: bundle.historyController,
-            gardenController: bundle.gardenController,
-            initialSettings: bundle.settings,
-            settingsRepository: bundle.settingsRepository,
-            onOpenSpace: () => onTabSelected(AppTab.space),
+          IndexedStack(
+            index: selectedTab.index,
+            children: [
+              HomeScreen(
+                historyController: bundle.historyController,
+                gardenController: bundle.gardenController,
+                initialSettings: bundle.settings,
+                settingsRepository: bundle.settingsRepository,
+                pendingRewardRepository: bundle.pendingRewardRepository,
+                gardenOnline: bundle.remoteAvailable,
+                onEnsureOnlineAction: onEnsureGardenActionOnline,
+                onOpenSpace: () => onTabSelected(AppTab.space),
+              ),
+              SpaceScreen(
+                gardenController: bundle.gardenController,
+                gardenOnline: bundle.remoteAvailable,
+                onEnsureGardenActionOnline: onEnsureGardenActionOnline,
+                tutorialActive: gardenTutorialActive,
+                onTutorialCompleted: onGardenTutorialCompleted,
+              ),
+              StatsScreen(historyController: bundle.historyController),
+              SettingsScreen(
+                language: language,
+                onLanguageChanged: onLanguageChanged,
+                onAccountDeleted: onAccountDeleted,
+                remoteAvailable: bundle.remoteAvailable,
+                onEnsureOnlineAction: onEnsureGardenActionOnline,
+              ),
+            ],
           ),
-          SpaceScreen(
-            gardenController: bundle.gardenController,
-            tutorialActive: gardenTutorialActive,
-            onTutorialCompleted: onGardenTutorialCompleted,
-          ),
-          StatsScreen(historyController: bundle.historyController),
-          SettingsScreen(
-            language: language,
-            onLanguageChanged: onLanguageChanged,
-            onAccountDeleted: onAccountDeleted,
+          Positioned(
+            top: selectedTab == AppTab.space ? 128 : AppSpacing.md,
+            left: selectedTab == AppTab.space ? AppSpacing.xl : 0,
+            right: selectedTab == AppTab.space ? AppSpacing.xl : 0,
+            child: _ConnectivityNoticeBanner(
+              notice: connectivityNotice,
+              onDismissed: onConnectivityNoticeDismissed,
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+enum _ConnectivityNotice { offline, online }
+
+class _ConnectivityNoticeBanner extends StatelessWidget {
+  const _ConnectivityNoticeBanner({
+    required this.notice,
+    required this.onDismissed,
+  });
+
+  final _ConnectivityNotice? notice;
+  final VoidCallback onDismissed;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentNotice = notice;
+    final l10n = AppLocalizations.of(context);
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      child: currentNotice == null
+          ? const SizedBox.shrink(key: ValueKey('connection-none'))
+          : Align(
+              key: ValueKey(currentNotice),
+              alignment: Alignment.topCenter,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onDismissed,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: .95),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      border: Border.all(
+                        color: AppColors.graySoft.withValues(alpha: .54),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.charcoal.withValues(alpha: .09),
+                          blurRadius: 18,
+                          offset: const Offset(0, 9),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            currentNotice == _ConnectivityNotice.offline
+                                ? CupertinoIcons.wifi_slash
+                                : CupertinoIcons.checkmark_alt_circle,
+                            color: currentNotice == _ConnectivityNotice.offline
+                                ? AppColors.grayWarm
+                                : AppColors.sage,
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              currentNotice == _ConnectivityNotice.offline
+                                  ? l10n.connectionOfflineMessage
+                                  : l10n.connectionOnlineMessage,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.charcoal.withValues(
+                                  alpha: .78,
+                                ),
+                                fontWeight: FontWeight.w900,
+                                height: 1.18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
@@ -781,6 +1210,8 @@ class _AppPersistenceBundle {
     required this.settingsRepository,
     required this.historyController,
     required this.gardenController,
+    required this.pendingRewardRepository,
+    required this.remoteAvailable,
   });
 
   final SharedPreferences preferences;
@@ -789,6 +1220,8 @@ class _AppPersistenceBundle {
   final FocusSettingsRepository settingsRepository;
   final FocusHistoryController historyController;
   final GardenController gardenController;
+  final PendingFocusRewardRepository pendingRewardRepository;
+  final bool remoteAvailable;
 
   _AppPersistenceBundle copyWithOnboardingCompleted() {
     return _AppPersistenceBundle(
@@ -798,6 +1231,21 @@ class _AppPersistenceBundle {
       settingsRepository: settingsRepository,
       historyController: historyController,
       gardenController: gardenController,
+      pendingRewardRepository: pendingRewardRepository,
+      remoteAvailable: remoteAvailable,
+    );
+  }
+
+  _AppPersistenceBundle copyWithRemoteAvailable(bool remoteAvailable) {
+    return _AppPersistenceBundle(
+      preferences: preferences,
+      onboardingCompleted: onboardingCompleted,
+      settings: settings,
+      settingsRepository: settingsRepository,
+      historyController: historyController,
+      gardenController: gardenController,
+      pendingRewardRepository: pendingRewardRepository,
+      remoteAvailable: remoteAvailable,
     );
   }
 }

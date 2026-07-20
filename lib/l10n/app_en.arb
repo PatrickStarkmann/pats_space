@@ -144,6 +144,9 @@
   "available": "Available",
   "online": "online",
   "offline": "offline",
+  "connectionOfflineMessage": "Offline. Some actions are unavailable.",
+  "connectionOnlineMessage": "Back online.",
+  "settingsOnlineRequired": "Reconnect to use this action.",
   "focusing": "focusing",
   "chooseActivity": "Choose activity",
   "reading": "reading",
@@ -193,6 +196,8 @@
   "equipped": "Equipped",
   "use": "Use",
   "locked": "Locked",
+  "gardenOfflineTitle": "Garden is offline",
+  "gardenOfflineMessage": "Reconnect to use the garden and shop.",
   "meadowLockedTitle": "A new space is waiting",
   "meadowLockedMessage": "{remaining, plural, =1{Bloom 1 more plant to unlock it.} other{Bloom {remaining} more plants to unlock it.}}",
   "@meadowLockedMessage": {

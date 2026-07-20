@@ -41,11 +41,15 @@ class SettingsScreen extends StatefulWidget {
     required this.language,
     required this.onLanguageChanged,
     required this.onAccountDeleted,
+    required this.remoteAvailable,
+    required this.onEnsureOnlineAction,
   });
 
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
   final Future<void> Function() onAccountDeleted;
+  final bool remoteAvailable;
+  final Future<bool> Function() onEnsureOnlineAction;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -74,6 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           (routeContext) => _MainSettingsPage(
             language: widget.language,
             profileRepository: _profileRepository,
+            remoteAvailable: widget.remoteAvailable,
+            onEnsureOnlineAction: widget.onEnsureOnlineAction,
             soundsEnabled: _soundsEnabled,
             notificationsEnabled: _notificationsEnabled,
             onLanguagePressed: () {
@@ -128,6 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   (accountContext) => _AccountSettingsPage(
                     onBack: () => Navigator.of(accountContext).maybePop(),
                     onAccountDeleted: widget.onAccountDeleted,
+                    onEnsureOnlineAction: widget.onEnsureOnlineAction,
                   ),
                 ),
               );
@@ -137,6 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _settingsRoute(
                   (friendsContext) => _FriendsSettingsPage(
                     repository: _profileRepository,
+                    onEnsureOnlineAction: widget.onEnsureOnlineAction,
                     onBack: () => Navigator.of(friendsContext).maybePop(),
                   ),
                 ),
@@ -169,6 +177,8 @@ class _MainSettingsPage extends StatelessWidget {
   const _MainSettingsPage({
     required this.language,
     required this.profileRepository,
+    required this.remoteAvailable,
+    required this.onEnsureOnlineAction,
     required this.soundsEnabled,
     required this.notificationsEnabled,
     required this.onLanguagePressed,
@@ -182,6 +192,8 @@ class _MainSettingsPage extends StatelessWidget {
 
   final AppLanguage language;
   final UserProfileRepository profileRepository;
+  final bool remoteAvailable;
+  final Future<bool> Function() onEnsureOnlineAction;
   final bool soundsEnabled;
   final bool notificationsEnabled;
   final VoidCallback onLanguagePressed;
@@ -199,7 +211,11 @@ class _MainSettingsPage extends StatelessWidget {
     return _SettingsScrollView(
       title: l10n.settingsTitle,
       children: [
-        _ProfileCard(repository: profileRepository),
+        _ProfileCard(
+          repository: profileRepository,
+          remoteAvailable: remoteAvailable,
+          onEnsureOnlineAction: onEnsureOnlineAction,
+        ),
         const SizedBox(height: AppSpacing.lg),
         _SettingsGroup(
           children: [
@@ -278,9 +294,15 @@ class _MainSettingsPage extends StatelessWidget {
 }
 
 class _ProfileCard extends StatefulWidget {
-  const _ProfileCard({required this.repository});
+  const _ProfileCard({
+    required this.repository,
+    required this.remoteAvailable,
+    required this.onEnsureOnlineAction,
+  });
 
   final UserProfileRepository repository;
+  final bool remoteAvailable;
+  final Future<bool> Function() onEnsureOnlineAction;
 
   @override
   State<_ProfileCard> createState() => _ProfileCardState();
@@ -500,8 +522,24 @@ class _ProfileCardState extends State<_ProfileCard> {
       return;
     }
 
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _saving = true);
-    final savedProfile = await widget.repository.saveDisplayName(trimmedName);
+    final UserProfile savedProfile;
+    try {
+      savedProfile = await widget.repository.saveDisplayName(trimmedName);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _saving = false);
+      await _showMessage(l10n.accountSecureFailed);
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -608,9 +646,14 @@ class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
 }
 
 class _FriendsSettingsPage extends StatefulWidget {
-  const _FriendsSettingsPage({required this.repository, required this.onBack});
+  const _FriendsSettingsPage({
+    required this.repository,
+    required this.onEnsureOnlineAction,
+    required this.onBack,
+  });
 
   final UserProfileRepository repository;
+  final Future<bool> Function() onEnsureOnlineAction;
   final VoidCallback onBack;
 
   @override
@@ -780,6 +823,11 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
       return;
     }
 
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _sendingRequest = true);
     try {
       await widget.repository.sendFriendRequestByCode(trimmedCode);
@@ -812,8 +860,23 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
 
   Future<void> _acceptFriendRequest(FriendRequest request) async {
     final l10n = AppLocalizations.of(context);
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _busyId = request.uid);
-    await widget.repository.acceptFriendRequest(request);
+    try {
+      await widget.repository.acceptFriendRequest(request);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _busyId = null);
+      await _showMessage(l10n.friendAddFailed);
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -823,8 +886,24 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
   }
 
   Future<void> _cancelFriendRequest(FriendRequest request) async {
+    final l10n = AppLocalizations.of(context);
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _busyId = request.uid);
-    await widget.repository.cancelFriendRequest(request);
+    try {
+      await widget.repository.cancelFriendRequest(request);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _busyId = null);
+      await _showMessage(l10n.friendAddFailed);
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -858,8 +937,23 @@ class _FriendsSettingsPageState extends State<_FriendsSettingsPage> {
       return;
     }
 
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _busyId = friend.uid);
-    await widget.repository.deleteFriend(friend);
+    try {
+      await widget.repository.deleteFriend(friend);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _busyId = null);
+      await _showMessage(l10n.friendAddFailed);
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -1344,10 +1438,12 @@ class _AccountSettingsPage extends StatefulWidget {
   const _AccountSettingsPage({
     required this.onBack,
     required this.onAccountDeleted,
+    required this.onEnsureOnlineAction,
   });
 
   final VoidCallback onBack;
   final Future<void> Function() onAccountDeleted;
+  final Future<bool> Function() onEnsureOnlineAction;
 
   @override
   State<_AccountSettingsPage> createState() => _AccountSettingsPageState();
@@ -1441,6 +1537,14 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
 
   Future<void> _showSignInOptions() async {
     final l10n = AppLocalizations.of(context);
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     final user = _auth.currentUser;
     final providerIds =
         user?.providerData.map((provider) => provider.providerId).toSet() ??
@@ -1500,6 +1604,12 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
   Future<void> _secureAccount(
     Future<AccountAuthResult> Function() secure,
   ) async {
+    final l10n = AppLocalizations.of(context);
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _linking = true);
     try {
       final result = await secure();
@@ -1611,6 +1721,11 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
       return;
     }
 
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
+      return;
+    }
+
     setState(() => _linking = true);
     try {
       await _accountAuthService.signOutToGuest();
@@ -1653,6 +1768,11 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
       },
     );
     if (shouldDelete != true) {
+      return;
+    }
+
+    if (!await widget.onEnsureOnlineAction()) {
+      await _showMessage(l10n.settingsOnlineRequired);
       return;
     }
 
