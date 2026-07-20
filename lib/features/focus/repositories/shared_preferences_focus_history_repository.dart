@@ -7,16 +7,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesFocusHistoryRepository
     implements FocusHistoryRepository {
-  const SharedPreferencesFocusHistoryRepository(this._preferences);
+  const SharedPreferencesFocusHistoryRepository(
+    this._preferences, {
+    required String userId,
+  }) : _userId = userId;
 
   static const _recordsKey = 'focus_history_records_v1';
   static const _codec = FocusHistoryJsonCodec();
 
   final SharedPreferences _preferences;
+  final String _userId;
+
+  String get _scopedRecordsKey => '$_recordsKey:$_userId';
 
   @override
   Future<List<FocusSessionRecord>> loadRecords() async {
-    final rawRecords = _preferences.getString(_recordsKey);
+    await migrateLegacyRecordsIfNeeded(_preferences, userId: _userId);
+    final rawRecords = _preferences.getString(_scopedRecordsKey);
     if (rawRecords == null) {
       return const [];
     }
@@ -36,13 +43,38 @@ class SharedPreferencesFocusHistoryRepository
   @override
   Future<void> saveRecords(List<FocusSessionRecord> records) {
     return _preferences.setString(
-      _recordsKey,
+      _scopedRecordsKey,
       jsonEncode(records.map(_codec.recordToJson).toList()),
     );
   }
 
   @override
   Future<void> clearRecords() {
-    return _preferences.remove(_recordsKey);
+    return clearRecordsForUser(_preferences, userId: _userId);
+  }
+
+  static Future<void> migrateLegacyRecordsIfNeeded(
+    SharedPreferences preferences, {
+    required String userId,
+  }) async {
+    final scopedKey = '$_recordsKey:$userId';
+    if (preferences.containsKey(scopedKey)) {
+      return;
+    }
+
+    final legacyRecords = preferences.getString(_recordsKey);
+    if (legacyRecords == null) {
+      return;
+    }
+
+    await preferences.setString(scopedKey, legacyRecords);
+    await preferences.remove(_recordsKey);
+  }
+
+  static Future<void> clearRecordsForUser(
+    SharedPreferences preferences, {
+    required String userId,
+  }) {
+    return preferences.remove('$_recordsKey:$userId');
   }
 }

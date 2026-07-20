@@ -41,13 +41,15 @@ class SettingsScreen extends StatefulWidget {
     required this.language,
     required this.onLanguageChanged,
     required this.onAccountDeleted,
+    required this.onSignedOutToGuest,
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
   });
 
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
-  final Future<void> Function() onAccountDeleted;
+  final Future<void> Function(String deletedUserId) onAccountDeleted;
+  final Future<void> Function() onSignedOutToGuest;
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
 
@@ -134,6 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   (accountContext) => _AccountSettingsPage(
                     onBack: () => Navigator.of(accountContext).maybePop(),
                     onAccountDeleted: widget.onAccountDeleted,
+                    onSignedOutToGuest: widget.onSignedOutToGuest,
                     onEnsureOnlineAction: widget.onEnsureOnlineAction,
                   ),
                 ),
@@ -1438,11 +1441,13 @@ class _AccountSettingsPage extends StatefulWidget {
   const _AccountSettingsPage({
     required this.onBack,
     required this.onAccountDeleted,
+    required this.onSignedOutToGuest,
     required this.onEnsureOnlineAction,
   });
 
   final VoidCallback onBack;
-  final Future<void> Function() onAccountDeleted;
+  final Future<void> Function(String deletedUserId) onAccountDeleted;
+  final Future<void> Function() onSignedOutToGuest;
   final Future<bool> Function() onEnsureOnlineAction;
 
   @override
@@ -1729,6 +1734,7 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
     setState(() => _linking = true);
     try {
       await _accountAuthService.signOutToGuest();
+      await widget.onSignedOutToGuest();
       if (!mounted) {
         return;
       }
@@ -1781,10 +1787,16 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
 
   Future<void> _deleteAccount() async {
     final l10n = AppLocalizations.of(context);
+    final deletedUserId = _auth.currentUser?.uid;
+    if (deletedUserId == null) {
+      await _showMessage(l10n.accountDeleteFailed);
+      return;
+    }
+
     setState(() => _linking = true);
     try {
       await _accountAuthService.deleteCurrentAccount();
-      await widget.onAccountDeleted();
+      await widget.onAccountDeleted(deletedUserId);
       if (!mounted) {
         return;
       }

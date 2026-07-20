@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/auth/account_auth_service.dart';
+import 'package:pats_space/core/auth/auth_session.dart';
 import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/network/remote_availability_service.dart';
@@ -172,6 +173,7 @@ class _AppShellState extends State<AppShell> {
                     _handleGardenTutorialCompleted();
                   },
                   onAccountDeleted: _handleAccountDeleted,
+                  onSignedOutToGuest: _handleSignedOutToGuest,
                   connectivityNotice: _connectivityNotice,
                   onConnectivityNoticeDismissed: _dismissConnectivityNotice,
                   onEnsureGardenActionOnline:
@@ -270,16 +272,22 @@ class _AppShellState extends State<AppShell> {
 
   Future<_AppPersistenceBundle> _loadPersistence() async {
     final preferences = await SharedPreferences.getInstance();
+    final userId = requireCurrentUser(FirebaseAuth.instance).uid;
     final settingsRepository = SharedPreferencesFocusSettingsRepository(
       preferences,
     );
     final localHistoryRepository = SharedPreferencesFocusHistoryRepository(
       preferences,
+      userId: userId,
     );
     final localGardenRepository = SharedPreferencesGardenRepository(
       preferences,
+      userId: userId,
     );
-    final pendingRewardRepository = PendingFocusRewardRepository(preferences);
+    final pendingRewardRepository = PendingFocusRewardRepository(
+      preferences,
+      userId: userId,
+    );
     final historyRepository = FirebaseFocusHistoryRepository(
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
@@ -316,10 +324,33 @@ class _AppShellState extends State<AppShell> {
       ),
       initialState: gardenState,
     );
-    final onboardingCompleted =
-        preferences.getBool(_onboardingCompletedKey) ?? false;
-    final gardenTutorialCompleted =
-        preferences.getBool(_gardenTutorialCompletedKey) ?? false;
+    var onboardingCompleted = await _loadScopedBool(
+      preferences,
+      key: _onboardingCompletedKey,
+      userId: userId,
+    );
+    var gardenTutorialCompleted = await _loadScopedBool(
+      preferences,
+      key: _gardenTutorialCompletedKey,
+      userId: userId,
+    );
+    final hasExistingProgress = records.isNotEmpty || gardenState != null;
+    if (hasExistingProgress && !onboardingCompleted) {
+      onboardingCompleted = true;
+      gardenTutorialCompleted = true;
+      await _setScopedBool(
+        preferences,
+        key: _onboardingCompletedKey,
+        userId: userId,
+        value: true,
+      );
+      await _setScopedBool(
+        preferences,
+        key: _gardenTutorialCompletedKey,
+        userId: userId,
+        value: true,
+      );
+    }
     _gardenTutorialActive = onboardingCompleted && !gardenTutorialCompleted;
     _historyController = historyController;
     _gardenController = gardenController;
@@ -333,10 +364,51 @@ class _AppShellState extends State<AppShell> {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       remoteAvailable: remoteAvailable,
+      userId: userId,
     );
     unawaited(_syncPendingFocusRewardsIfPossible(bundle));
     return bundle;
   }
+
+  Future<bool> _loadScopedBool(
+    SharedPreferences preferences, {
+    required String key,
+    required String userId,
+  }) async {
+    final scopedKey = _scopedPreferenceKey(key, userId);
+    final scopedValue = preferences.getBool(scopedKey);
+    if (scopedValue != null) {
+      return scopedValue;
+    }
+
+    final legacyValue = preferences.getBool(key);
+    if (legacyValue == null) {
+      return false;
+    }
+
+    await preferences.setBool(scopedKey, legacyValue);
+    await preferences.remove(key);
+    return legacyValue;
+  }
+
+  Future<void> _setScopedBool(
+    SharedPreferences preferences, {
+    required String key,
+    required String userId,
+    required bool value,
+  }) {
+    return preferences.setBool(_scopedPreferenceKey(key, userId), value);
+  }
+
+  Future<void> _removeScopedBool(
+    SharedPreferences preferences, {
+    required String key,
+    required String userId,
+  }) {
+    return preferences.remove(_scopedPreferenceKey(key, userId));
+  }
+
+  String _scopedPreferenceKey(String key, String userId) => '$key:$userId';
 
   Future<List<FocusSessionRecord>> _loadMigratedFocusHistory({
     required SharedPreferencesFocusHistoryRepository localRepository,
@@ -587,10 +659,12 @@ class _AppShellState extends State<AppShell> {
       final knownRecordIds = bundle.historyController.records
           .map((record) => record.id)
           .toSet();
-      var waterReward = 0;
+      var unappliedWaterReward = 0;
       var shouldPersistHistory = false;
       for (final reward in rewards) {
-        waterReward += reward.waterReward;
+        if (!reward.appliedLocally) {
+          unappliedWaterReward += reward.waterReward;
+        }
         final record = reward.record;
         if (record != null) {
           shouldPersistHistory = true;
@@ -604,10 +678,10 @@ class _AppShellState extends State<AppShell> {
       if (shouldPersistHistory) {
         await bundle.historyController.persist();
       }
-      if (waterReward > 0) {
-        bundle.gardenController.addWater(waterReward);
-        await bundle.gardenController.persist();
+      if (unappliedWaterReward > 0) {
+        bundle.gardenController.addWater(unappliedWaterReward);
       }
+      await bundle.gardenController.persist();
       await bundle.pendingRewardRepository.clearRewards();
     } finally {
       _syncingPendingRewards = false;
@@ -622,8 +696,18 @@ class _AppShellState extends State<AppShell> {
     if (source != null) {
       await _saveOnboardingSource(source);
     }
-    await bundle.preferences.setBool(_onboardingCompletedKey, true);
-    await bundle.preferences.setBool(_gardenTutorialCompletedKey, false);
+    await _setScopedBool(
+      bundle.preferences,
+      key: _onboardingCompletedKey,
+      userId: bundle.userId,
+      value: true,
+    );
+    await _setScopedBool(
+      bundle.preferences,
+      key: _gardenTutorialCompletedKey,
+      userId: bundle.userId,
+      value: false,
+    );
     bundle.gardenController.addWater(waterReward);
 
     if (!mounted) {
@@ -656,7 +740,12 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _handleGardenTutorialCompleted() async {
     final bundle = await _persistenceFuture;
-    await bundle.preferences.setBool(_gardenTutorialCompletedKey, true);
+    await _setScopedBool(
+      bundle.preferences,
+      key: _gardenTutorialCompletedKey,
+      userId: bundle.userId,
+      value: true,
+    );
     if (!mounted) {
       return;
     }
@@ -665,8 +754,58 @@ class _AppShellState extends State<AppShell> {
     await _showSaveSpacePromptIfNeeded();
   }
 
-  Future<void> _handleAccountDeleted() async {
+  Future<void> _handleAccountDeleted(String deletedUserId) async {
     final preferences = await SharedPreferences.getInstance();
+    await _removeScopedBool(
+      preferences,
+      key: _onboardingCompletedKey,
+      userId: deletedUserId,
+    );
+    await _removeScopedBool(
+      preferences,
+      key: _gardenTutorialCompletedKey,
+      userId: deletedUserId,
+    );
+    await preferences.remove(_onboardingCompletedKey);
+    await preferences.remove(_gardenTutorialCompletedKey);
+    await SharedPreferencesFocusHistoryRepository.clearRecordsForUser(
+      preferences,
+      userId: deletedUserId,
+    );
+    await SharedPreferencesGardenRepository.clearStateForUser(
+      preferences,
+      userId: deletedUserId,
+    );
+    await PendingFocusRewardRepository.clearRewardsForUser(
+      preferences,
+      userId: deletedUserId,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedTab = AppTab.home;
+      _gardenTutorialActive = false;
+      _persistenceFuture = _loadPersistence();
+    });
+  }
+
+  Future<void> _handleSignedOutToGuest() async {
+    final preferences = await SharedPreferences.getInstance();
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      await _removeScopedBool(
+        preferences,
+        key: _onboardingCompletedKey,
+        userId: userId,
+      );
+      await _removeScopedBool(
+        preferences,
+        key: _gardenTutorialCompletedKey,
+        userId: userId,
+      );
+    }
     await preferences.remove(_onboardingCompletedKey);
     await preferences.remove(_gardenTutorialCompletedKey);
     if (!mounted) {
@@ -1022,6 +1161,7 @@ class _AppShellContent extends StatelessWidget {
     required this.gardenTutorialActive,
     required this.onGardenTutorialCompleted,
     required this.onAccountDeleted,
+    required this.onSignedOutToGuest,
     required this.connectivityNotice,
     required this.onConnectivityNoticeDismissed,
     required this.onEnsureGardenActionOnline,
@@ -1036,7 +1176,8 @@ class _AppShellContent extends StatelessWidget {
   onOnboardingFinished;
   final bool gardenTutorialActive;
   final VoidCallback onGardenTutorialCompleted;
-  final Future<void> Function() onAccountDeleted;
+  final Future<void> Function(String deletedUserId) onAccountDeleted;
+  final Future<void> Function() onSignedOutToGuest;
   final _ConnectivityNotice? connectivityNotice;
   final VoidCallback onConnectivityNoticeDismissed;
   final Future<bool> Function() onEnsureGardenActionOnline;
@@ -1093,6 +1234,7 @@ class _AppShellContent extends StatelessWidget {
                 language: language,
                 onLanguageChanged: onLanguageChanged,
                 onAccountDeleted: onAccountDeleted,
+                onSignedOutToGuest: onSignedOutToGuest,
                 remoteAvailable: bundle.remoteAvailable,
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
               ),
@@ -1212,6 +1354,7 @@ class _AppPersistenceBundle {
     required this.gardenController,
     required this.pendingRewardRepository,
     required this.remoteAvailable,
+    required this.userId,
   });
 
   final SharedPreferences preferences;
@@ -1222,6 +1365,7 @@ class _AppPersistenceBundle {
   final GardenController gardenController;
   final PendingFocusRewardRepository pendingRewardRepository;
   final bool remoteAvailable;
+  final String userId;
 
   _AppPersistenceBundle copyWithOnboardingCompleted() {
     return _AppPersistenceBundle(
@@ -1233,6 +1377,7 @@ class _AppPersistenceBundle {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       remoteAvailable: remoteAvailable,
+      userId: userId,
     );
   }
 
@@ -1246,6 +1391,7 @@ class _AppPersistenceBundle {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       remoteAvailable: remoteAvailable,
+      userId: userId,
     );
   }
 }

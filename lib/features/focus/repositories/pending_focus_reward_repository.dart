@@ -8,24 +8,33 @@ class PendingFocusReward {
   const PendingFocusReward({
     required this.id,
     required this.waterReward,
+    this.appliedLocally = false,
     this.record,
   });
 
   final String id;
   final int waterReward;
+  final bool appliedLocally;
   final FocusSessionRecord? record;
 }
 
 class PendingFocusRewardRepository {
-  const PendingFocusRewardRepository(this._preferences);
+  const PendingFocusRewardRepository(
+    this._preferences, {
+    required String userId,
+  }) : _userId = userId;
 
   static const _rewardsKey = 'pending_focus_rewards_v1';
   static const _codec = FocusHistoryJsonCodec();
 
   final SharedPreferences _preferences;
+  final String _userId;
+
+  String get _scopedRewardsKey => '$_rewardsKey:$_userId';
 
   Future<List<PendingFocusReward>> loadRewards() async {
-    final rawRewards = _preferences.getString(_rewardsKey);
+    await migrateLegacyRewardsIfNeeded(_preferences, userId: _userId);
+    final rawRewards = _preferences.getString(_scopedRewardsKey);
     if (rawRewards == null) {
       return const [];
     }
@@ -42,7 +51,10 @@ class PendingFocusRewardRepository {
         .toList();
   }
 
-  Future<void> addSessionReward(FocusSessionRecord record) async {
+  Future<void> addSessionReward(
+    FocusSessionRecord record, {
+    bool appliedLocally = false,
+  }) async {
     if (record.waterReward <= 0) {
       return;
     }
@@ -57,12 +69,16 @@ class PendingFocusRewardRepository {
       PendingFocusReward(
         id: record.id,
         waterReward: record.waterReward,
+        appliedLocally: appliedLocally,
         record: record,
       ),
     ]);
   }
 
-  Future<void> addWaterReward(int waterReward) async {
+  Future<void> addWaterReward(
+    int waterReward, {
+    bool appliedLocally = false,
+  }) async {
     if (waterReward <= 0) {
       return;
     }
@@ -71,17 +87,21 @@ class PendingFocusRewardRepository {
     final id = DateTime.now().microsecondsSinceEpoch.toString();
     await _saveRewards([
       ...rewards,
-      PendingFocusReward(id: id, waterReward: waterReward),
+      PendingFocusReward(
+        id: id,
+        waterReward: waterReward,
+        appliedLocally: appliedLocally,
+      ),
     ]);
   }
 
   Future<void> clearRewards() {
-    return _preferences.remove(_rewardsKey);
+    return clearRewardsForUser(_preferences, userId: _userId);
   }
 
   Future<void> _saveRewards(List<PendingFocusReward> rewards) {
     return _preferences.setString(
-      _rewardsKey,
+      _scopedRewardsKey,
       jsonEncode(rewards.map(_rewardToJson).toList()),
     );
   }
@@ -97,14 +117,45 @@ class PendingFocusRewardRepository {
     final record = recordJson is Map<String, dynamic>
         ? _codec.recordFromJson(recordJson)
         : null;
-    return PendingFocusReward(id: id, waterReward: waterReward, record: record);
+    return PendingFocusReward(
+      id: id,
+      waterReward: waterReward,
+      appliedLocally: json['appliedLocally'] == true,
+      record: record,
+    );
   }
 
   Map<String, Object?> _rewardToJson(PendingFocusReward reward) {
     return {
       'id': reward.id,
       'waterReward': reward.waterReward,
+      'appliedLocally': reward.appliedLocally,
       if (reward.record != null) 'record': _codec.recordToJson(reward.record!),
     };
+  }
+
+  static Future<void> migrateLegacyRewardsIfNeeded(
+    SharedPreferences preferences, {
+    required String userId,
+  }) async {
+    final scopedKey = '$_rewardsKey:$userId';
+    if (preferences.containsKey(scopedKey)) {
+      return;
+    }
+
+    final legacyRewards = preferences.getString(_rewardsKey);
+    if (legacyRewards == null) {
+      return;
+    }
+
+    await preferences.setString(scopedKey, legacyRewards);
+    await preferences.remove(_rewardsKey);
+  }
+
+  static Future<void> clearRewardsForUser(
+    SharedPreferences preferences, {
+    required String userId,
+  }) {
+    return preferences.remove('$_rewardsKey:$userId');
   }
 }

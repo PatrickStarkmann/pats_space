@@ -782,14 +782,15 @@ class _HomeScreenState extends State<HomeScreen> {
         unawaited(
           widget.pendingRewardRepository.addSessionReward(
             record.copyWith(waterReward: waterReward),
+            appliedLocally: true,
           ),
         );
       }
     }
 
     if (record.mode == FocusMode.stopwatch) {
-      if (waterReward > 0 && widget.gardenOnline) {
-        widget.gardenController.addWater(waterReward);
+      if (waterReward > 0) {
+        _applyOrStoreWaterReward(waterReward, storeOffline: false);
       }
       _showCompletionReward(
         focusDuration: record.focusDuration,
@@ -807,9 +808,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final focusDuration = _pendingRewardDuration;
 
     if (waterReward > 0) {
-      if (widget.gardenOnline) {
-        widget.gardenController.addWater(waterReward);
-      }
+      _applyOrStoreWaterReward(waterReward, storeOffline: true);
     }
 
     _clearPendingRoundReward();
@@ -845,13 +844,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (widget.gardenOnline) {
-      widget.gardenController.addWater(waterReward);
-      return;
-    }
+    widget.gardenController.addWater(waterReward);
 
-    if (storeOffline) {
-      unawaited(widget.pendingRewardRepository.addWaterReward(waterReward));
+    if (!widget.gardenOnline && storeOffline) {
+      unawaited(
+        widget.pendingRewardRepository.addWaterReward(
+          waterReward,
+          appliedLocally: true,
+        ),
+      );
     }
   }
 
