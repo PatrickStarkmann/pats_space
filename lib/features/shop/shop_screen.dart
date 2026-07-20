@@ -410,9 +410,7 @@ class _ShopProductCard extends StatelessWidget {
             ? l10n.use
             : !available
             ? unavailableLabel ?? l10n.locked
-            : canBuy
-            ? '$cost'
-            : l10n.needAmount(cost));
+            : '$cost');
 
     final buttonColor = equipped
         ? AppColors.sageSoft
