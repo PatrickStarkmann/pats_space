@@ -1,3 +1,5 @@
+import 'package:pats_space/features/settings/models/week_start_day.dart';
+import 'package:pats_space/features/stats/utils/stats_aggregations.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 String formatMonthTitle(DateTime month) {
@@ -8,18 +10,18 @@ String formatMonthShortTitle(DateTime month, AppLocalizations l10n) {
   return '${_monthName(month.month, l10n)} ${month.year}';
 }
 
-String formatWeekRange(DateTime date, AppLocalizations l10n) {
-  final startOfWeek = DateTime(
-    date.year,
-    date.month,
-    date.day - (date.weekday - 1),
-  );
-  final endOfWeek = startOfWeek.add(const Duration(days: 6));
-  if (startOfWeek.month == endOfWeek.month) {
-    return '${_monthName(startOfWeek.month, l10n)} ${startOfWeek.day} - ${endOfWeek.day}';
+String formatWeekRange(
+  DateTime date,
+  AppLocalizations l10n,
+  WeekStartDay weekStartDay,
+) {
+  final firstDayOfWeek = startOfWeek(date, weekStartDay);
+  final endOfWeek = firstDayOfWeek.add(const Duration(days: 6));
+  if (firstDayOfWeek.month == endOfWeek.month) {
+    return '${_monthName(firstDayOfWeek.month, l10n)} ${firstDayOfWeek.day} - ${endOfWeek.day}';
   }
 
-  return '${_monthName(startOfWeek.month, l10n)} ${startOfWeek.day} - ${_monthName(endOfWeek.month, l10n)} ${endOfWeek.day}';
+  return '${_monthName(firstDayOfWeek.month, l10n)} ${firstDayOfWeek.day} - ${_monthName(endOfWeek.month, l10n)} ${endOfWeek.day}';
 }
 
 String formatDuration(Duration duration) {

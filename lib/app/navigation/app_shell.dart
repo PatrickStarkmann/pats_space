@@ -31,6 +31,7 @@ import 'package:pats_space/features/focus/repositories/shared_preferences_focus_
 import 'package:pats_space/features/home/home_screen.dart';
 import 'package:pats_space/features/onboarding/onboarding_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
+import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/settings_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
@@ -64,6 +65,7 @@ class _AppShellState extends State<AppShell> {
   static const _onboardingCompletedKey = 'onboarding.completed.v1';
   static const _gardenTutorialCompletedKey =
       'onboarding.garden_tutorial_completed.v1';
+  static const _weekStartDayKey = 'settings.week_start_day.v1';
 
   AppTab _selectedTab = AppTab.home;
   late Future<_AppPersistenceBundle> _persistenceFuture;
@@ -83,6 +85,7 @@ class _AppShellState extends State<AppShell> {
   bool _connectivityNoticesReady = false;
   bool _showedOfflineNoticeInSession = false;
   bool _syncingPendingRewards = false;
+  WeekStartDay _weekStartDay = WeekStartDay.defaultValue;
   late final AccountAuthService _accountAuthService =
       FirebaseAccountAuthService(
         auth: FirebaseAuth.instance,
@@ -181,6 +184,8 @@ class _AppShellState extends State<AppShell> {
                   bundle: bundle,
                   language: widget.language,
                   onLanguageChanged: widget.onLanguageChanged,
+                  weekStartDay: _weekStartDay,
+                  onWeekStartDayChanged: _handleWeekStartDayChanged,
                 ),
         );
       },
@@ -299,6 +304,9 @@ class _AppShellState extends State<AppShell> {
     final settings =
         await settingsRepository.loadSettings() ??
         FocusTimerController.defaultSettings;
+    _weekStartDay = WeekStartDay.fromStoredName(
+      preferences.getString(_weekStartDayKey),
+    );
     final remoteAvailable = await _checkRemoteAvailable();
     final records = await _loadMigratedFocusHistory(
       localRepository: localHistoryRepository,
@@ -368,6 +376,16 @@ class _AppShellState extends State<AppShell> {
     );
     unawaited(_syncPendingFocusRewardsIfPossible(bundle));
     return bundle;
+  }
+
+  Future<void> _handleWeekStartDayChanged(WeekStartDay weekStartDay) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_weekStartDayKey, weekStartDay.name);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _weekStartDay = weekStartDay);
   }
 
   Future<bool> _loadScopedBool(
@@ -1168,6 +1186,8 @@ class _AppShellContent extends StatelessWidget {
     required this.bundle,
     required this.language,
     required this.onLanguageChanged,
+    required this.weekStartDay,
+    required this.onWeekStartDayChanged,
   });
 
   final AppTab selectedTab;
@@ -1184,6 +1204,8 @@ class _AppShellContent extends StatelessWidget {
   final _AppPersistenceBundle bundle;
   final AppLanguage language;
   final ValueChanged<AppLanguage> onLanguageChanged;
+  final WeekStartDay weekStartDay;
+  final ValueChanged<WeekStartDay> onWeekStartDayChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1229,10 +1251,15 @@ class _AppShellContent extends StatelessWidget {
                 tutorialActive: gardenTutorialActive,
                 onTutorialCompleted: onGardenTutorialCompleted,
               ),
-              StatsScreen(historyController: bundle.historyController),
+              StatsScreen(
+                historyController: bundle.historyController,
+                weekStartDay: weekStartDay,
+              ),
               SettingsScreen(
                 language: language,
                 onLanguageChanged: onLanguageChanged,
+                weekStartDay: weekStartDay,
+                onWeekStartDayChanged: onWeekStartDayChanged,
                 onAccountDeleted: onAccountDeleted,
                 onSignedOutToGuest: onSignedOutToGuest,
                 remoteAvailable: bundle.remoteAvailable,

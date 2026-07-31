@@ -4,6 +4,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
+import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
@@ -13,6 +14,7 @@ class MonthCalendarCard extends StatelessWidget {
     required this.visibleMonth,
     required this.records,
     required this.today,
+    required this.weekStartDay,
     required this.onPreviousMonth,
     required this.onNextMonth,
   });
@@ -20,6 +22,7 @@ class MonthCalendarCard extends StatelessWidget {
   final DateTime visibleMonth;
   final List<FocusSessionRecord> records;
   final DateTime today;
+  final WeekStartDay weekStartDay;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
 
@@ -31,20 +34,13 @@ class MonthCalendarCard extends StatelessWidget {
       visibleMonth.month + 1,
       0,
     ).day;
-    final firstWeekdayOffset =
-        DateTime(visibleMonth.year, visibleMonth.month).weekday % 7;
+    final firstWeekdayOffset = _firstWeekdayOffset(
+      DateTime(visibleMonth.year, visibleMonth.month),
+    );
     final cellCount = firstWeekdayOffset + daysInMonth;
     final rowCount = (cellCount / 7).ceil();
     final l10n = AppLocalizations.of(context);
-    final weekdays = [
-      l10n.weekdaySun,
-      l10n.weekdayMon,
-      l10n.weekdayTue,
-      l10n.weekdayWed,
-      l10n.weekdayThu,
-      l10n.weekdayFri,
-      l10n.weekdaySat,
-    ];
+    final weekdays = _weekdayLabels(l10n);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -136,6 +132,30 @@ class MonthCalendarCard extends StatelessWidget {
     return visibleMonth.year == today.year &&
         visibleMonth.month == today.month &&
         day == today.day;
+  }
+
+  int _firstWeekdayOffset(DateTime firstDayOfMonth) {
+    return switch (weekStartDay) {
+      WeekStartDay.monday => firstDayOfMonth.weekday - DateTime.monday,
+      WeekStartDay.sunday => firstDayOfMonth.weekday % DateTime.daysPerWeek,
+    };
+  }
+
+  List<String> _weekdayLabels(AppLocalizations l10n) {
+    final mondayFirst = [
+      l10n.weekdayMon,
+      l10n.weekdayTue,
+      l10n.weekdayWed,
+      l10n.weekdayThu,
+      l10n.weekdayFri,
+      l10n.weekdaySat,
+      l10n.weekdaySun,
+    ];
+    if (weekStartDay == WeekStartDay.monday) {
+      return mondayFirst;
+    }
+
+    return [l10n.weekdaySun, ...mondayFirst.take(6)];
   }
 }
 

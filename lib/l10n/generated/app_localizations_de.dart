@@ -113,6 +113,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get languageGerman => 'Deutsch';
 
   @override
+  String get weekStartDay => 'Wochenstart';
+
+  @override
+  String get weekStartMonday => 'Montag';
+
+  @override
+  String get weekStartSunday => 'Sonntag';
+
+  @override
   String get sounds => 'Sounds';
 
   @override

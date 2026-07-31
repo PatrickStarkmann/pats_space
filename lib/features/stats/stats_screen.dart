@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
+import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/stats/utils/stats_aggregations.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
 import 'package:pats_space/features/stats/widgets/focus_by_tags_card.dart';
@@ -9,9 +10,14 @@ import 'package:pats_space/features/stats/widgets/month_calendar_card.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({super.key, required this.historyController});
+  const StatsScreen({
+    super.key,
+    required this.historyController,
+    required this.weekStartDay,
+  });
 
   final FocusHistoryController historyController;
+  final WeekStartDay weekStartDay;
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
@@ -26,7 +32,15 @@ class _StatsScreenState extends State<StatsScreen> {
     super.initState();
     final now = DateTime.now();
     _visibleMonth = DateTime(now.year, now.month);
-    _visibleWeek = _startOfWeek(now);
+    _visibleWeek = startOfWeek(now, widget.weekStartDay);
+  }
+
+  @override
+  void didUpdateWidget(covariant StatsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.weekStartDay != widget.weekStartDay) {
+      _visibleWeek = startOfWeek(_visibleWeek, widget.weekStartDay);
+    }
   }
 
   @override
@@ -53,6 +67,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   visibleMonth: _visibleMonth,
                   records: records,
                   today: now,
+                  weekStartDay: widget.weekStartDay,
                   onPreviousMonth: _showPreviousMonth,
                   onNextMonth: _showNextMonth,
                 ),
@@ -60,19 +75,23 @@ class _StatsScreenState extends State<StatsScreen> {
                 FocusLineChartCard(
                   title: l10n.avgFocusTime,
                   value: formatDuration(
-                    averageDailyFocusTime(records, _visibleWeek),
+                    averageDailyFocusTime(
+                      records,
+                      _visibleWeek,
+                      widget.weekStartDay,
+                    ),
                   ),
-                  rangeTitle: formatWeekRange(_visibleWeek, l10n),
-                  labels: [
-                    l10n.weekdayMon,
-                    l10n.weekdayTue,
-                    l10n.weekdayWed,
-                    l10n.weekdayThu,
-                    l10n.weekdayFri,
-                    l10n.weekdaySat,
-                    l10n.weekdaySun,
-                  ],
-                  values: weeklyFocusHours(records, _visibleWeek),
+                  rangeTitle: formatWeekRange(
+                    _visibleWeek,
+                    l10n,
+                    widget.weekStartDay,
+                  ),
+                  labels: _weekdayLabels(l10n),
+                  values: weeklyFocusHours(
+                    records,
+                    _visibleWeek,
+                    widget.weekStartDay,
+                  ),
                   onPreviousRange: _showPreviousWeek,
                   onNextRange: _showNextWeek,
                 ),
@@ -122,8 +141,20 @@ class _StatsScreenState extends State<StatsScreen> {
     });
   }
 
-  DateTime _startOfWeek(DateTime date) {
-    final normalized = DateTime(date.year, date.month, date.day);
-    return normalized.subtract(Duration(days: normalized.weekday - 1));
+  List<String> _weekdayLabels(AppLocalizations l10n) {
+    final mondayFirst = [
+      l10n.weekdayMon,
+      l10n.weekdayTue,
+      l10n.weekdayWed,
+      l10n.weekdayThu,
+      l10n.weekdayFri,
+      l10n.weekdaySat,
+      l10n.weekdaySun,
+    ];
+    if (widget.weekStartDay == WeekStartDay.monday) {
+      return mondayFirst;
+    }
+
+    return [l10n.weekdaySun, ...mondayFirst.take(6)];
   }
 }

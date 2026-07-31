@@ -18,6 +18,7 @@ import 'package:pats_space/core/widgets/app_icon_button.dart';
 import 'package:pats_space/core/widgets/primary_button.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/models/user_profile.dart';
+import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
@@ -35,6 +36,15 @@ extension _LocalizedAppLanguage on AppLanguage {
   }
 }
 
+extension _LocalizedWeekStartDay on WeekStartDay {
+  String localizedName(AppLocalizations l10n) {
+    return switch (this) {
+      WeekStartDay.monday => l10n.weekStartMonday,
+      WeekStartDay.sunday => l10n.weekStartSunday,
+    };
+  }
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     super.key,
@@ -42,6 +52,8 @@ class SettingsScreen extends StatefulWidget {
     required this.onLanguageChanged,
     required this.onAccountDeleted,
     required this.onSignedOutToGuest,
+    required this.weekStartDay,
+    required this.onWeekStartDayChanged,
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
   });
@@ -50,6 +62,8 @@ class SettingsScreen extends StatefulWidget {
   final ValueChanged<AppLanguage> onLanguageChanged;
   final Future<void> Function(String deletedUserId) onAccountDeleted;
   final Future<void> Function() onSignedOutToGuest;
+  final WeekStartDay weekStartDay;
+  final ValueChanged<WeekStartDay> onWeekStartDayChanged;
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
 
@@ -84,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onEnsureOnlineAction: widget.onEnsureOnlineAction,
             soundsEnabled: _soundsEnabled,
             notificationsEnabled: _notificationsEnabled,
+            weekStartDay: widget.weekStartDay,
             onLanguagePressed: () {
               Navigator.of(routeContext).push(
                 _settingsRoute(
@@ -117,6 +132,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onNotificationsChanged: (value) {
                       setState(() => _notificationsEnabled = value);
                     },
+                  ),
+                ),
+              );
+            },
+            onWeekStartDayPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (weekStartContext) => _WeekStartDaySettingsPage(
+                    selectedWeekStartDay: widget.weekStartDay,
+                    onBack: () => Navigator.of(weekStartContext).maybePop(),
+                    onWeekStartDaySelected: widget.onWeekStartDayChanged,
                   ),
                 ),
               );
@@ -184,9 +210,11 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onEnsureOnlineAction,
     required this.soundsEnabled,
     required this.notificationsEnabled,
+    required this.weekStartDay,
     required this.onLanguagePressed,
     required this.onSoundsPressed,
     required this.onNotificationsPressed,
+    required this.onWeekStartDayPressed,
     required this.onFeedbackLabPressed,
     required this.onAccountPressed,
     required this.onFriendsPressed,
@@ -199,9 +227,11 @@ class _MainSettingsPage extends StatelessWidget {
   final Future<bool> Function() onEnsureOnlineAction;
   final bool soundsEnabled;
   final bool notificationsEnabled;
+  final WeekStartDay weekStartDay;
   final VoidCallback onLanguagePressed;
   final VoidCallback onSoundsPressed;
   final VoidCallback onNotificationsPressed;
+  final VoidCallback onWeekStartDayPressed;
   final VoidCallback onFeedbackLabPressed;
   final VoidCallback onAccountPressed;
   final VoidCallback onFriendsPressed;
@@ -243,6 +273,14 @@ class _MainSettingsPage extends StatelessWidget {
               subtitle: language.localizedName(l10n),
               trailing: const _Chevron(),
               onTap: onLanguagePressed,
+            ),
+            const _SettingsDivider(),
+            _SettingsRow(
+              icon: PhosphorIconsRegular.calendarBlank,
+              title: l10n.weekStartDay,
+              subtitle: weekStartDay.localizedName(l10n),
+              trailing: const _Chevron(),
+              onTap: onWeekStartDayPressed,
             ),
           ],
         ),
@@ -1077,6 +1115,46 @@ class _LanguageSettingsPage extends StatelessWidget {
                 onTap: () => onLanguageSelected(languages[index]),
               ),
               if (index != languages.length - 1) const _SettingsDivider(),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekStartDaySettingsPage extends StatelessWidget {
+  const _WeekStartDaySettingsPage({
+    required this.selectedWeekStartDay,
+    required this.onBack,
+    required this.onWeekStartDaySelected,
+  });
+
+  final WeekStartDay selectedWeekStartDay;
+  final VoidCallback onBack;
+  final ValueChanged<WeekStartDay> onWeekStartDaySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    const weekStartDays = WeekStartDay.values;
+
+    return _SettingsScrollView(
+      title: l10n.weekStartDay,
+      leading: _BackButton(onPressed: onBack),
+      children: [
+        _SettingsGroup(
+          children: [
+            for (var index = 0; index < weekStartDays.length; index++) ...[
+              _SettingsRow(
+                icon: PhosphorIconsRegular.calendarBlank,
+                title: weekStartDays[index].localizedName(l10n),
+                trailing: selectedWeekStartDay == weekStartDays[index]
+                    ? const _Checkmark()
+                    : null,
+                onTap: () => onWeekStartDaySelected(weekStartDays[index]),
+              ),
+              if (index != weekStartDays.length - 1) const _SettingsDivider(),
             ],
           ],
         ),

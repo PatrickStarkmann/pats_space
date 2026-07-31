@@ -296,6 +296,24 @@ abstract class AppLocalizations {
   /// **'Deutsch'**
   String get languageGerman;
 
+  /// No description provided for @weekStartDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Week starts on'**
+  String get weekStartDay;
+
+  /// No description provided for @weekStartMonday.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get weekStartMonday;
+
+  /// No description provided for @weekStartSunday.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get weekStartSunday;
+
   /// No description provided for @sounds.
   ///
   /// In en, this message translates to:

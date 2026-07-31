@@ -2,13 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
+import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/stats/models/tag_focus_segment.dart';
 
 Duration averageDailyFocusTime(
   List<FocusSessionRecord> records,
   DateTime date,
+  WeekStartDay weekStartDay,
 ) {
-  final weekValues = weeklyFocusDurations(records, date);
+  final weekValues = weeklyFocusDurations(records, date, weekStartDay);
   final activeDays = weekValues.where((duration) => duration > Duration.zero);
   if (activeDays.isEmpty) {
     return Duration.zero;
@@ -30,24 +32,26 @@ Duration monthlyFocusTime(List<FocusSessionRecord> records, DateTime month) {
   });
 }
 
-List<double> weeklyFocusHours(List<FocusSessionRecord> records, DateTime date) {
+List<double> weeklyFocusHours(
+  List<FocusSessionRecord> records,
+  DateTime date,
+  WeekStartDay weekStartDay,
+) {
   return weeklyFocusDurations(
     records,
     date,
+    weekStartDay,
   ).map((duration) => duration.inMinutes / 60).toList();
 }
 
 List<Duration> weeklyFocusDurations(
   List<FocusSessionRecord> records,
   DateTime date,
+  WeekStartDay weekStartDay,
 ) {
-  final startOfWeek = DateTime(
-    date.year,
-    date.month,
-    date.day - (date.weekday - 1),
-  );
+  final firstDayOfWeek = startOfWeek(date, weekStartDay);
   return List.generate(7, (index) {
-    final day = startOfWeek.add(Duration(days: index));
+    final day = firstDayOfWeek.add(Duration(days: index));
     return records.fold(Duration.zero, (total, record) {
       final sameDay =
           record.completedAt.year == day.year &&
@@ -56,6 +60,15 @@ List<Duration> weeklyFocusDurations(
       return sameDay ? total + record.focusDuration : total;
     });
   });
+}
+
+DateTime startOfWeek(DateTime date, WeekStartDay weekStartDay) {
+  final normalized = DateTime(date.year, date.month, date.day);
+  final offset = switch (weekStartDay) {
+    WeekStartDay.monday => normalized.weekday - DateTime.monday,
+    WeekStartDay.sunday => normalized.weekday % DateTime.daysPerWeek,
+  };
+  return normalized.subtract(Duration(days: offset));
 }
 
 List<double> monthlyFocusHours(
