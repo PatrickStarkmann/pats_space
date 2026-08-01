@@ -14,12 +14,16 @@ class FocusCompletionSheet extends StatefulWidget {
     required this.waterReward,
     required this.onContinue,
     required this.onOpenSpace,
+    this.tutorial = false,
+    this.dismissible = true,
   });
 
   final Duration focusDuration;
   final int waterReward;
   final VoidCallback onContinue;
   final VoidCallback onOpenSpace;
+  final bool tutorial;
+  final bool dismissible;
 
   @override
   State<FocusCompletionSheet> createState() => _FocusCompletionSheetState();
@@ -106,34 +110,43 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onVerticalDragStart: (_) {
-        setState(() {
-          _isDragging = true;
-        });
-      },
-      onVerticalDragUpdate: (details) {
-        setState(() {
-          _dragOffset = (_dragOffset + details.delta.dy).clamp(0, 260);
-        });
-      },
-      onVerticalDragEnd: (details) {
-        _isDragging = false;
-        final velocity = details.primaryVelocity ?? 0;
-        if (_dragOffset > _dismissDistance || velocity > _dismissVelocity) {
-          _continue();
-          return;
-        }
+      onVerticalDragStart: widget.dismissible
+          ? (_) {
+              setState(() {
+                _isDragging = true;
+              });
+            }
+          : null,
+      onVerticalDragUpdate: widget.dismissible
+          ? (details) {
+              setState(() {
+                _dragOffset = (_dragOffset + details.delta.dy).clamp(0, 260);
+              });
+            }
+          : null,
+      onVerticalDragEnd: widget.dismissible
+          ? (details) {
+              _isDragging = false;
+              final velocity = details.primaryVelocity ?? 0;
+              if (_dragOffset > _dismissDistance ||
+                  velocity > _dismissVelocity) {
+                _continue();
+                return;
+              }
 
-        setState(() {
-          _dragOffset = 0;
-        });
-      },
-      onVerticalDragCancel: () {
-        setState(() {
-          _isDragging = false;
-          _dragOffset = 0;
-        });
-      },
+              setState(() {
+                _dragOffset = 0;
+              });
+            }
+          : null,
+      onVerticalDragCancel: widget.dismissible
+          ? () {
+              setState(() {
+                _isDragging = false;
+                _dragOffset = 0;
+              });
+            }
+          : null,
       child: AnimatedContainer(
         duration: _isDragging
             ? Duration.zero
@@ -193,7 +206,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                       children: [
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: _continue,
+                          onTap: widget.dismissible ? _continue : null,
                           child: SizedBox(
                             height: 28,
                             child: Center(
@@ -275,21 +288,26 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                                             ),
                                     ),
                                   ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: _RewardMetricCard(
-                                      icon: CupertinoIcons.timer,
-                                      accentColor: AppColors.charcoal,
-                                      value: Text(
-                                        l10n.focusedDuration(_formattedMinutes),
-                                        textAlign: TextAlign.center,
-                                        style: AppTextStyles.headline.copyWith(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
+                                  if (!widget.tutorial) ...[
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: _RewardMetricCard(
+                                        icon: CupertinoIcons.timer,
+                                        accentColor: AppColors.charcoal,
+                                        value: Text(
+                                          l10n.focusedDuration(
+                                            _formattedMinutes,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          style: AppTextStyles.headline
+                                              .copyWith(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -302,29 +320,33 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                             children: [
                               const SizedBox(height: AppSpacing.lg),
                               PrimaryButton(
-                                label: l10n.continueAction,
+                                label: widget.tutorial
+                                    ? l10n.goToSpace
+                                    : l10n.continueAction,
                                 onPressed: _continue,
                               ),
-                              const SizedBox(height: AppSpacing.xs),
-                              GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  AppHaptics.selection();
-                                  widget.onOpenSpace();
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.md,
-                                    vertical: AppSpacing.sm,
-                                  ),
-                                  child: Text(
-                                    l10n.goToSpace,
-                                    style: AppTextStyles.bodyMuted.copyWith(
-                                      fontWeight: FontWeight.w600,
+                              if (!widget.tutorial) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    AppHaptics.selection();
+                                    widget.onOpenSpace();
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md,
+                                      vertical: AppSpacing.sm,
+                                    ),
+                                    child: Text(
+                                      l10n.goToSpace,
+                                      style: AppTextStyles.bodyMuted.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),

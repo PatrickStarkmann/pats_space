@@ -12,33 +12,19 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key, required this.onFinished});
+  const OnboardingScreen({super.key, required this.onStartFocusChallenge});
 
-  static const waterReward = 10;
-
-  final Future<void> Function(String? source, int waterReward) onFinished;
+  final void Function(String? source) onStartFocusChallenge;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _challengeDuration = Duration(seconds: 30);
-  static const _screenCount = 6;
+  static const _screenCount = 5;
 
   int _screenIndex = 0;
   String? _selectedSource;
-  bool _challengeRunning = false;
-  bool _challengeCompleted = false;
-  bool _finishing = false;
-  Duration _remaining = _challengeDuration;
-  Timer? _challengeTimer;
-
-  @override
-  void dispose() {
-    _challengeTimer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,19 +113,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         actionLabel: l10n.onboardingStartChallenge,
         visualBuilder: (_) => const _FocusChallengePreview(),
         visualAlignment: const Alignment(0, .45),
-        onContinue: _startChallengeFromIntro,
+        onContinue: _startFocusChallenge,
       ),
-      _ => _ChallengeScreen(
-        key: const ValueKey('challenge'),
-        progressIndex: _screenIndex,
-        running: _challengeRunning,
-        completed: _challengeCompleted,
-        remaining: _remaining,
-        duration: _challengeDuration,
-        finishing: _finishing,
-        onStart: _startChallenge,
-        onFinish: _finishOnboarding,
-      ),
+      _ => const SizedBox.shrink(),
     };
   }
 
@@ -148,66 +124,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _screenIndex += 1);
   }
 
-  void _startChallenge() {
-    if (_challengeRunning || _challengeCompleted) {
-      return;
-    }
-
+  void _startFocusChallenge() {
     AppHaptics.mediumImpact();
-    setState(() {
-      _remaining = _challengeDuration;
-      _challengeRunning = true;
-    });
-
-    _startChallengeTimer();
-  }
-
-  void _startChallengeFromIntro() {
-    if (_challengeRunning || _challengeCompleted) {
-      return;
-    }
-
-    AppHaptics.mediumImpact();
-    setState(() {
-      _screenIndex += 1;
-      _remaining = _challengeDuration;
-      _challengeRunning = true;
-    });
-
-    _startChallengeTimer();
-  }
-
-  void _startChallengeTimer() {
-    _challengeTimer?.cancel();
-    _challengeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      final next = _remaining - const Duration(seconds: 1);
-      if (next <= Duration.zero) {
-        timer.cancel();
-        AppHaptics.success();
-        setState(() {
-          _remaining = Duration.zero;
-          _challengeRunning = false;
-          _challengeCompleted = true;
-        });
-        return;
-      }
-
-      setState(() => _remaining = next);
-    });
-  }
-
-  Future<void> _finishOnboarding() async {
-    if (!_challengeCompleted || _finishing) {
-      return;
-    }
-
-    setState(() => _finishing = true);
-    await widget.onFinished(_selectedSource, OnboardingScreen.waterReward);
+    widget.onStartFocusChallenge(_selectedSource);
   }
 }
 
@@ -440,94 +359,6 @@ class _SourceScreen extends StatelessWidget {
       actionLabel: l10n.continueAction,
       actionEnabled: selectedSource != null,
       onAction: onContinue,
-    );
-  }
-}
-
-class _ChallengeScreen extends StatelessWidget {
-  const _ChallengeScreen({
-    super.key,
-    required this.progressIndex,
-    required this.running,
-    required this.completed,
-    required this.remaining,
-    required this.duration,
-    required this.finishing,
-    required this.onStart,
-    required this.onFinish,
-  });
-
-  final int progressIndex;
-  final bool running;
-  final bool completed;
-  final Duration remaining;
-  final Duration duration;
-  final bool finishing;
-  final VoidCallback onStart;
-  final VoidCallback onFinish;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final halfway = remaining <= duration ~/ 2;
-    final title = completed
-        ? l10n.onboardingChallengeNiceWorkTitle
-        : running
-        ? halfway
-              ? l10n.onboardingChallengeAlmostThereTitle
-              : l10n.onboardingChallengeStayTitle
-        : l10n.onboardingChallengeReadyTitle;
-    final body = completed
-        ? l10n.onboardingChallengeNiceWorkBody
-        : running
-        ? halfway
-              ? l10n.onboardingChallengeAlmostThereBody
-              : l10n.onboardingChallengeStayBody
-        : l10n.onboardingChallengeReadyBody;
-    final actionLabel = completed
-        ? l10n.onboardingChallengePlantFirstSeed
-        : running
-        ? l10n.onboardingChallengeStayFocused
-        : l10n.onboardingChallengeStart;
-
-    return _OnboardingFrame(
-      progressIndex: progressIndex,
-      visualFlex: 6,
-      bodyFlex: 3,
-      visualAlignment: Alignment.bottomCenter,
-      bodyAlignment: completed
-          ? const Alignment(0, .55)
-          : const Alignment(0, .35),
-      visual: _ChallengeVisual(
-        running: running,
-        completed: completed,
-        remaining: remaining,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(title, style: AppTextStyles.title, textAlign: TextAlign.center),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            body,
-            style: AppTextStyles.bodyMuted,
-            textAlign: TextAlign.center,
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: completed
-                ? Padding(
-                    key: const ValueKey('reward'),
-                    padding: const EdgeInsets.only(top: AppSpacing.xl),
-                    child: const _WaterRewardValue(amount: 10),
-                  )
-                : const SizedBox.shrink(key: ValueKey('no-reward')),
-          ),
-        ],
-      ),
-      actionLabel: actionLabel,
-      actionEnabled: !running && !finishing,
-      onAction: completed ? onFinish : onStart,
     );
   }
 }
@@ -798,70 +629,6 @@ class _FocusChallengePreview extends StatelessWidget {
   }
 }
 
-class _ChallengeVisual extends StatelessWidget {
-  const _ChallengeVisual({
-    required this.running,
-    required this.completed,
-    required this.remaining,
-  });
-
-  final bool running;
-  final bool completed;
-  final Duration remaining;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableHeight = constraints.maxHeight.isFinite
-            ? constraints.maxHeight
-            : 320.0;
-        final timerHeight = (availableHeight * .22).clamp(52.0, 74.0);
-        final gap = (availableHeight * .035).clamp(8.0, 14.0);
-        final imageHeight = (availableHeight - timerHeight - gap).clamp(
-          250.0,
-          330.0,
-        );
-
-        return Transform.translate(
-          offset: const Offset(0, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                height: timerHeight,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    completed ? '00:00' : _formatRemaining(remaining),
-                    maxLines: 1,
-                    style: AppTextStyles.timer.copyWith(fontSize: 82),
-                  ),
-                ),
-              ),
-              SizedBox(height: gap),
-              SizedBox(
-                width: imageHeight * 1.24,
-                height: imageHeight,
-                child: LoopingAssetAnimation(
-                  frames: AppAssets.focusPair02Focus,
-                  frameDuration: const Duration(milliseconds: 900),
-                  playing: running,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatRemaining(Duration value) {
-    final seconds = value.inSeconds.clamp(0, 99).toString().padLeft(2, '0');
-    return '00:$seconds';
-  }
-}
-
 class _FocusEarnGrowVisual extends StatefulWidget {
   const _FocusEarnGrowVisual();
 
@@ -1035,37 +802,6 @@ class _LoopItem {
   final IconData icon;
   final String title;
   final String body;
-}
-
-class _WaterRewardValue extends StatelessWidget {
-  const _WaterRewardValue({required this.amount});
-
-  final int amount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      key: const ValueKey('reward'),
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const PhosphorIcon(
-          PhosphorIconsFill.drop,
-          color: Color(0xFF65A9F7),
-          size: 30,
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          '+$amount',
-          style: AppTextStyles.headline.copyWith(
-            color: AppColors.charcoal,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class _LoopIcon extends StatelessWidget {

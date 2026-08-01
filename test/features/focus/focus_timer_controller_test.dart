@@ -68,6 +68,41 @@ void main() {
       controller.dispose();
     });
 
+    testWidgets('uses a temporary focus duration when one is provided', (
+      tester,
+    ) async {
+      final records = <FocusSessionRecord>[];
+      final controller = FocusTimerController(
+        focusDurationOverride: const Duration(seconds: 30),
+        onFocusSessionCompleted: records.add,
+      );
+
+      controller.toggle();
+      expect(controller.remainingSeconds, 30);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(controller.phase, FocusSessionPhase.breakTime);
+      expect(records, hasLength(1));
+      expect(records.single.focusDuration, const Duration(seconds: 30));
+      controller.dispose();
+    });
+
+    testWidgets('can stop after a completed focus without starting a break', (
+      tester,
+    ) async {
+      final controller = FocusTimerController(
+        focusDurationOverride: const Duration(seconds: 30),
+        startBreakAfterFocus: false,
+      );
+
+      controller.toggle();
+      await tester.pump(const Duration(seconds: 30));
+
+      expect(controller.phase, FocusSessionPhase.idle);
+      expect(controller.remainingSeconds, 0);
+      controller.dispose();
+    });
+
     testWidgets('stopwatch records elapsed duration when finished', (
       tester,
     ) async {

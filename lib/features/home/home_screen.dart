@@ -51,6 +51,9 @@ class HomeScreen extends StatefulWidget {
     required this.onEnsureOnlineAction,
     required this.onOpenSpace,
     required this.focusBlockingController,
+    this.tutorialFocusDuration,
+    this.tutorialFocusWaterReward = 0,
+    this.onTutorialFocusCompleted,
   });
 
   final FocusHistoryController historyController;
@@ -62,6 +65,9 @@ class HomeScreen extends StatefulWidget {
   final Future<bool> Function() onEnsureOnlineAction;
   final VoidCallback onOpenSpace;
   final FocusBlockingController focusBlockingController;
+  final Duration? tutorialFocusDuration;
+  final int tutorialFocusWaterReward;
+  final VoidCallback? onTutorialFocusCompleted;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -90,6 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     _timerController = FocusTimerController(
       initialSettings: widget.initialSettings,
+      focusDurationOverride: widget.tutorialFocusDuration,
+      startBreakAfterFocus: widget.tutorialFocusDuration == null,
       onFocusSessionCompleted: _handleFocusSessionCompleted,
       onFocusRoundCompleted: _handleFocusRoundCompleted,
     )..addListener(_syncAnimation);
@@ -292,8 +300,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         running: _timerController.running,
                         stopwatch: _timerController.isStopwatch,
                         canSkip:
+                            widget.tutorialFocusDuration == null &&
                             _timerController.phase !=
-                            FocusSessionPhase.stopwatch,
+                                FocusSessionPhase.stopwatch,
                         onSkip: () {
                           _handleSkip();
                         },
@@ -303,21 +312,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           _handleFinishStopwatch();
                         },
                         onCancel: _confirmCancelFocusRound,
+                        tutorial: widget.tutorialFocusDuration != null,
+                        highlightStart:
+                            widget.tutorialFocusDuration != null &&
+                            !_timerController.active,
                       ),
                       if (!groupMode || (compactGroup && !mediumGroup))
                         const Spacer(),
                     ],
                   ),
                 ),
-                Positioned(
-                  top: MediaQuery.paddingOf(context).top + AppSpacing.xs,
-                  left: 0,
-                  child: _FocusViewModeToggle(
-                    selectedMode: _focusViewMode,
-                    socialOnline: widget.gardenOnline,
-                    onChanged: _handleFocusViewModeChanged,
+                if (widget.tutorialFocusDuration == null)
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + AppSpacing.xs,
+                    left: 0,
+                    child: _FocusViewModeToggle(
+                      selectedMode: _focusViewMode,
+                      socialOnline: widget.gardenOnline,
+                      onChanged: _handleFocusViewModeChanged,
+                    ),
                   ),
-                ),
                 if (_completionReward != null)
                   Positioned(
                     left: -AppSpacing.screenHorizontal,
@@ -326,8 +340,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: FocusCompletionSheet(
                       focusDuration: _completionReward!.focusDuration,
                       waterReward: _completionReward!.waterReward,
-                      onContinue: _dismissCompletionReward,
-                      onOpenSpace: _openSpaceFromCompletion,
+                      onContinue: _handleCompletionContinue,
+                      onOpenSpace: _handleCompletionOpenSpace,
+                      tutorial: widget.onTutorialFocusCompleted != null,
+                      dismissible: widget.onTutorialFocusCompleted == null,
                     ),
                   ),
               ],
@@ -338,7 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  VoidCallback get _settingsAction => _openSettings;
+  VoidCallback? get _settingsAction =>
+      widget.tutorialFocusDuration == null ? _openSettings : null;
 
   String get _focusLabel {
     final label = _timerController.settings.focusLabel.trim();
@@ -850,6 +867,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleFocusSessionCompleted(FocusSessionRecord record) {
+    if (widget.onTutorialFocusCompleted != null) {
+      _showCompletionReward(
+        focusDuration: record.focusDuration,
+        waterReward: widget.tutorialFocusWaterReward,
+      );
+      return;
+    }
+
     final waterReward = FocusRewardCalculator.waterForCompletedFocus(
       record.focusDuration,
     );
@@ -940,6 +965,24 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _completionReward = null;
     });
+  }
+
+  void _handleCompletionContinue() {
+    if (widget.onTutorialFocusCompleted != null) {
+      widget.onTutorialFocusCompleted!();
+      return;
+    }
+
+    _dismissCompletionReward();
+  }
+
+  void _handleCompletionOpenSpace() {
+    if (widget.onTutorialFocusCompleted != null) {
+      widget.onTutorialFocusCompleted!();
+      return;
+    }
+
+    _openSpaceFromCompletion();
   }
 
   void _openSpaceFromCompletion() {
@@ -1179,6 +1222,8 @@ class _FocusControls extends StatelessWidget {
     required this.onRestart,
     required this.onFinish,
     required this.onCancel,
+    this.tutorial = false,
+    this.highlightStart = false,
   });
 
   final bool active;
@@ -1190,6 +1235,8 @@ class _FocusControls extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onFinish;
   final VoidCallback onCancel;
+  final bool tutorial;
+  final bool highlightStart;
 
   @override
   Widget build(BuildContext context) {
@@ -1203,12 +1250,13 @@ class _FocusControls extends StatelessWidget {
     }
 
     if (!active) {
-      return AppIconButton(
+      final button = AppIconButton(
         icon: CupertinoIcons.play,
         semanticLabel: 'Start',
         haptic: AppIconButtonHaptic.light,
         onPressed: onPlayPause,
       );
+      return highlightStart ? _TutorialStartPulse(child: button) : button;
     }
 
     return SingleChildScrollView(
@@ -1217,7 +1265,7 @@ class _FocusControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (!stopwatch) ...[
+          if (!stopwatch && !tutorial) ...[
             AppIconButton(
               icon: CupertinoIcons.forward_end,
               semanticLabel: 'Skip',
@@ -1249,12 +1297,81 @@ class _FocusControls extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
           ],
-          AppIconButton(
-            icon: CupertinoIcons.xmark,
-            semanticLabel: 'Cancel',
-            haptic: AppIconButtonHaptic.medium,
-            onPressed: onCancel,
+          if (!tutorial)
+            AppIconButton(
+              icon: CupertinoIcons.xmark,
+              semanticLabel: 'Cancel',
+              haptic: AppIconButtonHaptic.medium,
+              onPressed: onCancel,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TutorialStartPulse extends StatefulWidget {
+  const _TutorialStartPulse({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_TutorialStartPulse> createState() => _TutorialStartPulseState();
+}
+
+class _TutorialStartPulseState extends State<_TutorialStartPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 58,
+      height: 58,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  final wave = Curves.easeOutCubic.transform(_controller.value);
+                  final opacity = (1 - wave).clamp(0.0, 1.0);
+
+                  return Center(
+                    child: Transform.scale(
+                      alignment: Alignment.center,
+                      scale: 1 + wave * .42,
+                      child: Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.charcoal.withValues(
+                              alpha: .28 * opacity,
+                            ),
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
+          Positioned.fill(child: widget.child),
         ],
       ),
     );

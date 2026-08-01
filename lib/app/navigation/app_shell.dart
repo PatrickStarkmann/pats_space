@@ -67,6 +67,8 @@ class _AppShellState extends State<AppShell> {
   static const _gardenTutorialCompletedKey =
       'onboarding.garden_tutorial_completed.v1';
   static const _weekStartDayKey = 'settings.week_start_day.v1';
+  static const _onboardingFocusChallengeDuration = Duration(seconds: 30);
+  static const _onboardingFocusChallengeWaterReward = 10;
 
   AppTab _selectedTab = AppTab.home;
   late Future<_AppPersistenceBundle> _persistenceFuture;
@@ -81,6 +83,9 @@ class _AppShellState extends State<AppShell> {
   GardenController? _gardenController;
   _ConnectivityNotice? _connectivityNotice;
   bool _gardenTutorialActive = false;
+  bool _onboardingFocusChallengeActive = false;
+  bool _finishingOnboardingFocusChallenge = false;
+  String? _onboardingSource;
   bool _hasLoadedPersistence = false;
   bool _reportedInitialPersistenceLoaded = false;
   bool _connectivityNoticesReady = false;
@@ -144,6 +149,21 @@ class _AppShellState extends State<AppShell> {
   }
 
   @override
+  void reassemble() {
+    super.reassemble();
+    if (!_onboardingFocusChallengeActive) {
+      return;
+    }
+
+    setState(() {
+      _onboardingFocusChallengeActive = false;
+      _finishingOnboardingFocusChallenge = false;
+      _onboardingSource = null;
+      _selectedTab = AppTab.home;
+    });
+  }
+
+  @override
   void dispose() {
     _authSubscription?.cancel();
     _networkSubscription?.cancel();
@@ -189,7 +209,12 @@ class _AppShellState extends State<AppShell> {
                   onTabSelected: (tab) {
                     setState(() => _selectedTab = tab);
                   },
-                  onOnboardingFinished: _handleOnboardingFinished,
+                  onOnboardingFocusChallengeStarted:
+                      _startOnboardingFocusChallenge,
+                  onboardingFocusChallengeActive:
+                      _onboardingFocusChallengeActive,
+                  onOnboardingFocusChallengeCompleted:
+                      _completeOnboardingFocusChallenge,
                   gardenTutorialActive: _gardenTutorialActive,
                   onGardenTutorialCompleted: () {
                     _handleGardenTutorialCompleted();
@@ -380,6 +405,9 @@ class _AppShellState extends State<AppShell> {
       );
     }
     _gardenTutorialActive = onboardingCompleted && !gardenTutorialCompleted;
+    if (_gardenTutorialActive) {
+      _selectedTab = AppTab.space;
+    }
     _historyController = historyController;
     _gardenController = gardenController;
 
@@ -756,6 +784,35 @@ class _AppShellState extends State<AppShell> {
       _selectedTab = AppTab.space;
       _gardenTutorialActive = true;
       _persistenceFuture = Future.value(bundle.copyWithOnboardingCompleted());
+    });
+  }
+
+  void _startOnboardingFocusChallenge(String? source) {
+    setState(() {
+      _onboardingSource = source;
+      _onboardingFocusChallengeActive = true;
+      _selectedTab = AppTab.home;
+    });
+  }
+
+  Future<void> _completeOnboardingFocusChallenge() async {
+    if (_finishingOnboardingFocusChallenge) {
+      return;
+    }
+
+    _finishingOnboardingFocusChallenge = true;
+    await _handleOnboardingFinished(
+      _onboardingSource,
+      _onboardingFocusChallengeWaterReward,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _onboardingFocusChallengeActive = false;
+      _finishingOnboardingFocusChallenge = false;
+      _onboardingSource = null;
     });
   }
 
@@ -1195,7 +1252,9 @@ class _AppShellContent extends StatelessWidget {
     super.key,
     required this.selectedTab,
     required this.onTabSelected,
-    required this.onOnboardingFinished,
+    required this.onOnboardingFocusChallengeStarted,
+    required this.onboardingFocusChallengeActive,
+    required this.onOnboardingFocusChallengeCompleted,
     required this.gardenTutorialActive,
     required this.onGardenTutorialCompleted,
     required this.onAccountDeleted,
@@ -1213,8 +1272,9 @@ class _AppShellContent extends StatelessWidget {
 
   final AppTab selectedTab;
   final ValueChanged<AppTab> onTabSelected;
-  final Future<void> Function(String? source, int waterReward)
-  onOnboardingFinished;
+  final ValueChanged<String?> onOnboardingFocusChallengeStarted;
+  final bool onboardingFocusChallengeActive;
+  final Future<void> Function() onOnboardingFocusChallengeCompleted;
   final bool gardenTutorialActive;
   final VoidCallback onGardenTutorialCompleted;
   final Future<void> Function(String deletedUserId) onAccountDeleted;
@@ -1231,8 +1291,10 @@ class _AppShellContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!bundle.onboardingCompleted) {
-      return OnboardingScreen(onFinished: onOnboardingFinished);
+    if (!bundle.onboardingCompleted && !onboardingFocusChallengeActive) {
+      return OnboardingScreen(
+        onStartFocusChallenge: onOnboardingFocusChallengeStarted,
+      );
     }
 
     return AppScaffold(
@@ -1248,7 +1310,7 @@ class _AppShellContent extends StatelessWidget {
       },
       bottomNavigation: PatsspaceBottomNavBar(
         selectedTab: selectedTab,
-        enabled: !gardenTutorialActive,
+        enabled: !gardenTutorialActive && !onboardingFocusChallengeActive,
         onTabSelected: onTabSelected,
       ),
       child: Stack(
@@ -1257,6 +1319,9 @@ class _AppShellContent extends StatelessWidget {
             index: selectedTab.index,
             children: [
               HomeScreen(
+                key: ValueKey(
+                  'home-${onboardingFocusChallengeActive ? 'tutorial' : 'standard'}',
+                ),
                 historyController: bundle.historyController,
                 gardenController: bundle.gardenController,
                 initialSettings: bundle.settings,
@@ -1266,6 +1331,15 @@ class _AppShellContent extends StatelessWidget {
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
                 onOpenSpace: () => onTabSelected(AppTab.space),
                 focusBlockingController: focusBlockingController,
+                tutorialFocusDuration: onboardingFocusChallengeActive
+                    ? _AppShellState._onboardingFocusChallengeDuration
+                    : null,
+                tutorialFocusWaterReward: onboardingFocusChallengeActive
+                    ? _AppShellState._onboardingFocusChallengeWaterReward
+                    : 0,
+                onTutorialFocusCompleted: onboardingFocusChallengeActive
+                    ? onOnboardingFocusChallengeCompleted
+                    : null,
               ),
               SpaceScreen(
                 gardenController: bundle.gardenController,

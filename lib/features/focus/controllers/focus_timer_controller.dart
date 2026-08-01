@@ -14,13 +14,20 @@ import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 class FocusTimerController extends ChangeNotifier {
   FocusTimerController({
     FocusTimerSettings initialSettings = defaultSettings,
+    Duration? focusDurationOverride,
+    this.startBreakAfterFocus = true,
     this.tickStep = const Duration(seconds: 1),
     this.onFocusSessionCompleted,
     this.onFocusRoundCompleted,
   }) : _settings = initialSettings,
+       _focusDuration =
+           focusDurationOverride ??
+           Duration(minutes: initialSettings.focusMinutes),
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
-           : initialSettings.focusMinutes * 60;
+           : (focusDurationOverride ??
+                     Duration(minutes: initialSettings.focusMinutes))
+                 .inSeconds;
 
   static const defaultSettings = FocusTimerSettings(
     mode: FocusMode.pomodoro,
@@ -37,11 +44,13 @@ class FocusTimerController extends ChangeNotifier {
   );
 
   final Duration tickStep;
+  final bool startBreakAfterFocus;
   final ValueChanged<FocusSessionRecord>? onFocusSessionCompleted;
   final VoidCallback? onFocusRoundCompleted;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
+  Duration _focusDuration;
   FocusSessionPhase _phase = FocusSessionPhase.idle;
   bool _paused = false;
   int _remainingSeconds;
@@ -61,9 +70,9 @@ class FocusTimerController extends ChangeNotifier {
   Duration get elapsedFocusDuration {
     return switch (_phase) {
       FocusSessionPhase.focus => Duration(
-        seconds: (_settings.focusMinutes * 60 - _remainingSeconds).clamp(
+        seconds: (_focusDuration.inSeconds - _remainingSeconds).clamp(
           0,
-          _settings.focusMinutes * 60,
+          _focusDuration.inSeconds,
         ),
       ),
       FocusSessionPhase.stopwatch => Duration(seconds: _remainingSeconds),
@@ -97,6 +106,7 @@ class FocusTimerController extends ChangeNotifier {
 
   void updateSettings(FocusTimerSettings settings) {
     _settings = settings;
+    _focusDuration = Duration(minutes: settings.focusMinutes);
     _resetToIdleWithoutNotify();
     notifyListeners();
   }
@@ -186,7 +196,7 @@ class FocusTimerController extends ChangeNotifier {
     if (_completedSessions >= _settings.sessionsPerRound) {
       _completedSessions = 0;
     }
-    _remainingSeconds = _settings.focusMinutes * 60;
+    _remainingSeconds = _focusDuration.inSeconds;
     _startTicker();
     notifyListeners();
   }
@@ -243,7 +253,7 @@ class FocusTimerController extends ChangeNotifier {
 
     _phase = FocusSessionPhase.idle;
     _paused = false;
-    _remainingSeconds = _settings.focusMinutes * 60;
+    _remainingSeconds = _focusDuration.inSeconds;
     notifyListeners();
     onFocusRoundCompleted?.call();
   }
@@ -275,14 +285,22 @@ class FocusTimerController extends ChangeNotifier {
 
   void _completeFocus() {
     _recordCompletedFocusSession();
+    if (!startBreakAfterFocus) {
+      _ticker?.cancel();
+      _phase = FocusSessionPhase.idle;
+      _paused = false;
+      _focusStartedAt = null;
+      _remainingSeconds = 0;
+      notifyListeners();
+      return;
+    }
+
     _startBreak();
   }
 
   void _recordCompletedFocusSession() {
     final completedAt = DateTime.now();
-    final startedAt =
-        _focusStartedAt ??
-        completedAt.subtract(Duration(minutes: _settings.focusMinutes));
+    final startedAt = _focusStartedAt ?? completedAt.subtract(_focusDuration);
 
     onFocusSessionCompleted?.call(
       FocusSessionRecord(
@@ -293,7 +311,7 @@ class FocusTimerController extends ChangeNotifier {
           badgeIcon: _settings.badgeIcon,
         ),
         mode: FocusMode.pomodoro,
-        focusDuration: Duration(minutes: _settings.focusMinutes),
+        focusDuration: _focusDuration,
         startedAt: startedAt,
         completedAt: completedAt,
         animationPair: _settings.animationPair,
@@ -328,6 +346,6 @@ class FocusTimerController extends ChangeNotifier {
     _phase = FocusSessionPhase.idle;
     _paused = false;
     _focusStartedAt = null;
-    _remainingSeconds = isStopwatch ? 0 : _settings.focusMinutes * 60;
+    _remainingSeconds = isStopwatch ? 0 : _focusDuration.inSeconds;
   }
 }
