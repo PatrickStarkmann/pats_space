@@ -662,6 +662,126 @@ abstract class AppLocalizations {
   /// **'Focus Mode'**
   String get focusMode;
 
+  /// No description provided for @deepFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Focus'**
+  String get deepFocus;
+
+  /// No description provided for @deepFocusDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Block selected distractions during this session'**
+  String get deepFocusDescription;
+
+  /// No description provided for @deepFocusSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the apps, categories, and websites that should stay out of reach while you focus. Your selection remains private on this device.'**
+  String get deepFocusSettingsDescription;
+
+  /// No description provided for @deepFocusReadyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String deepFocusReadyDescription(int count);
+
+  /// No description provided for @deepFocusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Focus active'**
+  String get deepFocusActive;
+
+  /// No description provided for @deepFocusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this device'**
+  String get deepFocusUnavailable;
+
+  /// No description provided for @deepFocusNotSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set up'**
+  String get deepFocusNotSetUp;
+
+  /// No description provided for @deepFocusPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen Time access'**
+  String get deepFocusPermission;
+
+  /// No description provided for @deepFocusPermissionGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Access granted'**
+  String get deepFocusPermissionGranted;
+
+  /// No description provided for @deepFocusPermissionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission needed'**
+  String get deepFocusPermissionNeeded;
+
+  /// No description provided for @deepFocusPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied'**
+  String get deepFocusPermissionDenied;
+
+  /// No description provided for @deepFocusBlockedApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked distractions'**
+  String get deepFocusBlockedApps;
+
+  /// No description provided for @deepFocusNoAppsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps selected yet'**
+  String get deepFocusNoAppsSelected;
+
+  /// No description provided for @deepFocusChooseApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose distractions'**
+  String get deepFocusChooseApps;
+
+  /// No description provided for @deepFocusSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Deep Focus'**
+  String get deepFocusSetUp;
+
+  /// No description provided for @deepFocusAndroidLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Android support is prepared and will be added later.'**
+  String get deepFocusAndroidLater;
+
+  /// No description provided for @deepFocusSetupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Focus could not be set up. Please try again.'**
+  String get deepFocusSetupFailed;
+
+  /// No description provided for @deepFocusCouldNotStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Focus could not start'**
+  String get deepFocusCouldNotStartTitle;
+
+  /// No description provided for @deepFocusCouldNotStartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your Screen Time permission and selected apps, or start this session without blocking.'**
+  String get deepFocusCouldNotStartMessage;
+
+  /// No description provided for @startWithoutDeepFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Start without blocking'**
+  String get startWithoutDeepFocus;
+
   /// No description provided for @pomodoro.
   ///
   /// In en, this message translates to:

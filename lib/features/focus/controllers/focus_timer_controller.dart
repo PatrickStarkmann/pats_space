@@ -33,6 +33,7 @@ class FocusTimerController extends ChangeNotifier {
     accentColor: FocusAccentColor.sunshine,
     badgeIcon: FocusBadgeIcon.character,
     animationPair: FocusAnimationPair.standard,
+    deepFocusEnabled: false,
   );
 
   final Duration tickStep;

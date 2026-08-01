@@ -314,6 +314,73 @@ class AppLocalizationsDe extends AppLocalizations {
   String get focusMode => 'Fokusmodus';
 
   @override
+  String get deepFocus => 'Deep Focus';
+
+  @override
+  String get deepFocusDescription =>
+      'Ausgewählte Ablenkungen während dieser Session blockieren';
+
+  @override
+  String get deepFocusSettingsDescription =>
+      'Wähle Apps, Kategorien und Websites aus, die während deines Fokus außer Reichweite bleiben. Deine Auswahl bleibt privat auf diesem Gerät.';
+
+  @override
+  String deepFocusReadyDescription(int count) {
+    return '$count ausgewählt';
+  }
+
+  @override
+  String get deepFocusActive => 'Deep Focus aktiv';
+
+  @override
+  String get deepFocusUnavailable => 'Auf diesem Gerät nicht verfügbar';
+
+  @override
+  String get deepFocusNotSetUp => 'Noch nicht eingerichtet';
+
+  @override
+  String get deepFocusPermission => 'Bildschirmzeit-Zugriff';
+
+  @override
+  String get deepFocusPermissionGranted => 'Zugriff erlaubt';
+
+  @override
+  String get deepFocusPermissionNeeded => 'Freigabe erforderlich';
+
+  @override
+  String get deepFocusPermissionDenied => 'Freigabe abgelehnt';
+
+  @override
+  String get deepFocusBlockedApps => 'Blockierte Ablenkungen';
+
+  @override
+  String get deepFocusNoAppsSelected => 'Noch keine Apps ausgewählt';
+
+  @override
+  String get deepFocusChooseApps => 'Ablenkungen auswählen';
+
+  @override
+  String get deepFocusSetUp => 'Deep Focus einrichten';
+
+  @override
+  String get deepFocusAndroidLater =>
+      'Die Android-Schnittstelle ist vorbereitet und wird später ergänzt.';
+
+  @override
+  String get deepFocusSetupFailed =>
+      'Deep Focus konnte nicht eingerichtet werden. Versuch es bitte erneut.';
+
+  @override
+  String get deepFocusCouldNotStartTitle => 'Deep Focus konnte nicht starten';
+
+  @override
+  String get deepFocusCouldNotStartMessage =>
+      'Prüfe die Bildschirmzeit-Freigabe und deine App-Auswahl oder starte diese Session ohne Blockierung.';
+
+  @override
+  String get startWithoutDeepFocus => 'Ohne Blockierung starten';
+
+  @override
   String get pomodoro => 'Pomodoro';
 
   @override

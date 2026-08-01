@@ -11,10 +11,14 @@ class PrimaryButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.backgroundColor,
+    this.pressedColor,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final Color? backgroundColor;
+  final Color? pressedColor;
 
   @override
   State<PrimaryButton> createState() => _PrimaryButtonState();
@@ -30,8 +34,8 @@ class _PrimaryButtonState extends State<PrimaryButton> {
     final backgroundColor = !_enabled
         ? AppColors.graySoft
         : _pressed
-        ? AppColors.sagePressed
-        : AppColors.sage;
+        ? (widget.pressedColor ?? AppColors.sagePressed)
+        : (widget.backgroundColor ?? AppColors.sage);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

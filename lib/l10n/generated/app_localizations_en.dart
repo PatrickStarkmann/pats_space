@@ -305,6 +305,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get focusMode => 'Focus Mode';
 
   @override
+  String get deepFocus => 'Deep Focus';
+
+  @override
+  String get deepFocusDescription =>
+      'Block selected distractions during this session';
+
+  @override
+  String get deepFocusSettingsDescription =>
+      'Choose the apps, categories, and websites that should stay out of reach while you focus. Your selection remains private on this device.';
+
+  @override
+  String deepFocusReadyDescription(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get deepFocusActive => 'Deep Focus active';
+
+  @override
+  String get deepFocusUnavailable => 'Not available on this device';
+
+  @override
+  String get deepFocusNotSetUp => 'Not set up';
+
+  @override
+  String get deepFocusPermission => 'Screen Time access';
+
+  @override
+  String get deepFocusPermissionGranted => 'Access granted';
+
+  @override
+  String get deepFocusPermissionNeeded => 'Permission needed';
+
+  @override
+  String get deepFocusPermissionDenied => 'Permission denied';
+
+  @override
+  String get deepFocusBlockedApps => 'Blocked distractions';
+
+  @override
+  String get deepFocusNoAppsSelected => 'No apps selected yet';
+
+  @override
+  String get deepFocusChooseApps => 'Choose distractions';
+
+  @override
+  String get deepFocusSetUp => 'Set up Deep Focus';
+
+  @override
+  String get deepFocusAndroidLater =>
+      'Android support is prepared and will be added later.';
+
+  @override
+  String get deepFocusSetupFailed =>
+      'Deep Focus could not be set up. Please try again.';
+
+  @override
+  String get deepFocusCouldNotStartTitle => 'Deep Focus could not start';
+
+  @override
+  String get deepFocusCouldNotStartMessage =>
+      'Check your Screen Time permission and selected apps, or start this session without blocking.';
+
+  @override
+  String get startWithoutDeepFocus => 'Start without blocking';
+
+  @override
   String get pomodoro => 'Pomodoro';
 
   @override

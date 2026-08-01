@@ -6,6 +6,8 @@ import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
+import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
+import 'package:pats_space/features/focus_blocking/widgets/focus_blocking_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/animation_pair_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/break_settings_card.dart';
 import 'package:pats_space/features/home/widgets/time_settings/focus_label_settings_card.dart';
@@ -20,6 +22,7 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 Future<FocusTimerSettings?> showTimeSettingsSheet({
   required BuildContext context,
   required FocusTimerSettings settings,
+  required FocusBlockingController focusBlockingController,
   bool showAnimationSettings = true,
 }) {
   return showModalBottomSheet<FocusTimerSettings>(
@@ -28,6 +31,7 @@ Future<FocusTimerSettings?> showTimeSettingsSheet({
     backgroundColor: AppColors.transparent,
     builder: (_) => TimeSettingsSheet(
       initialSettings: settings,
+      focusBlockingController: focusBlockingController,
       showAnimationSettings: showAnimationSettings,
     ),
   );
@@ -38,10 +42,12 @@ class TimeSettingsSheet extends StatefulWidget {
     super.key,
     required this.initialSettings,
     required this.showAnimationSettings,
+    required this.focusBlockingController,
   });
 
   final FocusTimerSettings initialSettings;
   final bool showAnimationSettings;
+  final FocusBlockingController focusBlockingController;
 
   @override
   State<TimeSettingsSheet> createState() => _TimeSettingsSheetState();
@@ -85,6 +91,7 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                     compact: compact,
                     contentGap: contentGap,
                     settings: _settings,
+                    focusBlockingController: widget.focusBlockingController,
                     showAnimationSettings: widget.showAnimationSettings,
                     onDone: () => Navigator.of(context).pop(_settings),
                     onCancel: () => Navigator.of(context).pop(),
@@ -93,6 +100,7 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                         _settings = _settings.copyWith(mode: mode);
                       });
                     },
+                    onDeepFocusChanged: _handleDeepFocusChanged,
                     onFocusMinutesChanged: (value) {
                       setState(() {
                         _settings = _settings.copyWith(focusMinutes: value);
@@ -155,6 +163,27 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
       };
     });
   }
+
+  Future<void> _handleDeepFocusChanged(bool enabled) async {
+    if (!enabled) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _settings = _settings.copyWith(deepFocusEnabled: false);
+      });
+      return;
+    }
+
+    final ready = await widget.focusBlockingController.prepare();
+    if (!mounted || !ready) {
+      return;
+    }
+
+    setState(() {
+      _settings = _settings.copyWith(deepFocusEnabled: true);
+    });
+  }
 }
 
 class _OverviewPage extends StatelessWidget {
@@ -163,10 +192,12 @@ class _OverviewPage extends StatelessWidget {
     required this.compact,
     required this.contentGap,
     required this.settings,
+    required this.focusBlockingController,
     required this.showAnimationSettings,
     required this.onDone,
     required this.onCancel,
     required this.onModeChanged,
+    required this.onDeepFocusChanged,
     required this.onFocusMinutesChanged,
     required this.onLabelChanged,
     required this.onAccentColorChanged,
@@ -178,10 +209,12 @@ class _OverviewPage extends StatelessWidget {
   final bool compact;
   final double contentGap;
   final FocusTimerSettings settings;
+  final FocusBlockingController focusBlockingController;
   final bool showAnimationSettings;
   final VoidCallback onDone;
   final VoidCallback onCancel;
   final ValueChanged<FocusMode> onModeChanged;
+  final Future<void> Function(bool enabled) onDeepFocusChanged;
   final ValueChanged<int> onFocusMinutesChanged;
   final ValueChanged<String> onLabelChanged;
   final ValueChanged<FocusAccentColor> onAccentColorChanged;
@@ -242,6 +275,12 @@ class _OverviewPage extends StatelessWidget {
                 ] else ...[
                   const StopwatchSettingsCard(),
                 ],
+                SizedBox(height: contentGap),
+                FocusBlockingSettingsCard(
+                  controller: focusBlockingController,
+                  enabled: settings.deepFocusEnabled,
+                  onChanged: onDeepFocusChanged,
+                ),
                 if (showAnimationSettings) ...[
                   SizedBox(height: contentGap),
                   AnimationPairSettingsCard(

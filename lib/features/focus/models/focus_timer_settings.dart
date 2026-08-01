@@ -15,6 +15,7 @@ class FocusTimerSettings {
     required this.accentColor,
     required this.badgeIcon,
     required this.animationPair,
+    required this.deepFocusEnabled,
   });
 
   final FocusMode mode;
@@ -27,6 +28,7 @@ class FocusTimerSettings {
   final FocusAccentColor accentColor;
   final FocusBadgeIcon badgeIcon;
   final FocusAnimationPair animationPair;
+  final bool deepFocusEnabled;
 
   FocusTimerSettings copyWith({
     FocusMode? mode,
@@ -39,6 +41,7 @@ class FocusTimerSettings {
     FocusAccentColor? accentColor,
     FocusBadgeIcon? badgeIcon,
     FocusAnimationPair? animationPair,
+    bool? deepFocusEnabled,
   }) {
     return FocusTimerSettings(
       mode: mode ?? this.mode,
@@ -51,6 +54,7 @@ class FocusTimerSettings {
       accentColor: accentColor ?? this.accentColor,
       badgeIcon: badgeIcon ?? this.badgeIcon,
       animationPair: animationPair ?? this.animationPair,
+      deepFocusEnabled: deepFocusEnabled ?? this.deepFocusEnabled,
     );
   }
 }

@@ -21,6 +21,8 @@ import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
+import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
+import 'package:pats_space/features/focus_blocking/models/focus_blocking_status.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -45,6 +47,25 @@ extension _LocalizedWeekStartDay on WeekStartDay {
   }
 }
 
+String _deepFocusStatusLabel(
+  AppLocalizations l10n,
+  FocusBlockingStatus status,
+) {
+  if (!status.isSupported) {
+    return l10n.deepFocusUnavailable;
+  }
+  if (status.isActive) {
+    return l10n.deepFocusActive;
+  }
+  if (status.isReady) {
+    return l10n.deepFocusReadyDescription(status.selectionCount);
+  }
+  if (status.authorization == FocusBlockingAuthorization.denied) {
+    return l10n.deepFocusPermissionDenied;
+  }
+  return l10n.deepFocusNotSetUp;
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     super.key,
@@ -56,6 +77,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onWeekStartDayChanged,
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
+    required this.focusBlockingController,
   });
 
   final AppLanguage language;
@@ -66,6 +88,7 @@ class SettingsScreen extends StatefulWidget {
   final ValueChanged<WeekStartDay> onWeekStartDayChanged;
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
+  final FocusBlockingController focusBlockingController;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -188,6 +211,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
+            focusBlockingController: widget.focusBlockingController,
+            onDeepFocusPressed: () {
+              Navigator.of(routeContext).push(
+                _settingsRoute(
+                  (deepFocusContext) => _DeepFocusSettingsPage(
+                    controller: widget.focusBlockingController,
+                    onBack: () => Navigator.of(deepFocusContext).maybePop(),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -219,6 +253,8 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onAccountPressed,
     required this.onFriendsPressed,
     required this.onOthersPressed,
+    required this.focusBlockingController,
+    required this.onDeepFocusPressed,
   });
 
   final AppLanguage language;
@@ -236,6 +272,8 @@ class _MainSettingsPage extends StatelessWidget {
   final VoidCallback onAccountPressed;
   final VoidCallback onFriendsPressed;
   final VoidCallback onOthersPressed;
+  final FocusBlockingController focusBlockingController;
+  final VoidCallback onDeepFocusPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +339,24 @@ class _MainSettingsPage extends StatelessWidget {
               subtitle: notificationsEnabled ? l10n.on : l10n.off,
               trailing: const _Chevron(),
               onTap: onNotificationsPressed,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _SettingsGroup(
+          children: [
+            AnimatedBuilder(
+              animation: focusBlockingController,
+              builder: (context, _) => _SettingsRow(
+                icon: PhosphorIconsRegular.shieldCheck,
+                title: l10n.deepFocus,
+                subtitle: _deepFocusStatusLabel(
+                  l10n,
+                  focusBlockingController.status,
+                ),
+                trailing: const _Chevron(),
+                onTap: onDeepFocusPressed,
+              ),
             ),
           ],
         ),
@@ -1159,6 +1215,111 @@ class _WeekStartDaySettingsPage extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _DeepFocusSettingsPage extends StatelessWidget {
+  const _DeepFocusSettingsPage({
+    required this.controller,
+    required this.onBack,
+  });
+
+  final FocusBlockingController controller;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final status = controller.status;
+        return _SettingsScrollView(
+          title: l10n.deepFocus,
+          leading: _BackButton(onPressed: onBack),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              child: Text(
+                l10n.deepFocusSettingsDescription,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.charcoal.withValues(alpha: .74),
+                  height: 1.38,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _SettingsGroup(
+              children: [
+                _SettingsRow(
+                  icon: PhosphorIconsRegular.lockKey,
+                  title: l10n.deepFocusPermission,
+                  subtitle:
+                      status.authorization ==
+                          FocusBlockingAuthorization.approved
+                      ? l10n.deepFocusPermissionGranted
+                      : status.authorization ==
+                            FocusBlockingAuthorization.denied
+                      ? l10n.deepFocusPermissionDenied
+                      : l10n.deepFocusPermissionNeeded,
+                  trailing:
+                      status.authorization ==
+                          FocusBlockingAuthorization.approved
+                      ? const _Checkmark()
+                      : null,
+                ),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  icon: PhosphorIconsRegular.appWindow,
+                  title: l10n.deepFocusBlockedApps,
+                  subtitle: status.hasSelection
+                      ? l10n.deepFocusReadyDescription(status.selectionCount)
+                      : l10n.deepFocusNoAppsSelected,
+                  trailing: status.hasSelection ? const _Checkmark() : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (status.isSupported)
+              PrimaryButton(
+                label: status.hasSelection
+                    ? l10n.deepFocusChooseApps
+                    : l10n.deepFocusSetUp,
+                backgroundColor: AppColors.charcoal,
+                pressedColor: AppColors.charcoal.withValues(alpha: .84),
+                onPressed: controller.isBusy
+                    ? null
+                    : () {
+                        controller.configureSelection();
+                      },
+              )
+            else
+              _SettingsGroup(
+                children: [
+                  _SettingsRow(
+                    icon: PhosphorIconsRegular.info,
+                    title: l10n.deepFocusUnavailable,
+                    subtitle: l10n.deepFocusAndroidLater,
+                  ),
+                ],
+              ),
+            if (controller.isBusy) ...[
+              const SizedBox(height: AppSpacing.md),
+              const Center(child: CupertinoActivityIndicator()),
+            ],
+            if (controller.lastErrorCode != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l10n.deepFocusSetupFailed,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMuted,
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

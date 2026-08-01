@@ -28,6 +28,7 @@ import 'package:pats_space/features/focus/repositories/mirrored_focus_history_re
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
+import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/home/home_screen.dart';
 import 'package:pats_space/features/onboarding/onboarding_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
@@ -97,10 +98,15 @@ class _AppShellState extends State<AppShell> {
         firestore: FirebaseFirestore.instance,
         connectivity: Connectivity(),
       );
+  late final FocusBlockingController _focusBlockingController =
+      FocusBlockingController();
 
   @override
   void initState() {
     super.initState();
+    unawaited(
+      _focusBlockingController.initialize(languageCode: _blockingLanguageCode),
+    );
     _requestedPersistenceUid = FirebaseAuth.instance.currentUser?.uid;
     _persistenceFuture = _loadPersistence();
     _remoteAvailabilityTimer = Timer.periodic(
@@ -130,6 +136,14 @@ class _AppShellState extends State<AppShell> {
   }
 
   @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.language != widget.language) {
+      unawaited(_focusBlockingController.setLanguage(_blockingLanguageCode));
+    }
+  }
+
+  @override
   void dispose() {
     _authSubscription?.cancel();
     _networkSubscription?.cancel();
@@ -139,8 +153,13 @@ class _AppShellState extends State<AppShell> {
     _networkOfflineConfirmationTimer?.cancel();
     _historyController?.dispose();
     _gardenController?.dispose();
+    _focusBlockingController.dispose();
     super.dispose();
   }
+
+  String get _blockingLanguageCode =>
+      widget.language.storageCode ??
+      WidgetsBinding.instance.platformDispatcher.locale.languageCode;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +205,7 @@ class _AppShellState extends State<AppShell> {
                   onLanguageChanged: widget.onLanguageChanged,
                   weekStartDay: _weekStartDay,
                   onWeekStartDayChanged: _handleWeekStartDayChanged,
+                  focusBlockingController: _focusBlockingController,
                 ),
         );
       },
@@ -1188,6 +1208,7 @@ class _AppShellContent extends StatelessWidget {
     required this.onLanguageChanged,
     required this.weekStartDay,
     required this.onWeekStartDayChanged,
+    required this.focusBlockingController,
   });
 
   final AppTab selectedTab;
@@ -1206,6 +1227,7 @@ class _AppShellContent extends StatelessWidget {
   final ValueChanged<AppLanguage> onLanguageChanged;
   final WeekStartDay weekStartDay;
   final ValueChanged<WeekStartDay> onWeekStartDayChanged;
+  final FocusBlockingController focusBlockingController;
 
   @override
   Widget build(BuildContext context) {
@@ -1243,6 +1265,7 @@ class _AppShellContent extends StatelessWidget {
                 gardenOnline: bundle.remoteAvailable,
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
                 onOpenSpace: () => onTabSelected(AppTab.space),
+                focusBlockingController: focusBlockingController,
               ),
               SpaceScreen(
                 gardenController: bundle.gardenController,
@@ -1264,6 +1287,7 @@ class _AppShellContent extends StatelessWidget {
                 onSignedOutToGuest: onSignedOutToGuest,
                 remoteAvailable: bundle.remoteAvailable,
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
+                focusBlockingController: focusBlockingController,
               ),
             ],
           ),

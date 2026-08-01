@@ -22,6 +22,7 @@ import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
+import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
@@ -49,6 +50,7 @@ class HomeScreen extends StatefulWidget {
     required this.gardenOnline,
     required this.onEnsureOnlineAction,
     required this.onOpenSpace,
+    required this.focusBlockingController,
   });
 
   final FocusHistoryController historyController;
@@ -59,6 +61,7 @@ class HomeScreen extends StatefulWidget {
   final bool gardenOnline;
   final Future<bool> Function() onEnsureOnlineAction;
   final VoidCallback onOpenSpace;
+  final FocusBlockingController focusBlockingController;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -74,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _pendingWaterReward = 0;
   _FocusViewMode _focusViewMode = _FocusViewMode.solo;
   SocialFocusMemberStatus? _lastSyncedSocialFocusStatus;
+  FocusSessionPhase _lastTimerPhase = FocusSessionPhase.idle;
 
   @override
   void initState() {
@@ -134,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _timerController,
         _characterAnimator,
         _socialFocusController,
+        widget.focusBlockingController,
       ]),
       builder: (context, child) {
         return LayoutBuilder(
@@ -292,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onSkip: () {
                           _handleSkip();
                         },
-                        onPlayPause: _timerController.toggle,
+                        onPlayPause: _handlePlayPause,
                         onRestart: _timerController.restartCurrentSession,
                         onFinish: () {
                           _handleFinishStopwatch();
@@ -561,6 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final updated = await showTimeSettingsSheet(
       context: context,
       settings: _timerController.settings,
+      focusBlockingController: widget.focusBlockingController,
       showAnimationSettings: _focusViewMode == _FocusViewMode.solo,
     );
 
@@ -733,6 +739,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _syncAnimation() {
+    final currentPhase = _timerController.phase;
+    if (_lastTimerPhase != FocusSessionPhase.idle &&
+        currentPhase == FocusSessionPhase.idle &&
+        widget.focusBlockingController.status.isActive) {
+      unawaited(widget.focusBlockingController.endSession());
+    }
+    _lastTimerPhase = currentPhase;
+
     if (_timerController.running) {
       _characterAnimator.start();
     } else if (_timerController.active) {
@@ -742,6 +756,72 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _syncSocialFocusStatus();
+  }
+
+  Future<void> _handlePlayPause() async {
+    if (_timerController.active) {
+      _timerController.toggle();
+      return;
+    }
+
+    if (!_timerController.settings.deepFocusEnabled) {
+      _timerController.toggle();
+      return;
+    }
+
+    final activated = await widget.focusBlockingController.startSession(
+      expectedEnd: _expectedFocusRoundEnd,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (activated) {
+      _timerController.toggle();
+      return;
+    }
+
+    final startWithoutBlocking = await _confirmStartWithoutDeepFocus();
+    if (startWithoutBlocking && mounted) {
+      _timerController.toggle();
+    }
+  }
+
+  DateTime? get _expectedFocusRoundEnd {
+    final settings = _timerController.settings;
+    if (settings.mode == FocusMode.stopwatch) {
+      return null;
+    }
+
+    var totalMinutes = settings.focusMinutes * settings.sessionsPerRound;
+    for (var session = 1; session <= settings.sessionsPerRound; session += 1) {
+      totalMinutes += session % settings.longBreakInterval == 0
+          ? settings.longBreakMinutes
+          : settings.shortBreakMinutes;
+    }
+    return DateTime.now().add(Duration(minutes: totalMinutes));
+  }
+
+  Future<bool> _confirmStartWithoutDeepFocus() async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text(l10n.deepFocusCouldNotStartTitle),
+        content: Text(l10n.deepFocusCouldNotStartMessage),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.back),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.startWithoutDeepFocus),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   void _syncSocialFocusStatus() {
