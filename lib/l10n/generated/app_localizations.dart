@@ -1394,6 +1394,258 @@ abstract class AppLocalizations {
   /// **'Choose plant'**
   String get choosePlant;
 
+  /// No description provided for @mysteryPlant.
+  ///
+  /// In en, this message translates to:
+  /// **'Mystery plant'**
+  String get mysteryPlant;
+
+  /// No description provided for @plantDaisy.
+  ///
+  /// In en, this message translates to:
+  /// **'Daisy'**
+  String get plantDaisy;
+
+  /// No description provided for @plantTulip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tulip'**
+  String get plantTulip;
+
+  /// No description provided for @plantClover.
+  ///
+  /// In en, this message translates to:
+  /// **'Clover'**
+  String get plantClover;
+
+  /// No description provided for @plantSunflower.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunflower'**
+  String get plantSunflower;
+
+  /// No description provided for @plantHangingFlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanging flower'**
+  String get plantHangingFlower;
+
+  /// No description provided for @plantUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get plantUnlocked;
+
+  /// No description provided for @plantBloomRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Bloom {plant}'**
+  String plantBloomRequirement(Object plant);
+
+  /// No description provided for @plantSpecialStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter'**
+  String get plantSpecialStarter;
+
+  /// No description provided for @plantSpecialBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get plantSpecialBonus;
+
+  /// No description provided for @plantSpecialLucky.
+  ///
+  /// In en, this message translates to:
+  /// **'Lucky'**
+  String get plantSpecialLucky;
+
+  /// No description provided for @plantSpecialJackpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Jackpot'**
+  String get plantSpecialJackpot;
+
+  /// No description provided for @plantSpecialHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanging'**
+  String get plantSpecialHanging;
+
+  /// No description provided for @plantDescriptionBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'More coins, slower drops'**
+  String get plantDescriptionBonus;
+
+  /// No description provided for @plantDescriptionLucky.
+  ///
+  /// In en, this message translates to:
+  /// **'20% chance for double coins'**
+  String get plantDescriptionLucky;
+
+  /// No description provided for @plantDescriptionJackpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest payout, slowest drop'**
+  String get plantDescriptionJackpot;
+
+  /// No description provided for @plantDescriptionHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Only grows in hanging pots'**
+  String get plantDescriptionHanging;
+
+  /// No description provided for @potSkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pot skin'**
+  String get potSkin;
+
+  /// No description provided for @plantAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant {plant}'**
+  String plantAction(Object plant);
+
+  /// No description provided for @plantActionWithCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant {plant} · {cost} water'**
+  String plantActionWithCost(Object cost, Object plant);
+
+  /// No description provided for @plantNeedWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Need {cost} water'**
+  String plantNeedWater(Object cost);
+
+  /// No description provided for @plantLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get plantLocked;
+
+  /// No description provided for @readyToHarvest.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to harvest · {count} harvests left'**
+  String readyToHarvest(Object count);
+
+  /// No description provided for @nextDropIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Next drop in {time}'**
+  String nextDropIn(Object time);
+
+  /// No description provided for @needsWaterToRecover.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs water to recover'**
+  String get needsWaterToRecover;
+
+  /// No description provided for @waterToGrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Water to grow'**
+  String get waterToGrow;
+
+  /// No description provided for @collect.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get collect;
+
+  /// No description provided for @waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get waiting;
+
+  /// No description provided for @water.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get water;
+
+  /// No description provided for @recoveryProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery progress'**
+  String get recoveryProgress;
+
+  /// No description provided for @growthProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth progress'**
+  String get growthProgress;
+
+  /// No description provided for @coinsEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins} every {interval}'**
+  String coinsEvery(Object coins, Object interval);
+
+  /// No description provided for @removePlant.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove plant'**
+  String get removePlant;
+
+  /// No description provided for @soon.
+  ///
+  /// In en, this message translates to:
+  /// **'soon'**
+  String get soon;
+
+  /// No description provided for @hoursMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String hoursMinutesShort(Object hours, Object minutes);
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String minutesShort(Object minutes);
+
+  /// No description provided for @growthStageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty pot'**
+  String get growthStageEmpty;
+
+  /// No description provided for @growthStageSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed planted'**
+  String get growthStageSeed;
+
+  /// No description provided for @growthStageSprout.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs water'**
+  String get growthStageSprout;
+
+  /// No description provided for @growthStageBud.
+  ///
+  /// In en, this message translates to:
+  /// **'Growing'**
+  String get growthStageBud;
+
+  /// No description provided for @growthStageBloom.
+  ///
+  /// In en, this message translates to:
+  /// **'Blooming'**
+  String get growthStageBloom;
+
+  /// No description provided for @growthStageDry.
+  ///
+  /// In en, this message translates to:
+  /// **'Dried out'**
+  String get growthStageDry;
+
   /// No description provided for @feedbackLab.
   ///
   /// In en, this message translates to:

@@ -718,6 +718,150 @@ class AppLocalizationsEn extends AppLocalizations {
   String get choosePlant => 'Choose plant';
 
   @override
+  String get mysteryPlant => 'Mystery plant';
+
+  @override
+  String get plantDaisy => 'Daisy';
+
+  @override
+  String get plantTulip => 'Tulip';
+
+  @override
+  String get plantClover => 'Clover';
+
+  @override
+  String get plantSunflower => 'Sunflower';
+
+  @override
+  String get plantHangingFlower => 'Hanging flower';
+
+  @override
+  String get plantUnlocked => 'Unlocked';
+
+  @override
+  String plantBloomRequirement(Object plant) {
+    return 'Bloom $plant';
+  }
+
+  @override
+  String get plantSpecialStarter => 'Starter';
+
+  @override
+  String get plantSpecialBonus => 'Bonus';
+
+  @override
+  String get plantSpecialLucky => 'Lucky';
+
+  @override
+  String get plantSpecialJackpot => 'Jackpot';
+
+  @override
+  String get plantSpecialHanging => 'Hanging';
+
+  @override
+  String get plantDescriptionBonus => 'More coins, slower drops';
+
+  @override
+  String get plantDescriptionLucky => '20% chance for double coins';
+
+  @override
+  String get plantDescriptionJackpot => 'Biggest payout, slowest drop';
+
+  @override
+  String get plantDescriptionHanging => 'Only grows in hanging pots';
+
+  @override
+  String get potSkin => 'Pot skin';
+
+  @override
+  String plantAction(Object plant) {
+    return 'Plant $plant';
+  }
+
+  @override
+  String plantActionWithCost(Object cost, Object plant) {
+    return 'Plant $plant · $cost water';
+  }
+
+  @override
+  String plantNeedWater(Object cost) {
+    return 'Need $cost water';
+  }
+
+  @override
+  String get plantLocked => 'Locked';
+
+  @override
+  String readyToHarvest(Object count) {
+    return 'Ready to harvest · $count harvests left';
+  }
+
+  @override
+  String nextDropIn(Object time) {
+    return 'Next drop in $time';
+  }
+
+  @override
+  String get needsWaterToRecover => 'Needs water to recover';
+
+  @override
+  String get waterToGrow => 'Water to grow';
+
+  @override
+  String get collect => 'Collect';
+
+  @override
+  String get waiting => 'Waiting';
+
+  @override
+  String get water => 'Water';
+
+  @override
+  String get recoveryProgress => 'Recovery progress';
+
+  @override
+  String get growthProgress => 'Growth progress';
+
+  @override
+  String coinsEvery(Object coins, Object interval) {
+    return '+$coins every $interval';
+  }
+
+  @override
+  String get removePlant => 'Remove plant';
+
+  @override
+  String get soon => 'soon';
+
+  @override
+  String hoursMinutesShort(Object hours, Object minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String minutesShort(Object minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String get growthStageEmpty => 'Empty pot';
+
+  @override
+  String get growthStageSeed => 'Seed planted';
+
+  @override
+  String get growthStageSprout => 'Needs water';
+
+  @override
+  String get growthStageBud => 'Growing';
+
+  @override
+  String get growthStageBloom => 'Blooming';
+
+  @override
+  String get growthStageDry => 'Dried out';
+
+  @override
   String get feedbackLab => 'Feedback Lab';
 
   @override

@@ -14,6 +14,61 @@ import 'package:pats_space/features/space/models/garden_pot_style.dart';
 import 'package:pats_space/features/space/widgets/garden_coin_icon.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 
+String _plantName(AppLocalizations l10n, GardenPlantType plantType) {
+  return switch (plantType) {
+    GardenPlantType.daisy => l10n.plantDaisy,
+    GardenPlantType.tulip => l10n.plantTulip,
+    GardenPlantType.clover => l10n.plantClover,
+    GardenPlantType.sunflower => l10n.plantSunflower,
+    GardenPlantType.hangingFlower => l10n.plantHangingFlower,
+  };
+}
+
+String _plantSpecialLabel(AppLocalizations l10n, GardenPlantType plantType) {
+  return switch (plantType) {
+    GardenPlantType.daisy => l10n.plantSpecialStarter,
+    GardenPlantType.tulip => l10n.plantSpecialBonus,
+    GardenPlantType.clover => l10n.plantSpecialLucky,
+    GardenPlantType.sunflower => l10n.plantSpecialJackpot,
+    GardenPlantType.hangingFlower => l10n.plantSpecialHanging,
+  };
+}
+
+String _plantSpecialDescription(
+  AppLocalizations l10n,
+  GardenPlantType plantType,
+) {
+  return switch (plantType) {
+    GardenPlantType.daisy => '',
+    GardenPlantType.tulip => l10n.plantDescriptionBonus,
+    GardenPlantType.clover => l10n.plantDescriptionLucky,
+    GardenPlantType.sunflower => l10n.plantDescriptionJackpot,
+    GardenPlantType.hangingFlower => l10n.plantDescriptionHanging,
+  };
+}
+
+String _potStyleName(AppLocalizations l10n, GardenPotStyle style) {
+  return switch (style) {
+    GardenPotStyle.classic => l10n.potClassic,
+    GardenPotStyle.blue => l10n.potBlue,
+    GardenPotStyle.colorful => l10n.potColorful,
+    GardenPotStyle.hanging => l10n.potHanging,
+    GardenPotStyle.round => l10n.potRound,
+    GardenPotStyle.white => l10n.potWhite,
+  };
+}
+
+String _growthStageStatus(AppLocalizations l10n, GardenGrowthStage stage) {
+  return switch (stage) {
+    GardenGrowthStage.empty => l10n.growthStageEmpty,
+    GardenGrowthStage.seed => l10n.growthStageSeed,
+    GardenGrowthStage.sprout => l10n.growthStageSprout,
+    GardenGrowthStage.bud => l10n.growthStageBud,
+    GardenGrowthStage.bloom => l10n.growthStageBloom,
+    GardenGrowthStage.dry => l10n.growthStageDry,
+  };
+}
+
 class GardenPlantCard extends StatefulWidget {
   const GardenPlantCard({
     super.key,
@@ -344,7 +399,9 @@ class _PlantCarouselCard extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: selected,
-        label: unlocked ? plantType.displayName : 'Mystery plant',
+        label: unlocked
+            ? _plantName(AppLocalizations.of(context), plantType)
+            : AppLocalizations.of(context).mysteryPlant,
         child: _PressableScale(
           onTap: onTap,
           child: AnimatedContainer(
@@ -432,7 +489,7 @@ class _PlantCarouselCard extends StatelessWidget {
                       if (unlocked) ...[
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          plantType.displayName,
+                          _plantName(AppLocalizations.of(context), plantType),
                           style: AppTextStyles.body.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.charcoal,
@@ -494,6 +551,7 @@ class _PlantPickerStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
       child: Row(
@@ -521,7 +579,7 @@ class _PlantPickerStats extends StatelessWidget {
                   size: 18,
                   color: AppColors.sage,
                 ),
-                label: plantType.specialLabel,
+                label: _plantSpecialLabel(l10n, plantType),
               ),
             ),
           ] else
@@ -532,7 +590,11 @@ class _PlantPickerStats extends StatelessWidget {
                   size: 18,
                   color: AppColors.grayWarm,
                 ),
-                label: 'Unlock: ${plantType.unlockRequirementLabel}',
+                label: plantType.unlockRequirement == null
+                    ? l10n.plantUnlocked
+                    : l10n.plantBloomRequirement(
+                        _plantName(l10n, plantType.unlockRequirement!),
+                      ),
               ),
             ),
         ],
@@ -652,10 +714,11 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Semantics(
       button: true,
       enabled: enabled,
-      label: 'Plant ${plantType.displayName}',
+      label: l10n.plantAction(_plantName(l10n, plantType)),
       child: _PressableScale(
         onTap: enabled ? onTap : AppHaptics.error,
         child: AnimatedContainer(
@@ -696,9 +759,12 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
                 child: Text(
                   unlocked
                       ? enabled
-                            ? 'Plant ${plantType.displayName} · ${plantType.plantCost} water'
-                            : 'Need ${plantType.plantCost} water'
-                      : 'Locked',
+                            ? l10n.plantActionWithCost(
+                                plantType.plantCost,
+                                _plantName(l10n, plantType),
+                              )
+                            : l10n.plantNeedWater(plantType.plantCost)
+                      : l10n.plantLocked,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.w700,
@@ -728,6 +794,7 @@ class _PotStyleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final styles = [
       GardenPotStyle.classic,
       ...GardenPotStyle.shopStyles.where(ownedStyles.contains),
@@ -737,7 +804,7 @@ class _PotStyleSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Pot skin',
+          l10n.potSkin,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.grayWarm,
             fontWeight: FontWeight.w800,
@@ -787,7 +854,7 @@ class _PotStyleChip extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: style.displayName,
+      label: _potStyleName(AppLocalizations.of(context), style),
       child: _PressableScale(
         onTap: onTap,
         child: AnimatedContainer(
@@ -928,21 +995,22 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final pot = widget.pot;
     final stage = pot.stage;
-    final nextDropLabel = _nextDropLabel(pot);
+    final nextDropLabel = _nextDropLabel(l10n, pot);
     final caption = switch (stage) {
       GardenGrowthStage.bloom =>
         pot.hasCollectableCoins
-            ? 'Ready to harvest · ${pot.remainingBloomCollections} harvests left'
-            : 'Next drop in $nextDropLabel',
-      GardenGrowthStage.dry => 'Needs water to recover',
-      _ => 'Water to grow',
+            ? l10n.readyToHarvest(pot.remainingBloomCollections)
+            : l10n.nextDropIn(nextDropLabel),
+      GardenGrowthStage.dry => l10n.needsWaterToRecover,
+      _ => l10n.waterToGrow,
     };
     final buttonLabel = switch (stage) {
       GardenGrowthStage.bloom =>
-        pot.hasCollectableCoins ? 'Collect' : 'Waiting',
-      _ => 'Water',
+        pot.hasCollectableCoins ? l10n.collect : l10n.waiting,
+      _ => l10n.water,
     };
     final buttonIcon = switch (stage) {
       GardenGrowthStage.bloom =>
@@ -973,7 +1041,10 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(pot.plantName, style: AppTextStyles.headline),
+                        Text(
+                          _plantName(l10n, pot.plantType),
+                          style: AppTextStyles.headline,
+                        ),
                         const SizedBox(height: AppSpacing.xs),
                         Row(
                           children: [
@@ -988,7 +1059,7 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
                             const SizedBox(width: AppSpacing.xs),
                             Flexible(
                               child: Text(
-                                stage.statusLabel,
+                                _growthStageStatus(l10n, stage),
                                 style: AppTextStyles.bodyMuted,
                               ),
                             ),
@@ -1000,8 +1071,8 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
                         else
                           _ProgressBlock(
                             label: stage.isDry
-                                ? 'Recovery progress'
-                                : 'Growth progress',
+                                ? l10n.recoveryProgress
+                                : l10n.growthProgress,
                             child: _WaterProgress(
                               count: pot.waterProgress,
                               total: pot.waterRequired,
@@ -1042,22 +1113,22 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
     );
   }
 
-  String _nextDropLabel(GardenPot pot) {
+  String _nextDropLabel(AppLocalizations l10n, GardenPot pot) {
     final remaining = pot.remainingCoinDropTime(
       pot.plantType.coinDropInterval,
       DateTime.now(),
     );
     if (remaining == Duration.zero) {
-      return 'soon';
+      return l10n.soon;
     }
 
     final hours = remaining.inHours;
     final minutes = remaining.inMinutes.remainder(60);
     if (hours > 0) {
-      return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+      return l10n.hoursMinutesShort(hours, minutes);
     }
 
-    return '${math.max(1, minutes)}m';
+    return l10n.minutesShort(math.max(1, minutes));
   }
 }
 
@@ -1339,15 +1410,18 @@ class _BloomInfoBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final plantType = pot.plantType;
-    final specialDescription = plantType.specialDescription;
+    final l10n = AppLocalizations.of(context);
+    final specialDescription = _plantSpecialDescription(l10n, plantType);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _BloomInfoRow(
           leading: const GardenCoinIcon(size: 22),
-          text:
-              '+${plantType.coinReward} every ${plantType.coinDropIntervalLabel}',
+          text: l10n.coinsEvery(
+            plantType.coinReward,
+            plantType.coinDropIntervalLabel,
+          ),
           emphasis: true,
         ),
         if (specialDescription.isNotEmpty) ...[
@@ -1407,9 +1481,10 @@ class _RemovePlantButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Semantics(
       button: true,
-      label: 'Remove plant',
+      label: l10n.removePlant,
       child: _PressableScale(
         onTap: onTap,
         child: Container(
