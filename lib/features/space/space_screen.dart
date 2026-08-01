@@ -266,8 +266,12 @@ class _SpaceScreenState extends State<SpaceScreen> {
       return;
     }
 
-    final nextIndex = (currentIndex + direction) % areas.length;
-    _selectArea(areas[nextIndex < 0 ? nextIndex + areas.length : nextIndex]);
+    final nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= areas.length) {
+      return;
+    }
+
+    _selectArea(areas[nextIndex]);
   }
 
   void _handleAreaSwipeEnd(DragEndDetails details) {
