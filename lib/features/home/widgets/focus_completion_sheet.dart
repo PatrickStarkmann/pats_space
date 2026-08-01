@@ -30,7 +30,7 @@ class FocusCompletionSheet extends StatefulWidget {
 }
 
 class _FocusCompletionSheetState extends State<FocusCompletionSheet>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const _dismissDistance = 88.0;
   static const _dismissVelocity = 520.0;
 
@@ -42,6 +42,8 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
   late final Animation<double> _metricsAnimation;
   late final Animation<double> _actionsAnimation;
   late final Animation<double> _countAnimation;
+  late final AnimationController _tutorialButtonPulseController;
+  late final Animation<double> _tutorialButtonPulse;
   double _dragOffset = 0;
   bool _isDragging = false;
 
@@ -83,6 +85,16 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
       parent: _entranceController,
       curve: const Interval(.42, 1, curve: Curves.easeOutCubic),
     );
+    _tutorialButtonPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _tutorialButtonPulse = Tween<double>(begin: 1, end: 1.02).animate(
+      CurvedAnimation(
+        parent: _tutorialButtonPulseController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -94,12 +106,20 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
       } else {
         AppHaptics.warning();
       }
+      if (widget.tutorial) {
+        Future<void>.delayed(const Duration(milliseconds: 1050), () {
+          if (mounted) {
+            _tutorialButtonPulseController.repeat(reverse: true);
+          }
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
+    _tutorialButtonPulseController.dispose();
     super.dispose();
   }
 
@@ -156,26 +176,6 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: -32,
-              height: 32,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppColors.transparent,
-                        AppColors.charcoal.withValues(alpha: .07),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
             DecoratedBox(
               decoration: BoxDecoration(
                 color: AppColors.surface.withValues(alpha: .92),
@@ -319,11 +319,16 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                           child: Column(
                             children: [
                               const SizedBox(height: AppSpacing.lg),
-                              PrimaryButton(
-                                label: widget.tutorial
-                                    ? l10n.goToSpace
-                                    : l10n.continueAction,
-                                onPressed: _continue,
+                              ScaleTransition(
+                                scale: widget.tutorial
+                                    ? _tutorialButtonPulse
+                                    : const AlwaysStoppedAnimation(1),
+                                child: PrimaryButton(
+                                  label: widget.tutorial
+                                      ? l10n.goToSpace
+                                      : l10n.continueAction,
+                                  onPressed: _continue,
+                                ),
                               ),
                               if (!widget.tutorial) ...[
                                 const SizedBox(height: AppSpacing.xs),

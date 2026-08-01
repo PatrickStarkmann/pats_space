@@ -271,6 +271,7 @@ class FocusTimerController extends ChangeNotifier {
     }
 
     if (_remainingSeconds <= 1) {
+      _remainingSeconds = 0;
       if (_phase == FocusSessionPhase.focus) {
         _completeFocus();
       } else if (_phase == FocusSessionPhase.breakTime) {
