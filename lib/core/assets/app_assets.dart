@@ -1,6 +1,16 @@
 class AppAssets {
   const AppAssets._();
 
+  static const alertBell = 'assets/audio/alerts/bell.mp3';
+  static const alertFinish = 'assets/audio/alerts/finish.mp3';
+  static const focusEndSound = alertBell;
+  static const breakEndSound = alertBell;
+  static const focusRoundEndSound = alertFinish;
+
+  static const ambienceFirewood = 'assets/audio/ambience/firewood.mp3';
+  static const ambienceRain = 'assets/audio/ambience/rain.mp3';
+  static const ambienceRainforest = 'assets/audio/ambience/rainforest.mp3';
+
   static const focusPair01Focus01 =
       'assets/images/focus_pairs/pair_01/focus_01.png';
   static const focusPair01Focus02 =

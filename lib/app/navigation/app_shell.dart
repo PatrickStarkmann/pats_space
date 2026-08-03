@@ -34,6 +34,9 @@ import 'package:pats_space/features/onboarding/onboarding_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/settings_screen.dart';
+import 'package:pats_space/features/sounds/controllers/sound_controller.dart';
+import 'package:pats_space/features/sounds/repositories/shared_preferences_sound_settings_repository.dart';
+import 'package:pats_space/features/sounds/services/audioplayers_app_sound_player.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_state.dart';
 import 'package:pats_space/features/space/repositories/firebase_garden_repository.dart';
@@ -81,6 +84,7 @@ class _AppShellState extends State<AppShell> {
   String? _requestedPersistenceUid;
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
+  SoundController? _soundController;
   _ConnectivityNotice? _connectivityNotice;
   bool _gardenTutorialActive = false;
   bool _onboardingFocusChallengeActive = false;
@@ -132,8 +136,10 @@ class _AppShellState extends State<AppShell> {
       _requestedPersistenceUid = uid;
       _historyController?.dispose();
       _gardenController?.dispose();
+      _soundController?.dispose();
       _historyController = null;
       _gardenController = null;
+      _soundController = null;
       setState(() {
         _persistenceFuture = _loadPersistence();
       });
@@ -173,6 +179,7 @@ class _AppShellState extends State<AppShell> {
     _networkOfflineConfirmationTimer?.cancel();
     _historyController?.dispose();
     _gardenController?.dispose();
+    _soundController?.dispose();
     _focusBlockingController.dispose();
     super.dispose();
   }
@@ -338,6 +345,15 @@ class _AppShellState extends State<AppShell> {
       preferences,
       userId: userId,
     );
+    final soundSettingsRepository = SharedPreferencesSoundSettingsRepository(
+      preferences,
+    );
+    final soundSettings = await soundSettingsRepository.loadSettings();
+    final soundController = SoundController(
+      initialSettings: soundSettings,
+      repository: soundSettingsRepository,
+      player: AudioplayersAppSoundPlayer(),
+    );
     final historyRepository = FirebaseFocusHistoryRepository(
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
@@ -410,6 +426,7 @@ class _AppShellState extends State<AppShell> {
     }
     _historyController = historyController;
     _gardenController = gardenController;
+    _soundController = soundController;
 
     final bundle = _AppPersistenceBundle(
       preferences: preferences,
@@ -419,6 +436,7 @@ class _AppShellState extends State<AppShell> {
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
+      soundController: soundController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -879,6 +897,8 @@ class _AppShellState extends State<AppShell> {
       return;
     }
 
+    _soundController?.dispose();
+    _soundController = null;
     setState(() {
       _selectedTab = AppTab.home;
       _gardenTutorialActive = false;
@@ -907,6 +927,8 @@ class _AppShellState extends State<AppShell> {
       return;
     }
 
+    _soundController?.dispose();
+    _soundController = null;
     setState(() {
       _selectedTab = AppTab.home;
       _gardenTutorialActive = false;
@@ -1331,6 +1353,7 @@ class _AppShellContent extends StatelessWidget {
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
                 onOpenSpace: () => onTabSelected(AppTab.space),
                 focusBlockingController: focusBlockingController,
+                soundController: bundle.soundController,
                 tutorialFocusDuration: onboardingFocusChallengeActive
                     ? _AppShellState._onboardingFocusChallengeDuration
                     : null,
@@ -1362,6 +1385,7 @@ class _AppShellContent extends StatelessWidget {
                 remoteAvailable: bundle.remoteAvailable,
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
                 focusBlockingController: focusBlockingController,
+                soundController: bundle.soundController,
               ),
             ],
           ),
@@ -1478,6 +1502,7 @@ class _AppPersistenceBundle {
     required this.historyController,
     required this.gardenController,
     required this.pendingRewardRepository,
+    required this.soundController,
     required this.remoteAvailable,
     required this.userId,
   });
@@ -1489,6 +1514,7 @@ class _AppPersistenceBundle {
   final FocusHistoryController historyController;
   final GardenController gardenController;
   final PendingFocusRewardRepository pendingRewardRepository;
+  final SoundController soundController;
   final bool remoteAvailable;
   final String userId;
 
@@ -1501,6 +1527,7 @@ class _AppPersistenceBundle {
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
+      soundController: soundController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -1515,6 +1542,7 @@ class _AppPersistenceBundle {
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
+      soundController: soundController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );

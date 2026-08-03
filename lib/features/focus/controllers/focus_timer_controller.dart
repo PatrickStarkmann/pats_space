@@ -19,6 +19,9 @@ class FocusTimerController extends ChangeNotifier {
     this.tickStep = const Duration(seconds: 1),
     this.onFocusSessionCompleted,
     this.onFocusRoundCompleted,
+    this.onFocusPeriodCompleted,
+    this.onBreakPeriodCompleted,
+    this.onFocusRoundFinished,
   }) : _settings = initialSettings,
        _focusDuration =
            focusDurationOverride ??
@@ -47,6 +50,9 @@ class FocusTimerController extends ChangeNotifier {
   final bool startBreakAfterFocus;
   final ValueChanged<FocusSessionRecord>? onFocusSessionCompleted;
   final VoidCallback? onFocusRoundCompleted;
+  final VoidCallback? onFocusPeriodCompleted;
+  final VoidCallback? onBreakPeriodCompleted;
+  final VoidCallback? onFocusRoundFinished;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
@@ -160,6 +166,7 @@ class FocusTimerController extends ChangeNotifier {
     switch (_phase) {
       case FocusSessionPhase.focus:
         _startBreak();
+        onFocusPeriodCompleted?.call();
       case FocusSessionPhase.breakTime:
         _completeBreak();
       case FocusSessionPhase.stopwatch:
@@ -239,7 +246,7 @@ class FocusTimerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _completeBreak() {
+  void _completeBreak({bool emitSoundEvent = true}) {
     _ticker?.cancel();
     _completedSessions = (_completedSessions + 1).clamp(
       0,
@@ -248,6 +255,9 @@ class FocusTimerController extends ChangeNotifier {
 
     if (_completedSessions < _settings.sessionsPerRound) {
       _startFocus();
+      if (emitSoundEvent) {
+        onBreakPeriodCompleted?.call();
+      }
       return;
     }
 
@@ -256,6 +266,9 @@ class FocusTimerController extends ChangeNotifier {
     _remainingSeconds = _focusDuration.inSeconds;
     notifyListeners();
     onFocusRoundCompleted?.call();
+    if (emitSoundEvent) {
+      onFocusRoundFinished?.call();
+    }
   }
 
   void _startTicker() {
@@ -293,10 +306,12 @@ class FocusTimerController extends ChangeNotifier {
       _focusStartedAt = null;
       _remainingSeconds = 0;
       notifyListeners();
+      onFocusPeriodCompleted?.call();
       return;
     }
 
     _startBreak();
+    onFocusPeriodCompleted?.call();
   }
 
   void _recordCompletedFocusSession() {

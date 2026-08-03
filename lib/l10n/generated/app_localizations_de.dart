@@ -153,6 +153,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get softBell => 'Sanfte Glocke';
 
   @override
+  String get ambientSounds => 'Hintergrundsounds';
+
+  @override
+  String get ambientSoundsDescription =>
+      'Spiele einen ruhigen Sound, während dein Fokus-Timer läuft';
+
+  @override
+  String get noAmbientSound => 'Kein Hintergrundsound';
+
+  @override
+  String get firewood => 'Kaminfeuer';
+
+  @override
+  String get rain => 'Regen';
+
+  @override
+  String get rainforest => 'Regenwald';
+
+  @override
+  String get volume => 'Lautstärke';
+
+  @override
+  String get timerSignals => 'Timer-Signale';
+
+  @override
+  String get timerSignalsDescription =>
+      'Glocke nach Fokus und Pause, Finish-Sound nach einer ganzen Runde';
+
+  @override
+  String get holdForSoundSelection =>
+      'Halte den Sound-Button gedrückt, um einen anderen Sound auszuwählen';
+
+  @override
   String get notificationsDescription => 'Erinnerungen für Sessions und Pausen';
 
   @override

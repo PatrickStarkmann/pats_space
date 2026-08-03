@@ -11,6 +11,9 @@ void main() {
       (tester) async {
         final records = <FocusSessionRecord>[];
         var completedRounds = 0;
+        var completedFocusPeriods = 0;
+        var completedBreakPeriods = 0;
+        var finishedRounds = 0;
         final controller = FocusTimerController(
           initialSettings: FocusTimerController.defaultSettings.copyWith(
             focusMinutes: 1,
@@ -20,6 +23,9 @@ void main() {
           ),
           onFocusSessionCompleted: records.add,
           onFocusRoundCompleted: () => completedRounds += 1,
+          onFocusPeriodCompleted: () => completedFocusPeriods += 1,
+          onBreakPeriodCompleted: () => completedBreakPeriods += 1,
+          onFocusRoundFinished: () => finishedRounds += 1,
         );
         addTearDown(controller.dispose);
 
@@ -29,20 +35,25 @@ void main() {
         await tester.pump(const Duration(minutes: 1));
         expect(controller.phase, FocusSessionPhase.breakTime);
         expect(records, hasLength(1));
+        expect(completedFocusPeriods, 1);
 
         await tester.pump(const Duration(minutes: 1));
         expect(controller.phase, FocusSessionPhase.focus);
         expect(controller.completedSessions, 1);
         expect(completedRounds, 0);
+        expect(completedBreakPeriods, 1);
 
         await tester.pump(const Duration(minutes: 1));
         expect(controller.phase, FocusSessionPhase.breakTime);
         expect(records, hasLength(2));
+        expect(completedFocusPeriods, 2);
 
         await tester.pump(const Duration(minutes: 1));
         expect(controller.phase, FocusSessionPhase.idle);
         expect(controller.completedSessions, 2);
         expect(completedRounds, 1);
+        expect(completedBreakPeriods, 1);
+        expect(finishedRounds, 1);
       },
     );
 
@@ -66,6 +77,46 @@ void main() {
       expect(controller.phase, FocusSessionPhase.focus);
       expect(controller.completedSessions, 1);
       controller.dispose();
+    });
+
+    testWidgets(
+      'emits the normal finish event when the last break is skipped',
+      (tester) async {
+        var completedBreakPeriods = 0;
+        var finishedRounds = 0;
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            focusMinutes: 1,
+            shortBreakMinutes: 1,
+            sessionsPerRound: 1,
+          ),
+          onBreakPeriodCompleted: () => completedBreakPeriods += 1,
+          onFocusRoundFinished: () => finishedRounds += 1,
+        );
+        addTearDown(controller.dispose);
+
+        controller.toggle();
+        await tester.pump(const Duration(minutes: 1));
+        controller.skip();
+
+        expect(completedBreakPeriods, 0);
+        expect(finishedRounds, 1);
+        expect(controller.phase, FocusSessionPhase.idle);
+      },
+    );
+
+    test('emits the normal focus-end event when focus is skipped', () {
+      var completedFocusPeriods = 0;
+      final controller = FocusTimerController(
+        onFocusPeriodCompleted: () => completedFocusPeriods += 1,
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      controller.skip();
+
+      expect(controller.phase, FocusSessionPhase.breakTime);
+      expect(completedFocusPeriods, 1);
     });
 
     testWidgets('uses a temporary focus duration when one is provided', (

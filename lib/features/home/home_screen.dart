@@ -36,6 +36,8 @@ import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
 import 'package:pats_space/features/social_focus/controllers/social_focus_controller.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/social_focus/repositories/firebase_social_focus_repository.dart';
+import 'package:pats_space/features/sounds/controllers/sound_controller.dart';
+import 'package:pats_space/features/sounds/widgets/ambient_sound_sheet.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -51,6 +53,7 @@ class HomeScreen extends StatefulWidget {
     required this.onEnsureOnlineAction,
     required this.onOpenSpace,
     required this.focusBlockingController,
+    required this.soundController,
     this.tutorialFocusDuration,
     this.tutorialFocusWaterReward = 0,
     this.onTutorialFocusCompleted,
@@ -65,6 +68,7 @@ class HomeScreen extends StatefulWidget {
   final Future<bool> Function() onEnsureOnlineAction;
   final VoidCallback onOpenSpace;
   final FocusBlockingController focusBlockingController;
+  final SoundController soundController;
   final Duration? tutorialFocusDuration;
   final int tutorialFocusWaterReward;
   final VoidCallback? onTutorialFocusCompleted;
@@ -100,6 +104,9 @@ class _HomeScreenState extends State<HomeScreen> {
       startBreakAfterFocus: widget.tutorialFocusDuration == null,
       onFocusSessionCompleted: _handleFocusSessionCompleted,
       onFocusRoundCompleted: _handleFocusRoundCompleted,
+      onFocusPeriodCompleted: _playFocusOrBreakEndSound,
+      onBreakPeriodCompleted: _playFocusOrBreakEndSound,
+      onFocusRoundFinished: _playRoundEndSound,
     )..addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
     if (widget.gardenOnline) {
@@ -132,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    unawaited(widget.soundController.syncFocusPlayback(shouldPlay: false));
     _timerController.removeListener(_syncAnimation);
     _timerController.dispose();
     _characterAnimator.dispose();
@@ -147,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _characterAnimator,
         _socialFocusController,
         widget.focusBlockingController,
+        widget.soundController,
       ]),
       builder: (context, child) {
         return LayoutBuilder(
@@ -330,6 +339,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       selectedMode: _focusViewMode,
                       socialOnline: widget.gardenOnline,
                       onChanged: _handleFocusViewModeChanged,
+                    ),
+                  ),
+                if (widget.tutorialFocusDuration == null)
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + AppSpacing.xs,
+                    right: 0,
+                    child: Transform.translate(
+                      offset: const Offset(0, -4),
+                      child: AppIconButton(
+                        icon: !widget.soundController.ambientSoundsEnabled
+                            ? PhosphorIconsRegular.speakerSlash
+                            : PhosphorIconsRegular.speakerHigh,
+                        selected: widget.soundController.ambientSoundsEnabled,
+                        showSelectedBackground: false,
+                        buttonSize: 44,
+                        iconSize: 24,
+                        semanticLabel: AppLocalizations.of(
+                          context,
+                        ).ambientSounds,
+                        onPressed: _handleAmbientSoundTap,
+                        onLongPress: () {
+                          _openAmbientSounds(showHintAfterSelection: false);
+                        },
+                      ),
                     ),
                   ),
                 if (_completionReward != null)
@@ -764,6 +797,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _lastTimerPhase = currentPhase;
 
+    unawaited(
+      widget.soundController.syncFocusPlayback(
+        shouldPlay:
+            _timerController.running &&
+            (currentPhase == FocusSessionPhase.focus ||
+                currentPhase == FocusSessionPhase.stopwatch),
+      ),
+    );
+
     if (_timerController.running) {
       _characterAnimator.start();
     } else if (_timerController.active) {
@@ -894,6 +936,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (record.mode == FocusMode.stopwatch) {
+      _playRoundEndSound();
       if (waterReward > 0) {
         _applyOrStoreWaterReward(waterReward, storeOffline: false);
       }
@@ -906,6 +949,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _pendingRewardDuration += record.focusDuration;
     _pendingWaterReward += waterReward;
+  }
+
+  Future<void> _handleAmbientSoundTap() async {
+    if (!widget.soundController.hasAmbientSoundSelection) {
+      await _openAmbientSounds();
+      return;
+    }
+
+    await widget.soundController.setAmbientSoundsEnabled(
+      !widget.soundController.ambientSoundsEnabled,
+    );
+  }
+
+  Future<void> _openAmbientSounds({bool showHintAfterSelection = true}) async {
+    final shouldShowHint =
+        showHintAfterSelection &&
+        !widget.soundController.ambientLongPressHintShown;
+    await showAmbientSoundSheet(
+      context: context,
+      controller: widget.soundController,
+    );
+    if (!mounted ||
+        !shouldShowHint ||
+        !widget.soundController.hasAmbientSoundSelection) {
+      return;
+    }
+
+    await widget.soundController.markAmbientLongPressHintShown();
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).holdForSoundSelection),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _playFocusOrBreakEndSound() {
+    unawaited(widget.soundController.playFocusOrBreakEnd());
+  }
+
+  void _playRoundEndSound() {
+    unawaited(widget.soundController.playRoundEnd());
   }
 
   void _handleFocusRoundCompleted() {

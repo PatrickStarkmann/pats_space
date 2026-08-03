@@ -374,6 +374,66 @@ abstract class AppLocalizations {
   /// **'Soft bell'**
   String get softBell;
 
+  /// No description provided for @ambientSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Background sounds'**
+  String get ambientSounds;
+
+  /// No description provided for @ambientSoundsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a calming sound while your focus timer is running'**
+  String get ambientSoundsDescription;
+
+  /// No description provided for @noAmbientSound.
+  ///
+  /// In en, this message translates to:
+  /// **'No background sound'**
+  String get noAmbientSound;
+
+  /// No description provided for @firewood.
+  ///
+  /// In en, this message translates to:
+  /// **'Fireplace'**
+  String get firewood;
+
+  /// No description provided for @rain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get rain;
+
+  /// No description provided for @rainforest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainforest'**
+  String get rainforest;
+
+  /// No description provided for @volume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get volume;
+
+  /// No description provided for @timerSignals.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer signals'**
+  String get timerSignals;
+
+  /// No description provided for @timerSignalsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Bell at focus and break endings, finish sound after a full round'**
+  String get timerSignalsDescription;
+
+  /// No description provided for @holdForSoundSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Press and hold the sound button to choose a different sound'**
+  String get holdForSoundSelection;
+
   /// No description provided for @notificationsDescription.
   ///
   /// In en, this message translates to:

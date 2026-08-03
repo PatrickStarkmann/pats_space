@@ -19,6 +19,7 @@ dependencies:
   google_sign_in: ^7.2.0
   phosphor_flutter: ^2.1.0
   connectivity_plus: ^7.3.0
+  audioplayers: ^6.7.1
 
 dev_dependencies:
   flutter_test:
@@ -52,6 +53,8 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/ambience/
+    - assets/audio/alerts/
     - assets/images/
     - assets/images/focus_pairs/pair_01/
     - assets/images/focus_pairs/pair_02/

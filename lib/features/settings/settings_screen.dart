@@ -21,6 +21,8 @@ import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
+import 'package:pats_space/features/sounds/controllers/sound_controller.dart';
+import 'package:pats_space/features/sounds/widgets/ambient_sound_sheet.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/focus_blocking/models/focus_blocking_status.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
@@ -78,6 +80,7 @@ class SettingsScreen extends StatefulWidget {
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
     required this.focusBlockingController,
+    required this.soundController,
   });
 
   final AppLanguage language;
@@ -89,13 +92,13 @@ class SettingsScreen extends StatefulWidget {
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
   final FocusBlockingController focusBlockingController;
+  final SoundController soundController;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _soundsEnabled = true;
   bool _notificationsEnabled = false;
   late final UserProfileRepository _profileRepository;
 
@@ -119,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             profileRepository: _profileRepository,
             remoteAvailable: widget.remoteAvailable,
             onEnsureOnlineAction: widget.onEnsureOnlineAction,
-            soundsEnabled: _soundsEnabled,
+            soundController: widget.soundController,
             notificationsEnabled: _notificationsEnabled,
             weekStartDay: widget.weekStartDay,
             onLanguagePressed: () {
@@ -137,11 +140,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(routeContext).push(
                 _settingsRoute(
                   (soundsContext) => _SoundsSettingsPage(
-                    soundsEnabled: _soundsEnabled,
+                    controller: widget.soundController,
                     onBack: () => Navigator.of(soundsContext).maybePop(),
-                    onSoundsChanged: (value) {
-                      setState(() => _soundsEnabled = value);
-                    },
                   ),
                 ),
               );
@@ -242,7 +242,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.profileRepository,
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
-    required this.soundsEnabled,
+    required this.soundController,
     required this.notificationsEnabled,
     required this.weekStartDay,
     required this.onLanguagePressed,
@@ -261,7 +261,7 @@ class _MainSettingsPage extends StatelessWidget {
   final UserProfileRepository profileRepository;
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
-  final bool soundsEnabled;
+  final SoundController soundController;
   final bool notificationsEnabled;
   final WeekStartDay weekStartDay;
   final VoidCallback onLanguagePressed;
@@ -325,12 +325,17 @@ class _MainSettingsPage extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         _SettingsGroup(
           children: [
-            _SettingsRow(
-              icon: PhosphorIconsRegular.speakerHigh,
-              title: l10n.sounds,
-              subtitle: soundsEnabled ? l10n.on : l10n.off,
-              trailing: const _Chevron(),
-              onTap: onSoundsPressed,
+            AnimatedBuilder(
+              animation: soundController,
+              builder: (context, _) => _SettingsRow(
+                icon: PhosphorIconsRegular.speakerHigh,
+                title: l10n.sounds,
+                subtitle: soundController.hasAnySoundEnabled
+                    ? l10n.on
+                    : l10n.off,
+                trailing: const _Chevron(),
+                onTap: onSoundsPressed,
+              ),
             ),
             const _SettingsDivider(),
             _SettingsRow(
@@ -1325,46 +1330,55 @@ class _DeepFocusSettingsPage extends StatelessWidget {
 }
 
 class _SoundsSettingsPage extends StatelessWidget {
-  const _SoundsSettingsPage({
-    required this.soundsEnabled,
-    required this.onBack,
-    required this.onSoundsChanged,
-  });
+  const _SoundsSettingsPage({required this.controller, required this.onBack});
 
-  final bool soundsEnabled;
+  final SoundController controller;
   final VoidCallback onBack;
-  final ValueChanged<bool> onSoundsChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return _SettingsScrollView(
-      title: l10n.sounds,
-      leading: _BackButton(onPressed: onBack),
-      children: [
-        _SettingsGroup(
-          children: [
-            _SettingsRow(
-              icon: PhosphorIconsRegular.speakerHigh,
-              title: l10n.alertSounds,
-              subtitle: l10n.alertSoundsDescription,
-              trailing: CupertinoSwitch(
-                value: soundsEnabled,
-                activeTrackColor: AppColors.charcoal,
-                onChanged: onSoundsChanged,
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => _SettingsScrollView(
+        title: l10n.sounds,
+        leading: _BackButton(onPressed: onBack),
+        children: [
+          _SettingsGroup(
+            children: [
+              _SettingsRow(
+                icon: PhosphorIconsRegular.speakerHigh,
+                title: l10n.timerSignals,
+                subtitle: l10n.timerSignalsDescription,
+                trailing: CupertinoSwitch(
+                  value: controller.alertSoundsEnabled,
+                  activeTrackColor: AppColors.charcoal,
+                  onChanged: (value) {
+                    unawaited(controller.setAlertSoundsEnabled(value));
+                  },
+                ),
               ),
-            ),
-            const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.speakerLow,
-              title: l10n.sound,
-              subtitle: l10n.softBell,
-              trailing: const _Chevron(),
-            ),
-          ],
-        ),
-      ],
+              const _SettingsDivider(),
+              _SettingsRow(
+                icon: PhosphorIconsRegular.waveform,
+                title: l10n.ambientSounds,
+                subtitle: localizedAmbientSoundName(
+                  l10n,
+                  controller.activeAmbientSound,
+                ),
+                trailing: const _Chevron(),
+                onTap: () {
+                  showAmbientSoundSheet(
+                    context: context,
+                    controller: controller,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

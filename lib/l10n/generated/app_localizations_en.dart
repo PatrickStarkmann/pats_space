@@ -149,6 +149,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get softBell => 'Soft bell';
 
   @override
+  String get ambientSounds => 'Background sounds';
+
+  @override
+  String get ambientSoundsDescription =>
+      'Play a calming sound while your focus timer is running';
+
+  @override
+  String get noAmbientSound => 'No background sound';
+
+  @override
+  String get firewood => 'Fireplace';
+
+  @override
+  String get rain => 'Rain';
+
+  @override
+  String get rainforest => 'Rainforest';
+
+  @override
+  String get volume => 'Volume';
+
+  @override
+  String get timerSignals => 'Timer signals';
+
+  @override
+  String get timerSignalsDescription =>
+      'Bell at focus and break endings, finish sound after a full round';
+
+  @override
+  String get holdForSoundSelection =>
+      'Press and hold the sound button to choose a different sound';
+
+  @override
   String get notificationsDescription => 'Session reminders and break alerts';
 
   @override
