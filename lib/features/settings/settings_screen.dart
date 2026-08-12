@@ -21,6 +21,7 @@ import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
+import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/sounds/controllers/sound_controller.dart';
 import 'package:pats_space/features/sounds/widgets/ambient_sound_sheet.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
@@ -81,6 +82,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onEnsureOnlineAction,
     required this.focusBlockingController,
     required this.soundController,
+    required this.notificationController,
   });
 
   final AppLanguage language;
@@ -93,13 +95,13 @@ class SettingsScreen extends StatefulWidget {
   final Future<bool> Function() onEnsureOnlineAction;
   final FocusBlockingController focusBlockingController;
   final SoundController soundController;
+  final NotificationController notificationController;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = false;
   late final UserProfileRepository _profileRepository;
 
   @override
@@ -123,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             remoteAvailable: widget.remoteAvailable,
             onEnsureOnlineAction: widget.onEnsureOnlineAction,
             soundController: widget.soundController,
-            notificationsEnabled: _notificationsEnabled,
+            notificationController: widget.notificationController,
             weekStartDay: widget.weekStartDay,
             onLanguagePressed: () {
               Navigator.of(routeContext).push(
@@ -150,11 +152,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(routeContext).push(
                 _settingsRoute(
                   (notificationsContext) => _NotificationsSettingsPage(
-                    notificationsEnabled: _notificationsEnabled,
+                    controller: widget.notificationController,
                     onBack: () => Navigator.of(notificationsContext).maybePop(),
-                    onNotificationsChanged: (value) {
-                      setState(() => _notificationsEnabled = value);
-                    },
                   ),
                 ),
               );
@@ -243,7 +242,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.remoteAvailable,
     required this.onEnsureOnlineAction,
     required this.soundController,
-    required this.notificationsEnabled,
+    required this.notificationController,
     required this.weekStartDay,
     required this.onLanguagePressed,
     required this.onSoundsPressed,
@@ -262,7 +261,7 @@ class _MainSettingsPage extends StatelessWidget {
   final bool remoteAvailable;
   final Future<bool> Function() onEnsureOnlineAction;
   final SoundController soundController;
-  final bool notificationsEnabled;
+  final NotificationController notificationController;
   final WeekStartDay weekStartDay;
   final VoidCallback onLanguagePressed;
   final VoidCallback onSoundsPressed;
@@ -338,12 +337,15 @@ class _MainSettingsPage extends StatelessWidget {
               ),
             ),
             const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.bell,
-              title: l10n.notifications,
-              subtitle: notificationsEnabled ? l10n.on : l10n.off,
-              trailing: const _Chevron(),
-              onTap: onNotificationsPressed,
+            AnimatedBuilder(
+              animation: notificationController,
+              builder: (context, _) => _SettingsRow(
+                icon: PhosphorIconsRegular.bell,
+                title: l10n.notifications,
+                subtitle: notificationController.enabled ? l10n.on : l10n.off,
+                trailing: const _Chevron(),
+                onTap: onNotificationsPressed,
+              ),
             ),
           ],
         ),
@@ -1385,52 +1387,83 @@ class _SoundsSettingsPage extends StatelessWidget {
 
 class _NotificationsSettingsPage extends StatelessWidget {
   const _NotificationsSettingsPage({
-    required this.notificationsEnabled,
+    required this.controller,
     required this.onBack,
-    required this.onNotificationsChanged,
   });
 
-  final bool notificationsEnabled;
+  final NotificationController controller;
   final VoidCallback onBack;
-  final ValueChanged<bool> onNotificationsChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return _SettingsScrollView(
-      title: l10n.notifications,
-      leading: _BackButton(onPressed: onBack),
-      children: [
-        _SettingsGroup(
-          children: [
-            _SettingsRow(
-              icon: PhosphorIconsRegular.bell,
-              title: l10n.notifications,
-              subtitle: l10n.notificationsDescription,
-              trailing: CupertinoSwitch(
-                value: notificationsEnabled,
-                activeTrackColor: AppColors.charcoal,
-                onChanged: onNotificationsChanged,
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final detailControlsEnabled = controller.enabled;
+
+        return _SettingsScrollView(
+        title: l10n.notifications,
+        leading: _BackButton(onPressed: onBack),
+        children: [
+          _SettingsGroup(
+            children: [
+              _SettingsRow(
+                icon: PhosphorIconsRegular.bell,
+                title: l10n.timerNotifications,
+                subtitle: l10n.timerNotificationsDescription,
+                trailing: CupertinoSwitch(
+                  value: controller.enabled,
+                  activeTrackColor: AppColors.charcoal,
+                  onChanged: (value) {
+                    unawaited(controller.setEnabled(value));
+                  },
+                ),
               ),
-            ),
-            const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.timer,
-              title: l10n.focusReminder,
-              subtitle: l10n.focusReminderDescription,
-              trailing: const _Chevron(),
-            ),
-            const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.moon,
-              title: l10n.breakReminder,
-              subtitle: l10n.breakReminderDescription,
-              trailing: const _Chevron(),
+              const _SettingsDivider(),
+              _SettingsRow(
+                icon: PhosphorIconsRegular.timer,
+                title: l10n.focusEndNotification,
+                subtitle: l10n.focusEndNotificationDescription,
+                trailing: CupertinoSwitch(
+                  value: detailControlsEnabled && controller.focusEndEnabled,
+                  activeTrackColor: AppColors.charcoal,
+                  onChanged: detailControlsEnabled
+                      ? (value) {
+                          unawaited(controller.setFocusEndEnabled(value));
+                        }
+                      : null,
+                ),
+              ),
+              const _SettingsDivider(),
+              _SettingsRow(
+                icon: PhosphorIconsRegular.coffee,
+                title: l10n.breakEndNotification,
+                subtitle: l10n.breakEndNotificationDescription,
+                trailing: CupertinoSwitch(
+                  value: detailControlsEnabled && controller.breakEndEnabled,
+                  activeTrackColor: AppColors.charcoal,
+                  onChanged: detailControlsEnabled
+                      ? (value) {
+                          unawaited(controller.setBreakEndEnabled(value));
+                        }
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          if (controller.permissionDenied) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              l10n.notificationPermissionDenied,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMuted,
             ),
           ],
-        ),
-      ],
+        ],
+        );
+      },
     );
   }
 }

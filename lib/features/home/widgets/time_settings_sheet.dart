@@ -103,7 +103,15 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                     onDeepFocusChanged: _handleDeepFocusChanged,
                     onFocusMinutesChanged: (value) {
                       setState(() {
-                        _settings = _settings.copyWith(focusMinutes: value);
+                        _settings = _settings.copyWith(
+                          focusMinutes: value,
+                          clearFocusSeconds: true,
+                        );
+                      });
+                    },
+                    onThirtySecondFocusSelected: () {
+                      setState(() {
+                        _settings = _settings.copyWith(focusSeconds: 30);
                       });
                     },
                     onLabelChanged: (value) {
@@ -199,6 +207,7 @@ class _OverviewPage extends StatelessWidget {
     required this.onModeChanged,
     required this.onDeepFocusChanged,
     required this.onFocusMinutesChanged,
+    required this.onThirtySecondFocusSelected,
     required this.onLabelChanged,
     required this.onAccentColorChanged,
     required this.onBadgeIconChanged,
@@ -216,6 +225,7 @@ class _OverviewPage extends StatelessWidget {
   final ValueChanged<FocusMode> onModeChanged;
   final Future<void> Function(bool enabled) onDeepFocusChanged;
   final ValueChanged<int> onFocusMinutesChanged;
+  final VoidCallback onThirtySecondFocusSelected;
   final ValueChanged<String> onLabelChanged;
   final ValueChanged<FocusAccentColor> onAccentColorChanged;
   final ValueChanged<FocusBadgeIcon> onBadgeIconChanged;
@@ -254,7 +264,9 @@ class _OverviewPage extends StatelessWidget {
                   PomodoroSettingsCard(
                     compact: compact,
                     focusMinutes: settings.focusMinutes,
+                    focusSeconds: settings.focusSeconds,
                     onChanged: onFocusMinutesChanged,
+                    onThirtySecondFocusSelected: onThirtySecondFocusSelected,
                   ),
                   SizedBox(height: contentGap),
                   BreakSettingsCard(

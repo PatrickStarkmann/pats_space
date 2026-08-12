@@ -185,6 +185,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsDescription => 'Session reminders and break alerts';
 
   @override
+  String get timerNotifications => 'Timer notifications';
+
+  @override
+  String get timerNotificationsDescription =>
+      'Notify me when a running focus or break ends';
+
+  @override
+  String get focusEndNotification => 'Focus completed';
+
+  @override
+  String get focusEndNotificationDescription =>
+      'When it is time to take a break';
+
+  @override
+  String get breakEndNotification => 'Break completed';
+
+  @override
+  String get breakEndNotificationDescription =>
+      'When it is time to focus again';
+
+  @override
+  String get notificationPermissionDenied =>
+      'Notifications are disabled in the system settings.';
+
+  @override
+  String get focusFinishedNotificationTitle => 'Focus complete';
+
+  @override
+  String get focusFinishedNotificationBody => 'Time for a well-earned break.';
+
+  @override
+  String get breakFinishedNotificationTitle => 'Break complete';
+
+  @override
+  String get breakFinishedNotificationBody =>
+      'Ready for the next focus session?';
+
+  @override
+  String get roundFinishedNotificationTitle => 'Round complete';
+
+  @override
+  String get roundFinishedNotificationBody =>
+      'Great work — your focus round is finished.';
+
+  @override
   String get focusReminder => 'Focus reminder';
 
   @override

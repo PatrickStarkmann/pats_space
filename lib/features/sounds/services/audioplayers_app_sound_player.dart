@@ -19,6 +19,9 @@ class AudioplayersAppSoundPlayer implements AppSoundPlayer {
   }
 
   @override
+  Future<void> stopAlert() => _alertPlayer.stop();
+
+  @override
   Future<void> startAmbience(String assetPath, {required double volume}) async {
     await _ambiencePlayer.stop();
     await _ambiencePlayer.setReleaseMode(ReleaseMode.loop);

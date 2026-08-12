@@ -440,6 +440,84 @@ abstract class AppLocalizations {
   /// **'Session reminders and break alerts'**
   String get notificationsDescription;
 
+  /// No description provided for @timerNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer notifications'**
+  String get timerNotifications;
+
+  /// No description provided for @timerNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me when a running focus or break ends'**
+  String get timerNotificationsDescription;
+
+  /// No description provided for @focusEndNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus completed'**
+  String get focusEndNotification;
+
+  /// No description provided for @focusEndNotificationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When it is time to take a break'**
+  String get focusEndNotificationDescription;
+
+  /// No description provided for @breakEndNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Break completed'**
+  String get breakEndNotification;
+
+  /// No description provided for @breakEndNotificationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When it is time to focus again'**
+  String get breakEndNotificationDescription;
+
+  /// No description provided for @notificationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are disabled in the system settings.'**
+  String get notificationPermissionDenied;
+
+  /// No description provided for @focusFinishedNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus complete'**
+  String get focusFinishedNotificationTitle;
+
+  /// No description provided for @focusFinishedNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for a well-earned break.'**
+  String get focusFinishedNotificationBody;
+
+  /// No description provided for @breakFinishedNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Break complete'**
+  String get breakFinishedNotificationTitle;
+
+  /// No description provided for @breakFinishedNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for the next focus session?'**
+  String get breakFinishedNotificationBody;
+
+  /// No description provided for @roundFinishedNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Round complete'**
+  String get roundFinishedNotificationTitle;
+
+  /// No description provided for @roundFinishedNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Great work — your focus round is finished.'**
+  String get roundFinishedNotificationBody;
+
   /// No description provided for @focusReminder.
   ///
   /// In en, this message translates to:

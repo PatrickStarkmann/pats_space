@@ -23,14 +23,10 @@ class FocusTimerController extends ChangeNotifier {
     this.onBreakPeriodCompleted,
     this.onFocusRoundFinished,
   }) : _settings = initialSettings,
-       _focusDuration =
-           focusDurationOverride ??
-           Duration(minutes: initialSettings.focusMinutes),
+       _focusDuration = focusDurationOverride ?? initialSettings.focusDuration,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
-           : (focusDurationOverride ??
-                     Duration(minutes: initialSettings.focusMinutes))
-                 .inSeconds;
+           : (focusDurationOverride ?? initialSettings.focusDuration).inSeconds;
 
   static const defaultSettings = FocusTimerSettings(
     mode: FocusMode.pomodoro,
@@ -112,7 +108,7 @@ class FocusTimerController extends ChangeNotifier {
 
   void updateSettings(FocusTimerSettings settings) {
     _settings = settings;
-    _focusDuration = Duration(minutes: settings.focusMinutes);
+    _focusDuration = settings.focusDuration;
     _resetToIdleWithoutNotify();
     notifyListeners();
   }
@@ -237,11 +233,9 @@ class FocusTimerController extends ChangeNotifier {
         (_completedSessions + 1) % _settings.longBreakInterval == 0;
     _phase = FocusSessionPhase.breakTime;
     _paused = false;
-    _remainingSeconds =
-        (isLongBreak
-            ? _settings.longBreakMinutes
-            : _settings.shortBreakMinutes) *
-        60;
+    _remainingSeconds = _settings
+        .breakDuration(isLongBreak: isLongBreak)
+        .inSeconds;
     _startTicker();
     notifyListeners();
   }

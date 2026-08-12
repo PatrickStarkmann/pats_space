@@ -44,19 +44,26 @@ class BreakSettingsCard extends StatelessWidget {
           const Divider(color: AppColors.graySoft),
           _SettingsRow(
             label: l10n.shortBreak,
-            value: '${settings.shortBreakMinutes}m',
+            value: _breakLabel(settings, isLongBreak: false),
             onTap: onShortBreakPressed,
           ),
           const Divider(color: AppColors.graySoft),
           _SettingsRow(
             label: l10n.longBreak,
-            value: '${settings.longBreakMinutes}m',
+            value: _breakLabel(settings, isLongBreak: true),
             onTap: onLongBreakPressed,
           ),
         ],
       ),
     );
   }
+}
+
+String _breakLabel(FocusTimerSettings settings, {required bool isLongBreak}) {
+  final duration = settings.breakDuration(isLongBreak: isLongBreak);
+  return duration.inSeconds < 60
+      ? '${duration.inSeconds}s'
+      : '${duration.inMinutes}m';
 }
 
 class _SettingsRow extends StatelessWidget {

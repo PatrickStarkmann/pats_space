@@ -189,6 +189,52 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notificationsDescription => 'Erinnerungen für Sessions und Pausen';
 
   @override
+  String get timerNotifications => 'Timer-Mitteilungen';
+
+  @override
+  String get timerNotificationsDescription =>
+      'Benachrichtige mich, wenn ein laufender Fokus oder eine Pause endet';
+
+  @override
+  String get focusEndNotification => 'Fokus beendet';
+
+  @override
+  String get focusEndNotificationDescription =>
+      'Wenn es Zeit für eine Pause ist';
+
+  @override
+  String get breakEndNotification => 'Pause beendet';
+
+  @override
+  String get breakEndNotificationDescription =>
+      'Wenn es Zeit ist, wieder zu fokussieren';
+
+  @override
+  String get notificationPermissionDenied =>
+      'Mitteilungen sind in den Systemeinstellungen deaktiviert.';
+
+  @override
+  String get focusFinishedNotificationTitle => 'Fokus geschafft';
+
+  @override
+  String get focusFinishedNotificationBody =>
+      'Zeit für eine wohlverdiente Pause.';
+
+  @override
+  String get breakFinishedNotificationTitle => 'Pause beendet';
+
+  @override
+  String get breakFinishedNotificationBody =>
+      'Bereit für die nächste Fokus-Session?';
+
+  @override
+  String get roundFinishedNotificationTitle => 'Runde geschafft';
+
+  @override
+  String get roundFinishedNotificationBody =>
+      'Starke Arbeit – deine Fokusrunde ist beendet.';
+
+  @override
   String get focusReminder => 'Fokus-Erinnerung';
 
   @override

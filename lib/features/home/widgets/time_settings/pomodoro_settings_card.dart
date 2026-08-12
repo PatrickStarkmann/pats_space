@@ -12,12 +12,16 @@ class PomodoroSettingsCard extends StatefulWidget {
     super.key,
     required this.compact,
     required this.focusMinutes,
+    required this.focusSeconds,
     required this.onChanged,
+    required this.onThirtySecondFocusSelected,
   });
 
   final bool compact;
   final int focusMinutes;
+  final int? focusSeconds;
   final ValueChanged<int> onChanged;
+  final VoidCallback onThirtySecondFocusSelected;
 
   @override
   State<PomodoroSettingsCard> createState() => _PomodoroSettingsCardState();
@@ -52,7 +56,9 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
           const SizedBox(height: AppSpacing.lg),
           Center(
             child: Text(
-              '${widget.focusMinutes}m',
+              widget.focusSeconds == null
+                  ? '${widget.focusMinutes}m'
+                  : '${widget.focusSeconds}s',
               style: AppTextStyles.timer.copyWith(
                 fontSize: widget.compact ? 56 : 68,
               ),
@@ -69,7 +75,9 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
               inactiveTickMarkColor: AppColors.charcoal,
             ),
             child: Slider(
-              value: widget.focusMinutes.toDouble(),
+              value: widget.focusSeconds == null
+                  ? widget.focusMinutes.toDouble()
+                  : 5,
               min: 5,
               max: 60,
               divisions: 11,
@@ -81,6 +89,13 @@ class _PomodoroSettingsCardState extends State<PomodoroSettingsCard> {
                 }
                 widget.onChanged(roundedValue);
               },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Center(
+            child: TextButton(
+              onPressed: widget.onThirtySecondFocusSelected,
+              child: const Text('30s Test'),
             ),
           ),
         ],

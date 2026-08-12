@@ -149,11 +149,17 @@ class _FakeSoundPlayer implements AppSoundPlayer {
   int pauseCount = 0;
   int resumeCount = 0;
   int stopCount = 0;
+  int stopAlertCount = 0;
   double? volume;
 
   @override
   Future<void> playAlert(String assetPath) async {
     alerts.add(assetPath);
+  }
+
+  @override
+  Future<void> stopAlert() async {
+    stopAlertCount += 1;
   }
 
   @override

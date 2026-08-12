@@ -23,6 +23,8 @@ import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
+import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
+import 'package:pats_space/features/notifications/models/timer_notification_kind.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
@@ -54,6 +56,7 @@ class HomeScreen extends StatefulWidget {
     required this.onOpenSpace,
     required this.focusBlockingController,
     required this.soundController,
+    required this.notificationController,
     this.tutorialFocusDuration,
     this.tutorialFocusWaterReward = 0,
     this.onTutorialFocusCompleted,
@@ -69,6 +72,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onOpenSpace;
   final FocusBlockingController focusBlockingController;
   final SoundController soundController;
+  final NotificationController notificationController;
   final Duration? tutorialFocusDuration;
   final int tutorialFocusWaterReward;
   final VoidCallback? onTutorialFocusCompleted;
@@ -77,7 +81,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final FocusTimerController _timerController;
   late final FocusCharacterAnimator _characterAnimator;
   late final SocialFocusController _socialFocusController;
@@ -88,10 +92,12 @@ class _HomeScreenState extends State<HomeScreen> {
   _FocusViewMode _focusViewMode = _FocusViewMode.solo;
   SocialFocusMemberStatus? _lastSyncedSocialFocusStatus;
   FocusSessionPhase _lastTimerPhase = FocusSessionPhase.idle;
+  bool _appInForeground = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _socialFocusController = SocialFocusController(
       repository: FirebaseSocialFocusRepository(
         auth: FirebaseAuth.instance,
@@ -139,12 +145,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(widget.notificationController.cancelTimerNotification());
     unawaited(widget.soundController.syncFocusPlayback(shouldPlay: false));
     _timerController.removeListener(_syncAnimation);
     _timerController.dispose();
     _characterAnimator.dispose();
     _socialFocusController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final foreground = state == AppLifecycleState.resumed;
+    _appInForeground = foreground;
+    if (!foreground) {
+      unawaited(widget.soundController.stopAlert());
+    }
+    unawaited(
+      widget.notificationController.setAppForeground(foreground).then((_) {
+        if (!foreground && mounted) {
+          _syncTimerNotification();
+        }
+      }),
+    );
   }
 
   @override
@@ -805,6 +829,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 currentPhase == FocusSessionPhase.stopwatch),
       ),
     );
+    _syncTimerNotification();
 
     if (_timerController.running) {
       _characterAnimator.start();
@@ -815,6 +840,45 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _syncSocialFocusStatus();
+  }
+
+  void _syncTimerNotification() {
+    final phase = _timerController.phase;
+    final kind = !_timerController.running
+        ? null
+        : switch (phase) {
+            FocusSessionPhase.focus => TimerNotificationKind.focusEnd,
+            FocusSessionPhase.breakTime =>
+              _timerController.completedSessions + 1 >=
+                      _timerController.settings.sessionsPerRound
+                  ? TimerNotificationKind.roundEnd
+                  : TimerNotificationKind.breakEnd,
+            FocusSessionPhase.idle || FocusSessionPhase.stopwatch => null,
+          };
+    final l10n = AppLocalizations.of(context);
+    final (title, body) = switch (kind) {
+      TimerNotificationKind.focusEnd => (
+        l10n.focusFinishedNotificationTitle,
+        l10n.focusFinishedNotificationBody,
+      ),
+      TimerNotificationKind.breakEnd => (
+        l10n.breakFinishedNotificationTitle,
+        l10n.breakFinishedNotificationBody,
+      ),
+      TimerNotificationKind.roundEnd => (
+        l10n.roundFinishedNotificationTitle,
+        l10n.roundFinishedNotificationBody,
+      ),
+      null => ('', ''),
+    };
+    unawaited(
+      widget.notificationController.syncTimerNotification(
+        kind: kind,
+        remaining: Duration(seconds: _timerController.remainingSeconds),
+        title: title,
+        body: body,
+      ),
+    );
   }
 
   Future<void> _handlePlayPause() async {
@@ -852,13 +916,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return null;
     }
 
-    var totalMinutes = settings.focusMinutes * settings.sessionsPerRound;
+    var totalSeconds =
+        settings.focusDuration.inSeconds * settings.sessionsPerRound;
     for (var session = 1; session <= settings.sessionsPerRound; session += 1) {
-      totalMinutes += session % settings.longBreakInterval == 0
-          ? settings.longBreakMinutes
-          : settings.shortBreakMinutes;
+      totalSeconds += settings
+          .breakDuration(isLongBreak: session % settings.longBreakInterval == 0)
+          .inSeconds;
     }
-    return DateTime.now().add(Duration(minutes: totalMinutes));
+    return DateTime.now().add(Duration(seconds: totalSeconds));
   }
 
   Future<bool> _confirmStartWithoutDeepFocus() async {
@@ -989,10 +1054,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _playFocusOrBreakEndSound() {
+    if (!_appInForeground) {
+      return;
+    }
     unawaited(widget.soundController.playFocusOrBreakEnd());
   }
 
   void _playRoundEndSound() {
+    if (!_appInForeground) {
+      return;
+    }
     unawaited(widget.soundController.playRoundEnd());
   }
 

@@ -130,6 +130,8 @@ class SoundController extends ChangeNotifier {
     return _playAlert(AppAssets.alertFinish);
   }
 
+  Future<void> stopAlert() => _guardPlayerAction(_player.stopAlert);
+
   @override
   void dispose() {
     _playbackRevision += 1;

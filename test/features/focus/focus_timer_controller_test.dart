@@ -6,6 +6,25 @@ import 'package:pats_space/features/focus/models/focus_session_record.dart';
 
 void main() {
   group('FocusTimerController', () {
+    testWidgets('uses the optional 30-second focus duration', (tester) async {
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          focusSeconds: 30,
+        ),
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      expect(controller.remainingSeconds, 30);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(controller.phase, FocusSessionPhase.breakTime);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(controller.phase, FocusSessionPhase.focus);
+      controller.cancelFocusRound();
+    });
+
     testWidgets(
       'auto-starts next focus after a break until round is complete',
       (tester) async {

@@ -31,6 +31,7 @@ class SharedPreferencesFocusSettingsRepository
     return FocusTimerSettings(
       mode: _enumValue(FocusMode.values, json['mode']) ?? FocusMode.pomodoro,
       focusMinutes: _intValue(json['focusMinutes']) ?? 5,
+      focusSeconds: _intValue(json['focusSeconds']),
       shortBreakMinutes: _intValue(json['shortBreakMinutes']) ?? 5,
       longBreakMinutes: _intValue(json['longBreakMinutes']) ?? 20,
       longBreakInterval: _intValue(json['longBreakInterval']) ?? 4,
@@ -54,6 +55,7 @@ class SharedPreferencesFocusSettingsRepository
       jsonEncode({
         'mode': settings.mode.name,
         'focusMinutes': settings.focusMinutes,
+        'focusSeconds': settings.focusSeconds,
         'shortBreakMinutes': settings.shortBreakMinutes,
         'longBreakMinutes': settings.longBreakMinutes,
         'longBreakInterval': settings.longBreakInterval,

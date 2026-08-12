@@ -7,6 +7,7 @@ class FocusTimerSettings {
   const FocusTimerSettings({
     required this.mode,
     required this.focusMinutes,
+    this.focusSeconds,
     required this.shortBreakMinutes,
     required this.longBreakMinutes,
     required this.longBreakInterval,
@@ -20,6 +21,25 @@ class FocusTimerSettings {
 
   final FocusMode mode;
   final int focusMinutes;
+
+  /// Optional short focus duration used for quick timer checks.
+  ///
+  /// Normal sessions continue to use [focusMinutes].
+  final int? focusSeconds;
+
+  Duration get focusDuration => focusSeconds == null
+      ? Duration(minutes: focusMinutes)
+      : Duration(seconds: focusSeconds!);
+
+  Duration breakDuration({required bool isLongBreak}) {
+    if (focusSeconds != null) {
+      return Duration(seconds: focusSeconds!);
+    }
+    return Duration(
+      minutes: isLongBreak ? longBreakMinutes : shortBreakMinutes,
+    );
+  }
+
   final int shortBreakMinutes;
   final int longBreakMinutes;
   final int longBreakInterval;
@@ -33,6 +53,8 @@ class FocusTimerSettings {
   FocusTimerSettings copyWith({
     FocusMode? mode,
     int? focusMinutes,
+    int? focusSeconds,
+    bool clearFocusSeconds = false,
     int? shortBreakMinutes,
     int? longBreakMinutes,
     int? longBreakInterval,
@@ -46,6 +68,9 @@ class FocusTimerSettings {
     return FocusTimerSettings(
       mode: mode ?? this.mode,
       focusMinutes: focusMinutes ?? this.focusMinutes,
+      focusSeconds: clearFocusSeconds
+          ? null
+          : focusSeconds ?? this.focusSeconds,
       shortBreakMinutes: shortBreakMinutes ?? this.shortBreakMinutes,
       longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
       longBreakInterval: longBreakInterval ?? this.longBreakInterval,

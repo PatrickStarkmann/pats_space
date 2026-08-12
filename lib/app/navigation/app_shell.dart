@@ -30,6 +30,9 @@ import 'package:pats_space/features/focus/repositories/shared_preferences_focus_
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/home/home_screen.dart';
+import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
+import 'package:pats_space/features/notifications/repositories/shared_preferences_notification_settings_repository.dart';
+import 'package:pats_space/features/notifications/services/flutter_local_timer_notification_service.dart';
 import 'package:pats_space/features/onboarding/onboarding_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
@@ -85,6 +88,7 @@ class _AppShellState extends State<AppShell> {
   FocusHistoryController? _historyController;
   GardenController? _gardenController;
   SoundController? _soundController;
+  NotificationController? _notificationController;
   _ConnectivityNotice? _connectivityNotice;
   bool _gardenTutorialActive = false;
   bool _onboardingFocusChallengeActive = false;
@@ -137,9 +141,12 @@ class _AppShellState extends State<AppShell> {
       _historyController?.dispose();
       _gardenController?.dispose();
       _soundController?.dispose();
+      unawaited(_notificationController?.cancelTimerNotification());
+      _notificationController?.dispose();
       _historyController = null;
       _gardenController = null;
       _soundController = null;
+      _notificationController = null;
       setState(() {
         _persistenceFuture = _loadPersistence();
       });
@@ -180,6 +187,7 @@ class _AppShellState extends State<AppShell> {
     _historyController?.dispose();
     _gardenController?.dispose();
     _soundController?.dispose();
+    _notificationController?.dispose();
     _focusBlockingController.dispose();
     super.dispose();
   }
@@ -354,6 +362,16 @@ class _AppShellState extends State<AppShell> {
       repository: soundSettingsRepository,
       player: AudioplayersAppSoundPlayer(),
     );
+    final notificationSettingsRepository =
+        SharedPreferencesNotificationSettingsRepository(preferences);
+    final notificationSettings = await notificationSettingsRepository
+        .loadSettings();
+    final notificationController = NotificationController(
+      initialSettings: notificationSettings,
+      repository: notificationSettingsRepository,
+      service: FlutterLocalTimerNotificationService(),
+    );
+    await notificationController.initialize();
     final historyRepository = FirebaseFocusHistoryRepository(
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
@@ -427,6 +445,7 @@ class _AppShellState extends State<AppShell> {
     _historyController = historyController;
     _gardenController = gardenController;
     _soundController = soundController;
+    _notificationController = notificationController;
 
     final bundle = _AppPersistenceBundle(
       preferences: preferences,
@@ -437,6 +456,7 @@ class _AppShellState extends State<AppShell> {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
+      notificationController: notificationController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -899,6 +919,9 @@ class _AppShellState extends State<AppShell> {
 
     _soundController?.dispose();
     _soundController = null;
+    unawaited(_notificationController?.cancelTimerNotification());
+    _notificationController?.dispose();
+    _notificationController = null;
     setState(() {
       _selectedTab = AppTab.home;
       _gardenTutorialActive = false;
@@ -929,6 +952,9 @@ class _AppShellState extends State<AppShell> {
 
     _soundController?.dispose();
     _soundController = null;
+    unawaited(_notificationController?.cancelTimerNotification());
+    _notificationController?.dispose();
+    _notificationController = null;
     setState(() {
       _selectedTab = AppTab.home;
       _gardenTutorialActive = false;
@@ -1354,6 +1380,7 @@ class _AppShellContent extends StatelessWidget {
                 onOpenSpace: () => onTabSelected(AppTab.space),
                 focusBlockingController: focusBlockingController,
                 soundController: bundle.soundController,
+                notificationController: bundle.notificationController,
                 tutorialFocusDuration: onboardingFocusChallengeActive
                     ? _AppShellState._onboardingFocusChallengeDuration
                     : null,
@@ -1386,6 +1413,7 @@ class _AppShellContent extends StatelessWidget {
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
                 focusBlockingController: focusBlockingController,
                 soundController: bundle.soundController,
+                notificationController: bundle.notificationController,
               ),
             ],
           ),
@@ -1503,6 +1531,7 @@ class _AppPersistenceBundle {
     required this.gardenController,
     required this.pendingRewardRepository,
     required this.soundController,
+    required this.notificationController,
     required this.remoteAvailable,
     required this.userId,
   });
@@ -1515,6 +1544,7 @@ class _AppPersistenceBundle {
   final GardenController gardenController;
   final PendingFocusRewardRepository pendingRewardRepository;
   final SoundController soundController;
+  final NotificationController notificationController;
   final bool remoteAvailable;
   final String userId;
 
@@ -1528,6 +1558,7 @@ class _AppPersistenceBundle {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
+      notificationController: notificationController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -1543,6 +1574,7 @@ class _AppPersistenceBundle {
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
+      notificationController: notificationController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
