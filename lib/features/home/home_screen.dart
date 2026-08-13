@@ -214,7 +214,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 constraints.maxHeight - bottomNavigationInset;
             final compact = availableHeight < 720;
             final tight = availableHeight < 650;
-            final groupMode = _focusViewMode == _FocusViewMode.group;
+            final groupMode =
+                _focusViewMode == _FocusViewMode.group &&
+                _socialFocusController.hasActiveRoom;
             final groupParticipantCount =
                 _socialFocusController.activeRoom?.members.length ?? 0;
             final singleGroup = groupMode && groupParticipantCount == 1;
@@ -489,6 +491,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() => _focusViewMode = _FocusViewMode.group);
       return;
     }
+
+    setState(() => _focusViewMode = _FocusViewMode.group);
 
     if (!await widget.onEnsureOnlineAction()) {
       if (!mounted) {
