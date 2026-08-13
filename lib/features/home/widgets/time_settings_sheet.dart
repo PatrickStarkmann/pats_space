@@ -101,6 +101,11 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                       });
                     },
                     onDeepFocusChanged: _handleDeepFocusChanged,
+                    onAutoContinueChanged: (value) {
+                      setState(() {
+                        _settings = _settings.copyWith(autoContinue: value);
+                      });
+                    },
                     onFocusMinutesChanged: (value) {
                       setState(() {
                         _settings = _settings.copyWith(
@@ -206,6 +211,7 @@ class _OverviewPage extends StatelessWidget {
     required this.onCancel,
     required this.onModeChanged,
     required this.onDeepFocusChanged,
+    required this.onAutoContinueChanged,
     required this.onFocusMinutesChanged,
     required this.onThirtySecondFocusSelected,
     required this.onLabelChanged,
@@ -224,6 +230,7 @@ class _OverviewPage extends StatelessWidget {
   final VoidCallback onCancel;
   final ValueChanged<FocusMode> onModeChanged;
   final Future<void> Function(bool enabled) onDeepFocusChanged;
+  final ValueChanged<bool> onAutoContinueChanged;
   final ValueChanged<int> onFocusMinutesChanged;
   final VoidCallback onThirtySecondFocusSelected;
   final ValueChanged<String> onLabelChanged;
@@ -283,6 +290,7 @@ class _OverviewPage extends StatelessWidget {
                     onLongBreakPressed: () {
                       onDetailSelected(_TimeSettingsDetail.longBreak);
                     },
+                    onAutoContinueChanged: onAutoContinueChanged,
                   ),
                 ] else ...[
                   const StopwatchSettingsCard(),

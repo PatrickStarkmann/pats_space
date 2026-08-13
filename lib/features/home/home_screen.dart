@@ -16,15 +16,18 @@ import 'package:pats_space/features/focus/controllers/focus_timer_controller.dar
 import 'package:pats_space/features/focus/focus_reward_calculator.dart';
 import 'package:pats_space/features/focus/focus_animation_catalog.dart';
 import 'package:pats_space/features/focus/models/focus_animation_spec.dart';
+import 'package:pats_space/features/focus/models/active_timer_state.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
+import 'package:pats_space/features/focus/repositories/active_timer_state_repository.dart';
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/notifications/models/timer_notification_kind.dart';
+import 'package:pats_space/features/notifications/models/timer_notification_request.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
@@ -50,6 +53,8 @@ class HomeScreen extends StatefulWidget {
     required this.gardenController,
     required this.initialSettings,
     required this.settingsRepository,
+    required this.activeTimerStateRepository,
+    this.initialActiveTimerState,
     required this.pendingRewardRepository,
     required this.gardenOnline,
     required this.onEnsureOnlineAction,
@@ -66,6 +71,8 @@ class HomeScreen extends StatefulWidget {
   final GardenController gardenController;
   final FocusTimerSettings initialSettings;
   final FocusSettingsRepository settingsRepository;
+  final ActiveTimerStateRepository activeTimerStateRepository;
+  final ActiveTimerState? initialActiveTimerState;
   final PendingFocusRewardRepository pendingRewardRepository;
   final bool gardenOnline;
   final Future<bool> Function() onEnsureOnlineAction;
@@ -93,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   SocialFocusMemberStatus? _lastSyncedSocialFocusStatus;
   FocusSessionPhase _lastTimerPhase = FocusSessionPhase.idle;
   bool _appInForeground = true;
+  String? _lastPersistedTimerSignature;
 
   @override
   void initState() {
@@ -113,7 +121,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onFocusPeriodCompleted: _playFocusOrBreakEndSound,
       onBreakPeriodCompleted: _playFocusOrBreakEndSound,
       onFocusRoundFinished: _playRoundEndSound,
-    )..addListener(_syncAnimation);
+    );
+    final initialTimerState = widget.initialActiveTimerState;
+    if (initialTimerState != null) {
+      _timerController.restore(initialTimerState);
+    }
+    _timerController.addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
     if (widget.gardenOnline) {
       _restoreSocialFocusRoom();
@@ -158,7 +171,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final foreground = state == AppLifecycleState.resumed;
-    _appInForeground = foreground;
+    if (foreground) {
+      unawaited(widget.notificationController.setAppForeground(true));
+      _timerController.resumeFromBackground();
+      _persistActiveTimerState(force: true);
+      _appInForeground = true;
+      return;
+    }
+
+    _appInForeground = false;
+    _persistActiveTimerState(force: true);
+    _timerController.suspendForBackground();
     if (!foreground) {
       unawaited(widget.soundController.stopAlert());
     }
@@ -830,6 +853,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
     _syncTimerNotification();
+    _persistActiveTimerState();
 
     if (_timerController.running) {
       _characterAnimator.start();
@@ -842,43 +866,97 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _syncSocialFocusStatus();
   }
 
+  void _persistActiveTimerState({bool force = false}) {
+    final state = _timerController.persistentState;
+    if (state == null) {
+      _lastPersistedTimerSignature = null;
+      unawaited(widget.activeTimerStateRepository.clear());
+      return;
+    }
+    final signature = [
+      state.phase.name,
+      state.paused,
+      state.completedSessions,
+    ].join(':');
+    if (!force && signature == _lastPersistedTimerSignature) return;
+    _lastPersistedTimerSignature = signature;
+    unawaited(widget.activeTimerStateRepository.save(state));
+  }
+
   void _syncTimerNotification() {
-    final phase = _timerController.phase;
-    final kind = !_timerController.running
-        ? null
-        : switch (phase) {
-            FocusSessionPhase.focus => TimerNotificationKind.focusEnd,
-            FocusSessionPhase.breakTime =>
-              _timerController.completedSessions + 1 >=
-                      _timerController.settings.sessionsPerRound
-                  ? TimerNotificationKind.roundEnd
-                  : TimerNotificationKind.breakEnd,
-            FocusSessionPhase.idle || FocusSessionPhase.stopwatch => null,
-          };
     final l10n = AppLocalizations.of(context);
-    final (title, body) = switch (kind) {
-      TimerNotificationKind.focusEnd => (
-        l10n.focusFinishedNotificationTitle,
-        l10n.focusFinishedNotificationBody,
-      ),
-      TimerNotificationKind.breakEnd => (
-        l10n.breakFinishedNotificationTitle,
-        l10n.breakFinishedNotificationBody,
-      ),
-      TimerNotificationKind.roundEnd => (
-        l10n.roundFinishedNotificationTitle,
-        l10n.roundFinishedNotificationBody,
-      ),
-      null => ('', ''),
-    };
     unawaited(
-      widget.notificationController.syncTimerNotification(
-        kind: kind,
-        remaining: Duration(seconds: _timerController.remainingSeconds),
-        title: title,
-        body: body,
+      widget.notificationController.syncTimerNotifications(
+        _backgroundNotificationTimeline(l10n),
       ),
     );
+  }
+
+  List<TimerNotificationRequest> _backgroundNotificationTimeline(
+    AppLocalizations l10n,
+  ) {
+    if (!_timerController.running ||
+        _timerController.phase == FocusSessionPhase.stopwatch) {
+      return const [];
+    }
+
+    final settings = _timerController.settings;
+    var phase = _timerController.phase;
+    var session = _timerController.completedSessions + 1;
+    var scheduledAt = DateTime.now().add(
+      Duration(seconds: _timerController.remainingSeconds),
+    );
+    final requests = <TimerNotificationRequest>[];
+
+    while (true) {
+      final kind = switch (phase) {
+        FocusSessionPhase.focus => TimerNotificationKind.focusEnd,
+        FocusSessionPhase.breakTime =>
+          session >= settings.sessionsPerRound
+              ? TimerNotificationKind.roundEnd
+              : TimerNotificationKind.breakEnd,
+        FocusSessionPhase.idle || FocusSessionPhase.stopwatch => null,
+      };
+      if (kind == null) break;
+      final (title, body) = switch (kind) {
+        TimerNotificationKind.focusEnd => (
+          l10n.focusFinishedNotificationTitle,
+          l10n.focusFinishedNotificationBody,
+        ),
+        TimerNotificationKind.breakEnd => (
+          l10n.breakFinishedNotificationTitle,
+          l10n.breakFinishedNotificationBody,
+        ),
+        TimerNotificationKind.roundEnd => (
+          l10n.roundFinishedNotificationTitle,
+          l10n.roundFinishedNotificationBody,
+        ),
+      };
+      requests.add(
+        TimerNotificationRequest(
+          kind: kind,
+          scheduledAt: scheduledAt,
+          title: title,
+          body: body,
+        ),
+      );
+      if (!settings.autoContinue || kind == TimerNotificationKind.roundEnd) {
+        break;
+      }
+      if (phase == FocusSessionPhase.focus) {
+        phase = FocusSessionPhase.breakTime;
+        scheduledAt = scheduledAt.add(
+          settings.breakDuration(
+            isLongBreak: session % settings.longBreakInterval == 0,
+          ),
+        );
+      } else {
+        session += 1;
+        phase = FocusSessionPhase.focus;
+        scheduledAt = scheduledAt.add(settings.focusDuration);
+      }
+    }
+    return requests;
   }
 
   Future<void> _handlePlayPause() async {

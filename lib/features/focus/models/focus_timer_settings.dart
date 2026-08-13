@@ -17,6 +17,7 @@ class FocusTimerSettings {
     required this.badgeIcon,
     required this.animationPair,
     required this.deepFocusEnabled,
+    required this.autoContinue,
   });
 
   final FocusMode mode;
@@ -49,6 +50,7 @@ class FocusTimerSettings {
   final FocusBadgeIcon badgeIcon;
   final FocusAnimationPair animationPair;
   final bool deepFocusEnabled;
+  final bool autoContinue;
 
   FocusTimerSettings copyWith({
     FocusMode? mode,
@@ -64,6 +66,7 @@ class FocusTimerSettings {
     FocusBadgeIcon? badgeIcon,
     FocusAnimationPair? animationPair,
     bool? deepFocusEnabled,
+    bool? autoContinue,
   }) {
     return FocusTimerSettings(
       mode: mode ?? this.mode,
@@ -80,6 +83,7 @@ class FocusTimerSettings {
       badgeIcon: badgeIcon ?? this.badgeIcon,
       animationPair: animationPair ?? this.animationPair,
       deepFocusEnabled: deepFocusEnabled ?? this.deepFocusEnabled,
+      autoContinue: autoContinue ?? this.autoContinue,
     );
   }
 }

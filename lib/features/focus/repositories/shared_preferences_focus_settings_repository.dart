@@ -45,6 +45,7 @@ class SharedPreferencesFocusSettingsRepository
           _enumValue(FocusAnimationPair.values, json['animationPair']) ??
           FocusAnimationPair.standard,
       deepFocusEnabled: json['deepFocusEnabled'] as bool? ?? false,
+      autoContinue: json['autoContinue'] as bool? ?? true,
     );
   }
 
@@ -65,6 +66,7 @@ class SharedPreferencesFocusSettingsRepository
         'badgeIcon': settings.badgeIcon.name,
         'animationPair': settings.animationPair.name,
         'deepFocusEnabled': settings.deepFocusEnabled,
+        'autoContinue': settings.autoContinue,
       }),
     );
   }

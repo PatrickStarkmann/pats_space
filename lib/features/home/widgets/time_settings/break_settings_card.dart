@@ -15,6 +15,7 @@ class BreakSettingsCard extends StatelessWidget {
     required this.onLongBreakIntervalPressed,
     required this.onShortBreakPressed,
     required this.onLongBreakPressed,
+    required this.onAutoContinueChanged,
   });
 
   final FocusTimerSettings settings;
@@ -22,6 +23,7 @@ class BreakSettingsCard extends StatelessWidget {
   final VoidCallback onLongBreakIntervalPressed;
   final VoidCallback onShortBreakPressed;
   final VoidCallback onLongBreakPressed;
+  final ValueChanged<bool> onAutoContinueChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +54,49 @@ class BreakSettingsCard extends StatelessWidget {
             label: l10n.longBreak,
             value: _breakLabel(settings, isLongBreak: true),
             onTap: onLongBreakPressed,
+          ),
+          const Divider(color: AppColors.graySoft),
+          _AutoContinueRow(
+            value: settings.autoContinue,
+            onChanged: onAutoContinueChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AutoContinueRow extends StatelessWidget {
+  const _AutoContinueRow({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.autoContinue, style: AppTextStyles.headline),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.autoContinueDescription,
+                  style: AppTextStyles.bodyMuted,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          CupertinoSwitch(
+            value: value,
+            activeTrackColor: AppColors.charcoal,
+            onChanged: onChanged,
           ),
         ],
       ),

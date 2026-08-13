@@ -20,6 +20,7 @@ import 'package:pats_space/core/widgets/app_loading_screen.dart';
 import 'package:pats_space/core/widgets/patsspace_bottom_nav_bar.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
+import 'package:pats_space/features/focus/models/active_timer_state.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
 import 'package:pats_space/features/focus/repositories/firebase_focus_history_repository.dart';
@@ -28,6 +29,8 @@ import 'package:pats_space/features/focus/repositories/mirrored_focus_history_re
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_history_repository.dart';
 import 'package:pats_space/features/focus/repositories/shared_preferences_focus_settings_repository.dart';
+import 'package:pats_space/features/focus/repositories/active_timer_state_repository.dart';
+import 'package:pats_space/features/focus/repositories/shared_preferences_active_timer_state_repository.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/home/home_screen.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
@@ -341,6 +344,11 @@ class _AppShellState extends State<AppShell> {
     final settingsRepository = SharedPreferencesFocusSettingsRepository(
       preferences,
     );
+    final activeTimerStateRepository =
+        SharedPreferencesActiveTimerStateRepository(
+          preferences,
+          userId: userId,
+        );
     final localHistoryRepository = SharedPreferencesFocusHistoryRepository(
       preferences,
       userId: userId,
@@ -383,6 +391,7 @@ class _AppShellState extends State<AppShell> {
     final settings =
         await settingsRepository.loadSettings() ??
         FocusTimerController.defaultSettings;
+    final activeTimerState = await activeTimerStateRepository.load();
     _weekStartDay = WeekStartDay.fromStoredName(
       preferences.getString(_weekStartDayKey),
     );
@@ -452,6 +461,8 @@ class _AppShellState extends State<AppShell> {
       onboardingCompleted: onboardingCompleted,
       settings: settings,
       settingsRepository: settingsRepository,
+      activeTimerStateRepository: activeTimerStateRepository,
+      activeTimerState: activeTimerState,
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
@@ -1374,6 +1385,8 @@ class _AppShellContent extends StatelessWidget {
                 gardenController: bundle.gardenController,
                 initialSettings: bundle.settings,
                 settingsRepository: bundle.settingsRepository,
+                activeTimerStateRepository: bundle.activeTimerStateRepository,
+                initialActiveTimerState: bundle.activeTimerState,
                 pendingRewardRepository: bundle.pendingRewardRepository,
                 gardenOnline: bundle.remoteAvailable,
                 onEnsureOnlineAction: onEnsureGardenActionOnline,
@@ -1527,6 +1540,8 @@ class _AppPersistenceBundle {
     required this.onboardingCompleted,
     required this.settings,
     required this.settingsRepository,
+    required this.activeTimerStateRepository,
+    required this.activeTimerState,
     required this.historyController,
     required this.gardenController,
     required this.pendingRewardRepository,
@@ -1540,6 +1555,8 @@ class _AppPersistenceBundle {
   final bool onboardingCompleted;
   final FocusTimerSettings settings;
   final FocusSettingsRepository settingsRepository;
+  final ActiveTimerStateRepository activeTimerStateRepository;
+  final ActiveTimerState? activeTimerState;
   final FocusHistoryController historyController;
   final GardenController gardenController;
   final PendingFocusRewardRepository pendingRewardRepository;
@@ -1554,6 +1571,8 @@ class _AppPersistenceBundle {
       onboardingCompleted: true,
       settings: settings,
       settingsRepository: settingsRepository,
+      activeTimerStateRepository: activeTimerStateRepository,
+      activeTimerState: activeTimerState,
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,
@@ -1570,6 +1589,8 @@ class _AppPersistenceBundle {
       onboardingCompleted: onboardingCompleted,
       settings: settings,
       settingsRepository: settingsRepository,
+      activeTimerStateRepository: activeTimerStateRepository,
+      activeTimerState: activeTimerState,
       historyController: historyController,
       gardenController: gardenController,
       pendingRewardRepository: pendingRewardRepository,

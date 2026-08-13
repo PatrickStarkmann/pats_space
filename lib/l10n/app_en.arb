@@ -309,6 +309,8 @@
     }
   },
   "continueAction": "Continue",
+  "autoContinue": "Auto continue",
+  "autoContinueDescription": "Start the next focus or break automatically",
   "goToSpace": "Go to Space",
   "animations": "Animations",
   "select": "Select",

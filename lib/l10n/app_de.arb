@@ -309,6 +309,8 @@
     }
   },
   "continueAction": "Weiter",
+  "autoContinue": "Automatisch fortsetzen",
+  "autoContinueDescription": "Nächsten Fokus oder Pause automatisch starten",
   "goToSpace": "Zum Space",
   "animations": "Animationen",
   "select": "Auswählen",

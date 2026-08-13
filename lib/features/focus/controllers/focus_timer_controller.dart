@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/focus/models/focus_accent_color.dart';
+import 'package:pats_space/features/focus/models/active_timer_state.dart';
 import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
 import 'package:pats_space/features/focus/models/focus_badge_icon.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
@@ -22,7 +23,9 @@ class FocusTimerController extends ChangeNotifier {
     this.onFocusPeriodCompleted,
     this.onBreakPeriodCompleted,
     this.onFocusRoundFinished,
+    DateTime Function()? clock,
   }) : _settings = initialSettings,
+       _clock = clock ?? DateTime.now,
        _focusDuration = focusDurationOverride ?? initialSettings.focusDuration,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
@@ -40,6 +43,7 @@ class FocusTimerController extends ChangeNotifier {
     badgeIcon: FocusBadgeIcon.character,
     animationPair: FocusAnimationPair.standard,
     deepFocusEnabled: false,
+    autoContinue: true,
   );
 
   final Duration tickStep;
@@ -49,6 +53,7 @@ class FocusTimerController extends ChangeNotifier {
   final VoidCallback? onFocusPeriodCompleted;
   final VoidCallback? onBreakPeriodCompleted;
   final VoidCallback? onFocusRoundFinished;
+  final DateTime Function() _clock;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
@@ -58,6 +63,7 @@ class FocusTimerController extends ChangeNotifier {
   int _remainingSeconds;
   int _completedSessions = 0;
   DateTime? _focusStartedAt;
+  DateTime? _backgroundStartedAt;
 
   FocusTimerSettings get settings => _settings;
   FocusSessionPhase get phase => _phase;
@@ -68,6 +74,18 @@ class FocusTimerController extends ChangeNotifier {
   bool get active => _phase != FocusSessionPhase.idle;
   bool get running => active && !_paused;
   bool get isStopwatch => _settings.mode == FocusMode.stopwatch;
+
+  ActiveTimerState? get persistentState {
+    if (!active) return null;
+    return ActiveTimerState(
+      phase: _phase,
+      paused: _paused,
+      completedSessions: _completedSessions,
+      remainingSeconds: _remainingSeconds,
+      savedAt: _clock(),
+      focusStartedAt: _focusStartedAt,
+    );
+  }
 
   Duration get elapsedFocusDuration {
     return switch (_phase) {
@@ -176,6 +194,54 @@ class FocusTimerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void restore(ActiveTimerState state) {
+    _ticker?.cancel();
+    _phase = state.phase;
+    _paused = state.paused;
+    _completedSessions = state.completedSessions.clamp(
+      0,
+      _settings.sessionsPerRound,
+    );
+    _remainingSeconds = state.remainingSeconds;
+    _focusStartedAt = state.focusStartedAt;
+    _backgroundStartedAt = null;
+    if (!_paused) {
+      final elapsedSeconds = _clock().difference(state.savedAt).inSeconds;
+      if (elapsedSeconds > 0) {
+        _elapse(
+          elapsedSeconds,
+          emitSoundEvents: false,
+          recordCompletions: false,
+        );
+      }
+      if (running) _startTicker();
+    }
+    notifyListeners();
+  }
+
+  void suspendForBackground() {
+    if (!running || _backgroundStartedAt != null) {
+      return;
+    }
+    _ticker?.cancel();
+    _backgroundStartedAt = _clock();
+  }
+
+  void resumeFromBackground({bool emitSoundEvents = false}) {
+    final backgroundStartedAt = _backgroundStartedAt;
+    if (backgroundStartedAt == null) {
+      return;
+    }
+    _backgroundStartedAt = null;
+    final elapsedSeconds = _clock().difference(backgroundStartedAt).inSeconds;
+    if (elapsedSeconds > 0) {
+      _elapse(elapsedSeconds, emitSoundEvents: emitSoundEvents);
+    }
+    if (running) {
+      _startTicker();
+    }
+  }
+
   @override
   void dispose() {
     _ticker?.cancel();
@@ -195,7 +261,7 @@ class FocusTimerController extends ChangeNotifier {
     _ticker?.cancel();
     _phase = FocusSessionPhase.focus;
     _paused = false;
-    _focusStartedAt = DateTime.now();
+    _focusStartedAt = _clock();
     if (_completedSessions >= _settings.sessionsPerRound) {
       _completedSessions = 0;
     }
@@ -208,7 +274,7 @@ class FocusTimerController extends ChangeNotifier {
     _ticker?.cancel();
     _phase = FocusSessionPhase.stopwatch;
     _paused = false;
-    _focusStartedAt = DateTime.now();
+    _focusStartedAt = _clock();
     _remainingSeconds = 0;
     _startTicker();
     notifyListeners();
@@ -249,6 +315,9 @@ class FocusTimerController extends ChangeNotifier {
 
     if (_completedSessions < _settings.sessionsPerRound) {
       _startFocus();
+      if (!_settings.autoContinue) {
+        _pause();
+      }
       if (emitSoundEvent) {
         onBreakPeriodCompleted?.call();
       }
@@ -277,22 +346,48 @@ class FocusTimerController extends ChangeNotifier {
       return;
     }
 
-    if (_remainingSeconds <= 1) {
-      _remainingSeconds = 0;
-      if (_phase == FocusSessionPhase.focus) {
-        _completeFocus();
-      } else if (_phase == FocusSessionPhase.breakTime) {
-        _completeBreak();
-      }
+    _elapse(1);
+  }
+
+  void _elapse(
+    int elapsedSeconds, {
+    bool emitSoundEvents = true,
+    bool recordCompletions = true,
+  }) {
+    if (_phase == FocusSessionPhase.stopwatch) {
+      _remainingSeconds += elapsedSeconds;
+      notifyListeners();
       return;
     }
 
-    _remainingSeconds -= 1;
-    notifyListeners();
+    var remainingElapsedSeconds = elapsedSeconds;
+    while (remainingElapsedSeconds > 0 && running) {
+      if (remainingElapsedSeconds < _remainingSeconds) {
+        _remainingSeconds -= remainingElapsedSeconds;
+        notifyListeners();
+        return;
+      }
+
+      remainingElapsedSeconds -= _remainingSeconds;
+      _remainingSeconds = 0;
+      if (_phase == FocusSessionPhase.focus) {
+        _completeFocus(
+          emitSoundEvent: emitSoundEvents,
+          recordCompletion: recordCompletions,
+        );
+      } else if (_phase == FocusSessionPhase.breakTime) {
+        _completeBreak(emitSoundEvent: emitSoundEvents);
+      }
+    }
   }
 
-  void _completeFocus() {
-    _recordCompletedFocusSession();
+  void _completeFocus({
+    bool emitSoundEvent = true,
+    bool recordCompletion = true,
+  }) {
+    if (recordCompletion) {
+      _recordCompletedFocusSession();
+    }
     if (!startBreakAfterFocus) {
       _ticker?.cancel();
       _phase = FocusSessionPhase.idle;
@@ -300,16 +395,23 @@ class FocusTimerController extends ChangeNotifier {
       _focusStartedAt = null;
       _remainingSeconds = 0;
       notifyListeners();
-      onFocusPeriodCompleted?.call();
+      if (emitSoundEvent) {
+        onFocusPeriodCompleted?.call();
+      }
       return;
     }
 
     _startBreak();
-    onFocusPeriodCompleted?.call();
+    if (!_settings.autoContinue) {
+      _pause();
+    }
+    if (emitSoundEvent) {
+      onFocusPeriodCompleted?.call();
+    }
   }
 
   void _recordCompletedFocusSession() {
-    final completedAt = DateTime.now();
+    final completedAt = _clock();
     final startedAt = _focusStartedAt ?? completedAt.subtract(_focusDuration);
 
     onFocusSessionCompleted?.call(
@@ -330,7 +432,7 @@ class FocusTimerController extends ChangeNotifier {
   }
 
   void _recordCompletedStopwatchSession() {
-    final completedAt = DateTime.now();
+    final completedAt = _clock();
     final duration = Duration(seconds: _remainingSeconds);
     final startedAt = _focusStartedAt ?? completedAt.subtract(duration);
 
@@ -356,6 +458,7 @@ class FocusTimerController extends ChangeNotifier {
     _phase = FocusSessionPhase.idle;
     _paused = false;
     _focusStartedAt = null;
+    _backgroundStartedAt = null;
     _remainingSeconds = isStopwatch ? 0 : _focusDuration.inSeconds;
   }
 }

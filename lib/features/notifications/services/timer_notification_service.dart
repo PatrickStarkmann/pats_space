@@ -6,10 +6,11 @@ abstract interface class TimerNotificationService {
   Future<bool> requestPermissions();
 
   Future<void> schedule({
+    required int id,
     required DateTime scheduledAt,
     required String title,
     required String body,
   });
 
-  Future<void> cancel();
+  Future<void> cancel(Iterable<int> ids);
 }

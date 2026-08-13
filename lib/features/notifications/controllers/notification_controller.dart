@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/notifications/models/notification_settings.dart';
 import 'package:pats_space/features/notifications/models/timer_notification_kind.dart';
+import 'package:pats_space/features/notifications/models/timer_notification_request.dart';
 import 'package:pats_space/features/notifications/repositories/notification_settings_repository.dart';
 import 'package:pats_space/features/notifications/services/timer_notification_service.dart';
 
@@ -20,7 +21,10 @@ class NotificationController extends ChangeNotifier {
   bool _permissionGranted = false;
   bool _appForeground = true;
   bool _permissionDenied = false;
-  _ScheduledTimerNotification? _scheduledNotification;
+  List<TimerNotificationRequest> _scheduledNotifications = const [];
+
+  static const _notificationIdStart = 41001;
+  static const _notificationIdCount = 24;
 
   NotificationSettings get settings => _settings;
   bool get enabled => _settings.enabled && _permissionGranted;
@@ -97,56 +101,78 @@ class NotificationController extends ChangeNotifier {
     required String title,
     required String body,
   }) async {
-    final eventEnabled = switch (kind) {
+    if (kind == null) {
+      await syncTimerNotifications(const []);
+      return;
+    }
+    await syncTimerNotifications([
+      TimerNotificationRequest(
+        kind: kind,
+        scheduledAt: DateTime.now().add(remaining),
+        title: title,
+        body: body,
+      ),
+    ]);
+  }
+
+  Future<void> syncTimerNotifications(
+    List<TimerNotificationRequest> requests,
+  ) async {
+    final enabledRequests = requests.where((request) {
+      return switch (request.kind) {
       TimerNotificationKind.focusEnd => focusEndEnabled,
       TimerNotificationKind.breakEnd ||
       TimerNotificationKind.roundEnd => breakEndEnabled,
-      null => false,
-    };
-    if (!enabled ||
-        _appForeground ||
-        !eventEnabled ||
-        remaining <= Duration.zero) {
+      };
+    }).toList(growable: false);
+    if (!enabled || _appForeground || enabledRequests.isEmpty) {
       await cancelTimerNotification();
       return;
     }
-
-    final scheduledAt = DateTime.now().add(remaining);
-    final next = _ScheduledTimerNotification(
-      kind: kind!,
-      scheduledAt: scheduledAt,
-      title: title,
-      body: body,
-    );
-    final current = _scheduledNotification;
-    if (current != null && current.matches(next)) {
+    if (_sameRequests(_scheduledNotifications, enabledRequests)) {
       return;
     }
-
-    _scheduledNotification = next;
     try {
-      await _service.schedule(
-        scheduledAt: scheduledAt,
-        title: title,
-        body: body,
-      );
-    } catch (_) {
-      if (_scheduledNotification == next) {
-        _scheduledNotification = null;
+      await _service.cancel(_notificationIds);
+      for (var index = 0; index < enabledRequests.length; index += 1) {
+        final request = enabledRequests[index];
+        await _service.schedule(
+          id: _notificationIdStart + index,
+          scheduledAt: request.scheduledAt,
+          title: request.title,
+          body: request.body,
+        );
       }
+      _scheduledNotifications = enabledRequests;
+    } catch (_) {
+      _scheduledNotifications = const [];
     }
   }
 
   Future<void> cancelTimerNotification({bool force = false}) async {
-    if (_scheduledNotification == null && !force) {
+    if (_scheduledNotifications.isEmpty && !force) {
       return;
     }
-    _scheduledNotification = null;
+    _scheduledNotifications = const [];
     try {
-      await _service.cancel();
+      await _service.cancel(_notificationIds);
     } catch (_) {
       // Notification failures must not affect an active focus session.
     }
+  }
+
+  Iterable<int> get _notificationIds =>
+      Iterable<int>.generate(_notificationIdCount, (index) => _notificationIdStart + index);
+
+  bool _sameRequests(
+    List<TimerNotificationRequest> first,
+    List<TimerNotificationRequest> second,
+  ) {
+    if (first.length != second.length) return false;
+    for (var index = 0; index < first.length; index += 1) {
+      if (!first[index].matches(second[index])) return false;
+    }
+    return true;
   }
 
   Future<void> _saveSettings() async {
@@ -155,27 +181,5 @@ class NotificationController extends ChangeNotifier {
     } catch (_) {
       // A local preference failure should not interrupt the settings UI.
     }
-  }
-}
-
-class _ScheduledTimerNotification {
-  const _ScheduledTimerNotification({
-    required this.kind,
-    required this.scheduledAt,
-    required this.title,
-    required this.body,
-  });
-
-  final TimerNotificationKind kind;
-  final DateTime scheduledAt;
-  final String title;
-  final String body;
-
-  bool matches(_ScheduledTimerNotification other) {
-    return kind == other.kind &&
-        title == other.title &&
-        body == other.body &&
-        scheduledAt.difference(other.scheduledAt).abs() <
-            const Duration(seconds: 2);
   }
 }

@@ -1490,6 +1490,18 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get continueAction;
 
+  /// No description provided for @autoContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto continue'**
+  String get autoContinue;
+
+  /// No description provided for @autoContinueDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the next focus or break automatically'**
+  String get autoContinueDescription;
+
   /// No description provided for @goToSpace.
   ///
   /// In en, this message translates to:

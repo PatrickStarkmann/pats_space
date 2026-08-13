@@ -790,6 +790,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get continueAction => 'Weiter';
 
   @override
+  String get autoContinue => 'Automatisch fortsetzen';
+
+  @override
+  String get autoContinueDescription =>
+      'Nächsten Fokus oder Pause automatisch starten';
+
+  @override
   String get goToSpace => 'Zum Space';
 
   @override

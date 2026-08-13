@@ -1,11 +1,38 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
+import 'package:pats_space/features/focus/models/active_timer_state.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 
 void main() {
   group('FocusTimerController', () {
+    test(
+      'catches up a running timer after the app returns from background',
+      () {
+        var now = DateTime(2026, 8, 12, 16);
+        var focusEndSounds = 0;
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            focusSeconds: 30,
+          ),
+          clock: () => now,
+          onFocusPeriodCompleted: () => focusEndSounds += 1,
+        );
+        addTearDown(controller.dispose);
+
+        controller.toggle();
+        controller.suspendForBackground();
+        now = now.add(const Duration(seconds: 45));
+        controller.resumeFromBackground();
+
+        expect(controller.phase, FocusSessionPhase.breakTime);
+        expect(controller.remainingSeconds, 15);
+        expect(focusEndSounds, 0);
+        controller.cancelFocusRound();
+      },
+    );
+
     testWidgets('uses the optional 30-second focus duration', (tester) async {
       final controller = FocusTimerController(
         initialSettings: FocusTimerController.defaultSettings.copyWith(
@@ -23,6 +50,107 @@ void main() {
       await tester.pump(const Duration(seconds: 30));
       expect(controller.phase, FocusSessionPhase.focus);
       controller.cancelFocusRound();
+    });
+
+    testWidgets(
+      'waits for manual start between phases when auto continue is off',
+      (tester) async {
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            focusSeconds: 30,
+            autoContinue: false,
+          ),
+        );
+        addTearDown(controller.dispose);
+
+        controller.toggle();
+        await tester.pump(const Duration(seconds: 30));
+
+        expect(controller.phase, FocusSessionPhase.breakTime);
+        expect(controller.paused, isTrue);
+        expect(controller.remainingSeconds, 30);
+      },
+    );
+
+    test(
+      'does not skip further phases on resume when auto continue is off',
+      () {
+        var now = DateTime(2026, 8, 13, 16);
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            focusSeconds: 30,
+            autoContinue: false,
+          ),
+          clock: () => now,
+        );
+        addTearDown(controller.dispose);
+
+        controller.toggle();
+        controller.suspendForBackground();
+        now = now.add(const Duration(minutes: 3));
+        controller.resumeFromBackground();
+
+        expect(controller.phase, FocusSessionPhase.breakTime);
+        expect(controller.paused, isTrue);
+        expect(controller.completedSessions, 0);
+        expect(controller.remainingSeconds, 30);
+      },
+    );
+
+    test('restores a running timer from the elapsed wall-clock time', () {
+      var now = DateTime(2026, 8, 13, 16);
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          focusSeconds: 30,
+        ),
+        clock: () => now,
+      );
+      addTearDown(controller.dispose);
+
+      controller.restore(
+        ActiveTimerState(
+          phase: FocusSessionPhase.focus,
+          paused: false,
+          completedSessions: 0,
+          remainingSeconds: 30,
+          savedAt: now,
+        ),
+      );
+      final savedState = controller.persistentState!;
+      now = now.add(const Duration(seconds: 45));
+      controller.restore(savedState);
+
+      expect(controller.phase, FocusSessionPhase.breakTime);
+      expect(controller.remainingSeconds, 15);
+      controller.cancelFocusRound();
+    });
+
+    test('restores a paused timer without consuming elapsed time', () {
+      var now = DateTime(2026, 8, 13, 16);
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          focusSeconds: 30,
+        ),
+        clock: () => now,
+      );
+      addTearDown(controller.dispose);
+
+      controller.restore(
+        ActiveTimerState(
+          phase: FocusSessionPhase.breakTime,
+          paused: true,
+          completedSessions: 0,
+          remainingSeconds: 30,
+          savedAt: now,
+        ),
+      );
+      final savedState = controller.persistentState!;
+      now = now.add(const Duration(minutes: 5));
+      controller.restore(savedState);
+
+      expect(controller.phase, FocusSessionPhase.breakTime);
+      expect(controller.paused, isTrue);
+      expect(controller.remainingSeconds, 30);
     });
 
     testWidgets(

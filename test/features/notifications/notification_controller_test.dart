@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/notifications/models/notification_settings.dart';
 import 'package:pats_space/features/notifications/models/timer_notification_kind.dart';
+import 'package:pats_space/features/notifications/models/timer_notification_request.dart';
 import 'package:pats_space/features/notifications/repositories/notification_settings_repository.dart';
 import 'package:pats_space/features/notifications/services/timer_notification_service.dart';
 
@@ -102,6 +103,34 @@ void main() {
       expect(service.scheduled, hasLength(1));
     });
 
+    test('schedules each future transition while auto continue is active', () async {
+      service.permissionsGrantedResult = true;
+      final controller = createController(
+        settings: const NotificationSettings(enabled: true),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.setAppForeground(false);
+      final now = DateTime.now();
+
+      await controller.syncTimerNotifications([
+        TimerNotificationRequest(
+          kind: TimerNotificationKind.focusEnd,
+          scheduledAt: now.add(const Duration(seconds: 30)),
+          title: 'Focus complete',
+          body: 'Take a break',
+        ),
+        TimerNotificationRequest(
+          kind: TimerNotificationKind.breakEnd,
+          scheduledAt: now.add(const Duration(seconds: 60)),
+          title: 'Break complete',
+          body: 'Focus again',
+        ),
+      ]);
+
+      expect(service.scheduled, hasLength(2));
+    });
+
     test('cancels a pending notification when foregrounded', () async {
       service.permissionsGrantedResult = true;
       final controller = createController(
@@ -119,7 +148,7 @@ void main() {
 
       await controller.setAppForeground(true);
 
-      expect(service.cancelCount, 2);
+      expect(service.cancelCount, 3);
     });
 
     test('respects individual focus notification setting', () async {
@@ -183,6 +212,7 @@ class _FakeTimerNotificationService implements TimerNotificationService {
 
   @override
   Future<void> schedule({
+    required int id,
     required DateTime scheduledAt,
     required String title,
     required String body,
@@ -191,7 +221,7 @@ class _FakeTimerNotificationService implements TimerNotificationService {
   }
 
   @override
-  Future<void> cancel() async {
+  Future<void> cancel(Iterable<int> ids) async {
     cancelCount += 1;
   }
 }

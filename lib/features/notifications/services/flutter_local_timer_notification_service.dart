@@ -9,7 +9,6 @@ class FlutterLocalTimerNotificationService implements TimerNotificationService {
     FlutterLocalNotificationsPlugin? plugin,
   }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
-  static const _notificationId = 41001;
   static const _channelId = 'focus_timer_v1';
 
   final FlutterLocalNotificationsPlugin _plugin;
@@ -115,6 +114,7 @@ class FlutterLocalTimerNotificationService implements TimerNotificationService {
 
   @override
   Future<void> schedule({
+    required int id,
     required DateTime scheduledAt,
     required String title,
     required String body,
@@ -137,7 +137,7 @@ class FlutterLocalTimerNotificationService implements TimerNotificationService {
     }
 
     await _plugin.zonedSchedule(
-      id: _notificationId,
+      id: id,
       title: title,
       body: body,
       scheduledDate: tz.TZDateTime.from(safeScheduleTime.toUtc(), tz.UTC),
@@ -166,5 +166,7 @@ class FlutterLocalTimerNotificationService implements TimerNotificationService {
   }
 
   @override
-  Future<void> cancel() => _plugin.cancel(id: _notificationId);
+  Future<void> cancel(Iterable<int> ids) {
+    return Future.wait(ids.map((id) => _plugin.cancel(id: id)));
+  }
 }
