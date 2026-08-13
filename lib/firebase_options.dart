@@ -54,6 +54,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1051905230507',
     projectId: 'patsspace-app',
     storageBucket: 'patsspace-app.firebasestorage.app',
+    androidClientId: '1051905230507-i8gl159k9br6rggh58ueqia111ekjnap.apps.googleusercontent.com',
+    iosClientId: '1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d.apps.googleusercontent.com',
     iosBundleId: 'com.patsspace.app',
   );
 
@@ -63,6 +65,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1051905230507',
     projectId: 'patsspace-app',
     storageBucket: 'patsspace-app.firebasestorage.app',
+    androidClientId: '1051905230507-i8gl159k9br6rggh58ueqia111ekjnap.apps.googleusercontent.com',
+    iosClientId: '1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d.apps.googleusercontent.com',
     iosBundleId: 'com.patsspace.app',
   );
+
 }

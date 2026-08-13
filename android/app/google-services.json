@@ -12,7 +12,12 @@
           "package_name": "com.patsspace.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1051905230507-6chadsb195uhv4dltiauc8f8gtqanqms.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBwX2ATyoi5yZ0X14jVeQ2daKkd0S3LIkA"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051905230507-6chadsb195uhv4dltiauc8f8gtqanqms.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.patsspace.app"
+              }
+            }
+          ]
         }
       }
     }
