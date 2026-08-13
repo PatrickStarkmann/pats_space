@@ -204,6 +204,26 @@ void main() {
       },
     );
 
+    testWidgets('clears completed session dots when a round is acknowledged', (
+      tester,
+    ) async {
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          focusSeconds: 30,
+          sessionsPerRound: 1,
+        ),
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pump(const Duration(seconds: 30));
+      expect(controller.completedSessions, 1);
+
+      controller.acknowledgeRoundCompletion();
+      expect(controller.completedSessions, 0);
+    });
+
     testWidgets('skip during break starts next focus when sessions remain', (
       tester,
     ) async {

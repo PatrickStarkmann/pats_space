@@ -149,6 +149,14 @@ class FocusTimerController extends ChangeNotifier {
     resetToIdle();
   }
 
+  void acknowledgeRoundCompletion() {
+    if (active || _completedSessions < _settings.sessionsPerRound) {
+      return;
+    }
+    _completedSessions = 0;
+    notifyListeners();
+  }
+
   void finishStopwatch() {
     if (_phase != FocusSessionPhase.stopwatch) {
       return;

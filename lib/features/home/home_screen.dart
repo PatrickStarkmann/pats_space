@@ -1210,7 +1210,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    _dismissCompletionReward();
+    _prepareNextRoundAfterCompletion();
   }
 
   void _handleCompletionOpenSpace() {
@@ -1219,12 +1219,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    _openSpaceFromCompletion();
+    _prepareNextRoundAfterCompletion();
+    widget.onOpenSpace();
   }
 
-  void _openSpaceFromCompletion() {
+  void _prepareNextRoundAfterCompletion() {
+    _timerController.acknowledgeRoundCompletion();
     _dismissCompletionReward();
-    widget.onOpenSpace();
   }
 
   void _precacheAnimationAssets() {
