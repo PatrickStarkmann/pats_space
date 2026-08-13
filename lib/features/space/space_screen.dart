@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
@@ -102,6 +103,12 @@ class _SpaceScreenState extends State<SpaceScreen> {
 
     if (newlyUnlocked.isEmpty || !mounted) {
       return;
+    }
+
+    for (final plantType in newlyUnlocked) {
+      unawaited(
+        AppAnalytics.instance.logGardenItemUnlocked(itemType: plantType.name),
+      );
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -9,6 +9,7 @@ import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/auth/account_auth_service.dart';
 import 'package:pats_space/core/auth/auth_session.dart';
 import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
+import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/network/remote_availability_service.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -225,7 +226,11 @@ class _AppShellState extends State<AppShell> {
                   key: const ValueKey('app-shell-content'),
                   selectedTab: _selectedTab,
                   onTabSelected: (tab) {
+                    if (tab == _selectedTab) {
+                      return;
+                    }
                     setState(() => _selectedTab = tab);
+                    unawaited(AppAnalytics.instance.logScreen(tab.name));
                   },
                   onOnboardingFocusChallengeStarted:
                       _startOnboardingFocusChallenge,
@@ -876,6 +881,9 @@ class _AppShellState extends State<AppShell> {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'onboardingSource': source,
       }, SetOptions(merge: true));
+      unawaited(
+        AppAnalytics.instance.logAcquisitionSourceSelected(source: source),
+      );
     } catch (error, stackTrace) {
       debugPrint('Could not save onboarding source: $error');
       debugPrintStack(stackTrace: stackTrace);

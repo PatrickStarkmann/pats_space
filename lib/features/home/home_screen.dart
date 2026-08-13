@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -482,6 +483,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
 
+      unawaited(AppAnalytics.instance.logSocialFocusLeft());
       _lastSyncedSocialFocusStatus = null;
       setState(() => _focusViewMode = _FocusViewMode.solo);
       return;
@@ -537,6 +539,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
+    unawaited(
+      AppAnalytics.instance.logSocialFocusJoined(
+        createdRoom: selection.createsRoom,
+      ),
+    );
     _syncSocialFocusStatus();
     setState(() => _focusViewMode = _FocusViewMode.group);
   }
@@ -605,6 +612,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
+    unawaited(AppAnalytics.instance.logSocialFocusLeft());
     _lastSyncedSocialFocusStatus = null;
     setState(() => _focusViewMode = _FocusViewMode.solo);
   }
@@ -749,6 +757,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         FocusRewardCalculator.waterForPartialFocus(focusDuration);
     final rewardDuration = _pendingRewardDuration + focusDuration;
 
+    unawaited(
+      AppAnalytics.instance.logFocusCancelled(
+        mode: _timerController.settings.mode.name,
+        durationSeconds: rewardDuration.inSeconds,
+        groupFocus: _socialFocusController.hasActiveRoom,
+      ),
+    );
     _timerController.cancelFocusRound();
     if (waterReward > 0) {
       _applyOrStoreWaterReward(waterReward, storeOffline: true);
@@ -802,6 +817,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
 
       _timerController.resetToIdle();
+      unawaited(
+        AppAnalytics.instance.logFocusCancelled(
+          mode: FocusMode.stopwatch.name,
+          durationSeconds: focusDuration.inSeconds,
+          groupFocus: _socialFocusController.hasActiveRoom,
+        ),
+      );
       _showCompletionReward(focusDuration: focusDuration, waterReward: 0);
       return;
     }
@@ -971,6 +993,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (!_timerController.settings.deepFocusEnabled) {
       _timerController.toggle();
+      _logFocusStarted();
       return;
     }
 
@@ -983,13 +1006,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (activated) {
       _timerController.toggle();
+      _logFocusStarted();
       return;
     }
 
     final startWithoutBlocking = await _confirmStartWithoutDeepFocus();
     if (startWithoutBlocking && mounted) {
       _timerController.toggle();
+      _logFocusStarted();
     }
+  }
+
+  void _logFocusStarted() {
+    unawaited(
+      AppAnalytics.instance.logFocusStarted(
+        mode: _timerController.settings.mode.name,
+        plannedSeconds: _timerController.remainingSeconds,
+        groupFocus: _socialFocusController.hasActiveRoom,
+      ),
+    );
   }
 
   DateTime? get _expectedFocusRoundEnd {
@@ -1063,6 +1098,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
       return;
     }
+
+    unawaited(
+      AppAnalytics.instance.logFocusCompleted(
+        mode: record.mode.name,
+        durationSeconds: record.focusDuration.inSeconds,
+        groupFocus: _socialFocusController.hasActiveRoom,
+      ),
+    );
 
     final waterReward = FocusRewardCalculator.waterForCompletedFocus(
       record.focusDuration,

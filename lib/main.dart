@@ -4,15 +4,21 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pats_space/app/patsspace_app.dart';
+import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/auth/auth_session.dart';
 import 'package:pats_space/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await _configureAnalytics();
   _configureCrashlytics();
   await ensureAnonymousSession(FirebaseAuth.instance);
   runApp(const PatsspaceApp());
+}
+
+Future<void> _configureAnalytics() async {
+  await AppAnalytics.instance.enableCollection();
 }
 
 void _configureCrashlytics() {
