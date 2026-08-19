@@ -215,6 +215,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 constraints.maxHeight - bottomNavigationInset;
             final compact = availableHeight < 720;
             final tight = availableHeight < 650;
+            final accessibilityTight =
+                compact &&
+                availableHeight < 700 &&
+                MediaQuery.textScalerOf(context).scale(16) > 19.2;
             final groupMode =
                 _focusViewMode == _FocusViewMode.group &&
                 _socialFocusController.hasActiveRoom;
@@ -339,6 +343,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           running: _timerController.running,
                           compact: compact,
                         )
+                      else if (accessibilityTight)
+                        Flexible(
+                          fit: FlexFit.tight,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: PatsspaceCharacterView(
+                              compact: compact,
+                              assetPath: _currentCharacterAsset,
+                              visualScale: _currentAnimationSpec.visualScale,
+                              alignment: _currentAnimationSpec.alignment,
+                              verticalOffset:
+                                  _currentAnimationSpec.verticalOffset,
+                            ),
+                          ),
+                        )
                       else
                         PatsspaceCharacterView(
                           compact: compact,
@@ -376,7 +395,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             widget.tutorialFocusDuration != null &&
                             !_timerController.active,
                       ),
-                      if (!groupMode || (compactGroup && !mediumGroup))
+                      if ((!groupMode || (compactGroup && !mediumGroup)) &&
+                          !accessibilityTight)
                         const Spacer(),
                     ],
                   ),

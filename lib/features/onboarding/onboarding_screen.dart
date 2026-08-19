@@ -275,6 +275,7 @@ class _FocusEarnGrowScreenState extends State<_FocusEarnGrowScreen> {
       bodyBeforeVisual: true,
       bodyFlex: 3,
       visualFlex: 6,
+      scrollVisual: true,
       bodyAlignment: const Alignment(0, .32),
       visualAlignment: Alignment.topCenter,
       body: Column(
@@ -293,10 +294,7 @@ class _FocusEarnGrowScreenState extends State<_FocusEarnGrowScreen> {
           ),
         ],
       ),
-      visual: Transform.translate(
-        offset: const Offset(0, -34),
-        child: const _FocusEarnGrowVisual(),
-      ),
+      visual: const _FocusEarnGrowVisual(),
       actionLabel: l10n.continueAction,
       actionEnabled: _ready,
       onAction: widget.onContinue,
@@ -374,6 +372,7 @@ class _OnboardingFrame extends StatelessWidget {
     this.visualFlex = 5,
     this.bodyFlex = 4,
     this.bodyBeforeVisual = false,
+    this.scrollVisual = false,
     this.visualAlignment = Alignment.center,
     this.bodyAlignment = Alignment.center,
   });
@@ -387,6 +386,7 @@ class _OnboardingFrame extends StatelessWidget {
   final int visualFlex;
   final int bodyFlex;
   final bool bodyBeforeVisual;
+  final bool scrollVisual;
   final Alignment visualAlignment;
   final Alignment bodyAlignment;
 
@@ -397,13 +397,43 @@ class _OnboardingFrame extends StatelessWidget {
         final compact = constraints.maxHeight < 700;
         final headerGap = compact ? AppSpacing.md : AppSpacing.lg;
         final sectionGap = compact ? AppSpacing.sm : AppSpacing.md;
-        final visualSection = Expanded(
-          flex: visualFlex,
-          child: Align(alignment: visualAlignment, child: visual),
-        );
-        final bodySection = Expanded(
+        Widget scrollableSection({
+          required int flex,
+          required Alignment alignment,
+          required Widget child,
+        }) {
+          return Expanded(
+            flex: flex,
+            child: LayoutBuilder(
+              builder: (context, sectionConstraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: sectionConstraints.maxHeight,
+                    ),
+                    child: Align(alignment: alignment, child: child),
+                  ),
+                );
+              },
+            ),
+          );
+        }
+
+        final visualSection = scrollVisual
+            ? scrollableSection(
+                flex: visualFlex,
+                alignment: visualAlignment,
+                child: visual,
+              )
+            : Expanded(
+                flex: visualFlex,
+                child: Align(alignment: visualAlignment, child: visual),
+              );
+        final bodySection = scrollableSection(
           flex: bodyFlex,
-          child: Align(alignment: bodyAlignment, child: body),
+          alignment: bodyAlignment,
+          child: body,
         );
 
         return Column(
@@ -961,7 +991,7 @@ class _SourceTile extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOutCubic,
         width: width,
-        height: 76,
+        constraints: const BoxConstraints(minHeight: 76),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         decoration: BoxDecoration(
           color: selected ? AppColors.charcoal : AppColors.surface,
@@ -987,11 +1017,15 @@ class _SourceTile extends StatelessWidget {
               size: 25,
             ),
             const SizedBox(width: AppSpacing.sm),
-            Text(
-              source.label,
-              style: AppTextStyles.body.copyWith(
-                color: selected ? AppColors.surface : AppColors.charcoal,
-                fontWeight: FontWeight.w800,
+            Expanded(
+              child: Text(
+                source.label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.body.copyWith(
+                  color: selected ? AppColors.surface : AppColors.charcoal,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
