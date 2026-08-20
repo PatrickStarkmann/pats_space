@@ -16,6 +16,29 @@ Future<bool> showGroupFocusRoomSheet({
   required Future<void> Function(SocialFocusActivity activity)
   onLocalActivityChanged,
 }) async {
+  final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+  if (isTablet) {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+        child: SizedBox(
+          width: 680,
+          height: MediaQuery.sizeOf(context).height * .7,
+          child: GroupFocusRoomSheet(
+            room: room,
+            localMemberId: localMemberId,
+            onLocalActivityChanged: onLocalActivityChanged,
+            dialog: true,
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
+  }
+
   final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -26,7 +49,6 @@ Future<bool> showGroupFocusRoomSheet({
       onLocalActivityChanged: onLocalActivityChanged,
     ),
   );
-
   return result ?? false;
 }
 
@@ -36,12 +58,14 @@ class GroupFocusRoomSheet extends StatefulWidget {
     required this.room,
     required this.localMemberId,
     required this.onLocalActivityChanged,
+    this.dialog = false,
   });
 
   final SocialFocusRoom room;
   final String? localMemberId;
   final Future<void> Function(SocialFocusActivity activity)
   onLocalActivityChanged;
+  final bool dialog;
 
   @override
   State<GroupFocusRoomSheet> createState() => _GroupFocusRoomSheetState();
@@ -60,7 +84,9 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
       top: false,
       bottom: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.82),
+        constraints: widget.dialog
+            ? const BoxConstraints.expand()
+            : BoxConstraints(maxHeight: mediaQuery.size.height * 0.82),
         child: Container(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg,
@@ -70,9 +96,11 @@ class _GroupFocusRoomSheetState extends State<GroupFocusRoomSheet> {
                 mediaQuery.padding.bottom +
                 AppSpacing.lg,
           ),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFFF5F4FA),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+            borderRadius: widget.dialog
+                ? BorderRadius.circular(34)
+                : const BorderRadius.vertical(top: Radius.circular(34)),
           ),
           child: Column(
             children: [

@@ -18,38 +18,38 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final maxContentWidth = tablet ? 1024.0 : AppSpacing.maxContentWidth;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: AppSpacing.maxContentWidth,
-            ),
-            child: SizedBox.expand(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                      ),
-                      child: child,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Center(
+                child: ConstrainedBox(
+                  key: const ValueKey('app-scaffold-content'),
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
                     ),
+                    child: child,
                   ),
-                  if (bottomNavigation != null)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: bottomNavigation!,
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
+            if (bottomNavigation != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: bottomNavigation!,
+              ),
+          ],
         ),
       ),
     );

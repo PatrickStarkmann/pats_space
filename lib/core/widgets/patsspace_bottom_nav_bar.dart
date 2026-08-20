@@ -22,6 +22,7 @@ class PatsspaceBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
 
     return ClipRect(
       child: BackdropFilter(
@@ -30,39 +31,48 @@ class PatsspaceBottomNavBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface.withValues(alpha: 0.08),
           ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.screenHorizontal,
-              AppSpacing.xs,
-              AppSpacing.screenHorizontal,
-              bottomInset + AppSpacing.xs,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: AppTab.values.map((tab) {
-                final selected = selectedTab == tab;
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: tablet ? 600 : AppSpacing.maxContentWidth,
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenHorizontal,
+                  AppSpacing.xs,
+                  AppSpacing.screenHorizontal,
+                  bottomInset + AppSpacing.xs,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: AppTab.values.map((tab) {
+                    final selected = selectedTab == tab;
 
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: enabled
-                      ? () {
-                          if (!selected) {
-                            AppHaptics.selection();
-                          }
-                          onTabSelected(tab);
-                        }
-                      : null,
-                  child: SizedBox(
-                    width: 52,
-                    height: 44,
-                    child: PhosphorIcon(
-                      selected ? tab.selectedIcon : tab.icon,
-                      color: selected ? AppColors.charcoal : AppColors.grayWarm,
-                      size: selected ? 28 : 26,
-                    ),
-                  ),
-                );
-              }).toList(),
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: enabled
+                          ? () {
+                              if (!selected) {
+                                AppHaptics.selection();
+                              }
+                              onTabSelected(tab);
+                            }
+                          : null,
+                      child: SizedBox(
+                        width: 52,
+                        height: 44,
+                        child: PhosphorIcon(
+                          selected ? tab.selectedIcon : tab.icon,
+                          color: selected
+                              ? AppColors.charcoal
+                              : AppColors.grayWarm,
+                          size: selected ? 28 : 26,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
         ),

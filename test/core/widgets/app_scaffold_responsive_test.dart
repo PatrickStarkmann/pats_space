@@ -34,13 +34,12 @@ void main() {
       expect(tester.takeException(), isNull);
 
       final shell = tester.renderObject<RenderBox>(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is ConstrainedBox &&
-              widget.constraints.maxWidth == AppSpacing.maxContentWidth,
-        ),
+        find.byKey(const ValueKey('app-scaffold-content')),
       );
-      expect(shell.size.width, lessThanOrEqualTo(AppSpacing.maxContentWidth));
+      final expectedMaxWidth = size.shortestSide >= 600
+          ? 1024.0
+          : AppSpacing.maxContentWidth;
+      expect(shell.size.width, lessThanOrEqualTo(expectedMaxWidth));
       expect(shell.size.width, lessThanOrEqualTo(size.width));
     });
   }

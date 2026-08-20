@@ -25,6 +25,28 @@ Future<FocusTimerSettings?> showTimeSettingsSheet({
   required FocusBlockingController focusBlockingController,
   bool showAnimationSettings = true,
 }) {
+  final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+  if (isTablet) {
+    return showDialog<FocusTimerSettings>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+        child: SizedBox(
+          width: 760,
+          height: MediaQuery.sizeOf(context).height * .82,
+          child: TimeSettingsSheet(
+            initialSettings: settings,
+            focusBlockingController: focusBlockingController,
+            showAnimationSettings: showAnimationSettings,
+            dialog: true,
+          ),
+        ),
+      ),
+    );
+  }
+
   return showModalBottomSheet<FocusTimerSettings>(
     context: context,
     isScrollControlled: true,
@@ -43,11 +65,13 @@ class TimeSettingsSheet extends StatefulWidget {
     required this.initialSettings,
     required this.showAnimationSettings,
     required this.focusBlockingController,
+    this.dialog = false,
   });
 
   final FocusTimerSettings initialSettings;
   final bool showAnimationSettings;
   final FocusBlockingController focusBlockingController;
+  final bool dialog;
 
   @override
   State<TimeSettingsSheet> createState() => _TimeSettingsSheetState();
@@ -67,7 +91,9 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
       top: false,
       bottom: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
+        constraints: widget.dialog
+            ? const BoxConstraints.expand()
+            : BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
         child: Container(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg,
@@ -77,9 +103,11 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                 mediaQuery.padding.bottom +
                 AppSpacing.lg,
           ),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFFF5F4FA),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+            borderRadius: widget.dialog
+                ? BorderRadius.circular(34)
+                : const BorderRadius.vertical(top: Radius.circular(34)),
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),

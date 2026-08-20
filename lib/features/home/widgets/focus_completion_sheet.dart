@@ -127,6 +127,7 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final hasReward = widget.waterReward > 0;
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -167,118 +168,145 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
               });
             }
           : null,
-      child: AnimatedContainer(
-        duration: _isDragging
-            ? Duration.zero
-            : const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _dragOffset, 0),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.surface.withValues(alpha: .92),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(36),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.charcoal.withValues(alpha: .05),
-                    blurRadius: 18,
-                    offset: const Offset(0, -5),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: tablet ? 560 : double.infinity),
+          child: AnimatedContainer(
+            duration: _isDragging
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, _dragOffset, 0),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withValues(alpha: .92),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(36),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.charcoal.withValues(alpha: .05),
+                        blurRadius: 18,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.lg,
-                  AppSpacing.xl,
-                ),
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: widget.dismissible ? _continue : null,
-                          child: SizedBox(
-                            height: 28,
-                            child: Center(
-                              child: Container(
-                                width: 44,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: AppColors.graySoft,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.pill,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                      AppSpacing.lg,
+                      AppSpacing.xl,
+                    ),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: widget.dismissible ? _continue : null,
+                              child: SizedBox(
+                                height: 28,
+                                child: Center(
+                                  child: Container(
+                                    width: 44,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.graySoft,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.pill,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        _RewardHero(
-                          hasReward: hasReward,
-                          animation: _heroAnimation,
-                        ),
-                        _RewardEntrance(
-                          animation: _titleAnimation,
-                          verticalOffset: 10,
-                          child: Column(
-                            children: [
-                              const SizedBox(height: AppSpacing.md),
-                              Text(
-                                hasReward ? l10n.wellDone : l10n.takeABreath,
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.title.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 310,
-                                ),
-                                child: Text(
-                                  hasReward
-                                      ? l10n.rewardWaterMessage
-                                      : l10n.noRewardWaterMessage,
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.bodyMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _RewardEntrance(
-                          animation: _metricsAnimation,
-                          verticalOffset: 14,
-                          child: Column(
-                            children: [
-                              const SizedBox(height: AppSpacing.lg),
-                              Row(
+                            const SizedBox(height: AppSpacing.md),
+                            _RewardHero(
+                              hasReward: hasReward,
+                              animation: _heroAnimation,
+                            ),
+                            _RewardEntrance(
+                              animation: _titleAnimation,
+                              verticalOffset: 10,
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    child: _RewardMetricCard(
-                                      icon: hasReward
-                                          ? CupertinoIcons.drop_fill
-                                          : CupertinoIcons.drop,
-                                      accentColor: const Color(0xFF65A9F7),
-                                      value: hasReward
-                                          ? _AnimatedRewardValue(
-                                              value: widget.waterReward,
-                                              animation: _countAnimation,
-                                              labelBuilder: l10n.waterReward,
-                                            )
-                                          : Text(
-                                              l10n.noWater,
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    hasReward
+                                        ? l10n.wellDone
+                                        : l10n.takeABreath,
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.title.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 310,
+                                    ),
+                                    child: Text(
+                                      hasReward
+                                          ? l10n.rewardWaterMessage
+                                          : l10n.noRewardWaterMessage,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodyMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _RewardEntrance(
+                              animation: _metricsAnimation,
+                              verticalOffset: 14,
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: AppSpacing.lg),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _RewardMetricCard(
+                                          icon: hasReward
+                                              ? CupertinoIcons.drop_fill
+                                              : CupertinoIcons.drop,
+                                          accentColor: const Color(0xFF65A9F7),
+                                          value: hasReward
+                                              ? _AnimatedRewardValue(
+                                                  value: widget.waterReward,
+                                                  animation: _countAnimation,
+                                                  labelBuilder:
+                                                      l10n.waterReward,
+                                                )
+                                              : Text(
+                                                  l10n.noWater,
+                                                  textAlign: TextAlign.center,
+                                                  style: AppTextStyles.headline
+                                                      .copyWith(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                ),
+                                        ),
+                                      ),
+                                      if (!widget.tutorial) ...[
+                                        const SizedBox(width: AppSpacing.sm),
+                                        Expanded(
+                                          child: _RewardMetricCard(
+                                            icon: CupertinoIcons.timer,
+                                            accentColor: AppColors.charcoal,
+                                            value: Text(
+                                              l10n.focusedDuration(
+                                                _formattedMinutes,
+                                              ),
                                               textAlign: TextAlign.center,
                                               style: AppTextStyles.headline
                                                   .copyWith(
@@ -286,23 +314,49 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                                                     fontWeight: FontWeight.w700,
                                                   ),
                                             ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _RewardEntrance(
+                              animation: _actionsAnimation,
+                              verticalOffset: 12,
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: AppSpacing.lg),
+                                  ScaleTransition(
+                                    scale: widget.tutorial
+                                        ? _tutorialButtonPulse
+                                        : const AlwaysStoppedAnimation(1),
+                                    child: PrimaryButton(
+                                      label: widget.tutorial
+                                          ? l10n.goToSpace
+                                          : l10n.continueAction,
+                                      onPressed: _continue,
                                     ),
                                   ),
                                   if (!widget.tutorial) ...[
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: _RewardMetricCard(
-                                        icon: CupertinoIcons.timer,
-                                        accentColor: AppColors.charcoal,
-                                        value: Text(
-                                          l10n.focusedDuration(
-                                            _formattedMinutes,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          style: AppTextStyles.headline
+                                    const SizedBox(height: AppSpacing.xs),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        AppHaptics.selection();
+                                        widget.onOpenSpace();
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.md,
+                                          vertical: AppSpacing.sm,
+                                        ),
+                                        child: Text(
+                                          l10n.goToSpace,
+                                          style: AppTextStyles.bodyMuted
                                               .copyWith(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w700,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                         ),
                                       ),
@@ -310,58 +364,16 @@ class _FocusCompletionSheetState extends State<FocusCompletionSheet>
                                   ],
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        _RewardEntrance(
-                          animation: _actionsAnimation,
-                          verticalOffset: 12,
-                          child: Column(
-                            children: [
-                              const SizedBox(height: AppSpacing.lg),
-                              ScaleTransition(
-                                scale: widget.tutorial
-                                    ? _tutorialButtonPulse
-                                    : const AlwaysStoppedAnimation(1),
-                                child: PrimaryButton(
-                                  label: widget.tutorial
-                                      ? l10n.goToSpace
-                                      : l10n.continueAction,
-                                  onPressed: _continue,
-                                ),
-                              ),
-                              if (!widget.tutorial) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    AppHaptics.selection();
-                                    widget.onOpenSpace();
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.md,
-                                      vertical: AppSpacing.sm,
-                                    ),
-                                    child: Text(
-                                      l10n.goToSpace,
-                                      style: AppTextStyles.bodyMuted.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

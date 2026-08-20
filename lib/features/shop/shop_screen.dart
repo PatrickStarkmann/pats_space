@@ -18,6 +18,34 @@ Future<void> showShopSheet({
   required GardenController gardenController,
   required Future<bool> Function() onEnsureShopActionOnline,
 }) {
+  final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+
+  if (tablet) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) {
+        final size = MediaQuery.sizeOf(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(34),
+          ),
+          child: SizedBox(
+            width: 760,
+            height: size.height * .82,
+            child: ShopScreen(
+              gardenController: gardenController,
+              onEnsureShopActionOnline: onEnsureShopActionOnline,
+              onClose: () => Navigator.of(context).pop(),
+              onOpenSpace: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,

@@ -30,6 +30,7 @@ class SocialFocusGroupView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
         final spacing = compact ? AppSpacing.xs : AppSpacing.sm;
         final participantCount = visibleParticipants.length;
         final columns = participantCount >= 4 ? 2 : participantCount;
@@ -37,7 +38,7 @@ class SocialFocusGroupView extends StatelessWidget {
         final maxSlotSizeByWidth =
             (constraints.maxWidth - spacing * (columns - 1)) / columns;
         final slotSize = maxSlotSizeByWidth
-            .clamp(96.0, _maxSlotSizeFor(participantCount))
+            .clamp(96.0, _maxSlotSizeFor(participantCount, isTablet: isTablet))
             .toDouble();
         final lift = _characterLiftFor(slotSize);
         final rows = participantCount >= 4
@@ -86,7 +87,15 @@ class SocialFocusGroupView extends StatelessWidget {
     );
   }
 
-  double _maxSlotSizeFor(int participantCount) {
+  double _maxSlotSizeFor(int participantCount, {required bool isTablet}) {
+    if (isTablet) {
+      return switch (participantCount) {
+        1 => 300,
+        2 => 250,
+        _ => 220,
+      };
+    }
+
     return switch (participantCount) {
       1 => compact ? 188 : 220,
       2 => compact ? 156 : 176,

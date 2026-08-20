@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
+import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/stats/utils/stats_aggregations.dart';
 import 'package:pats_space/features/stats/utils/stats_date_formatters.dart';
@@ -51,6 +52,7 @@ class _StatsScreenState extends State<StatsScreen> {
         final l10n = AppLocalizations.of(context);
         final records = widget.historyController.records;
         final now = DateTime.now();
+        final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
 
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -72,41 +74,20 @@ class _StatsScreenState extends State<StatsScreen> {
                   onNextMonth: _showNextMonth,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                FocusLineChartCard(
-                  title: l10n.avgFocusTime,
-                  value: formatDuration(
-                    averageDailyFocusTime(
-                      records,
-                      _visibleWeek,
-                      widget.weekStartDay,
-                    ),
-                  ),
-                  rangeTitle: formatWeekRange(
-                    _visibleWeek,
-                    l10n,
-                    widget.weekStartDay,
-                  ),
-                  labels: _weekdayLabels(l10n),
-                  values: weeklyFocusHours(
-                    records,
-                    _visibleWeek,
-                    widget.weekStartDay,
-                  ),
-                  onPreviousRange: _showPreviousWeek,
-                  onNextRange: _showNextWeek,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                FocusLineChartCard(
-                  title: l10n.monthlyFocusTime,
-                  value: formatDuration(
-                    monthlyFocusTime(records, _visibleMonth),
-                  ),
-                  rangeTitle: formatMonthShortTitle(_visibleMonth, l10n),
-                  labels: const ['1', '7', '14', '21', '28', '31'],
-                  values: monthlyFocusHours(records, _visibleMonth),
-                  onPreviousRange: _showPreviousMonth,
-                  onNextRange: _showNextMonth,
-                ),
+                if (tablet)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _weeklyChart(l10n, records)),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(child: _monthlyChart(l10n, records)),
+                    ],
+                  )
+                else ...[
+                  _weeklyChart(l10n, records),
+                  const SizedBox(height: AppSpacing.lg),
+                  _monthlyChart(l10n, records),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 FocusByTagsCard(records: records),
               ],
@@ -114,6 +95,35 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _weeklyChart(AppLocalizations l10n, List<FocusSessionRecord> records) {
+    return FocusLineChartCard(
+      title: l10n.avgFocusTime,
+      value: formatDuration(
+        averageDailyFocusTime(records, _visibleWeek, widget.weekStartDay),
+      ),
+      rangeTitle: formatWeekRange(_visibleWeek, l10n, widget.weekStartDay),
+      labels: _weekdayLabels(l10n),
+      values: weeklyFocusHours(records, _visibleWeek, widget.weekStartDay),
+      onPreviousRange: _showPreviousWeek,
+      onNextRange: _showNextWeek,
+    );
+  }
+
+  Widget _monthlyChart(
+    AppLocalizations l10n,
+    List<FocusSessionRecord> records,
+  ) {
+    return FocusLineChartCard(
+      title: l10n.monthlyFocusTime,
+      value: formatDuration(monthlyFocusTime(records, _visibleMonth)),
+      rangeTitle: formatMonthShortTitle(_visibleMonth, l10n),
+      labels: const ['1', '7', '14', '21', '28', '31'],
+      values: monthlyFocusHours(records, _visibleMonth),
+      onPreviousRange: _showPreviousMonth,
+      onNextRange: _showNextMonth,
     );
   }
 

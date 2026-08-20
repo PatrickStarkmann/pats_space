@@ -15,6 +15,22 @@ Future<void> showAmbientSoundSheet({
   required BuildContext context,
   required SoundController controller,
 }) {
+  final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+  if (isTablet) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+        child: SizedBox(
+          width: 560,
+          child: _AmbientSoundSheet(controller: controller, dialog: true),
+        ),
+      ),
+    );
+  }
+
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -33,9 +49,10 @@ String localizedAmbientSoundName(AppLocalizations l10n, AmbientSound sound) {
 }
 
 class _AmbientSoundSheet extends StatelessWidget {
-  const _AmbientSoundSheet({required this.controller});
+  const _AmbientSoundSheet({required this.controller, this.dialog = false});
 
   final SoundController controller;
+  final bool dialog;
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +68,11 @@ class _AmbientSoundSheet extends StatelessWidget {
           AppSpacing.lg,
           mediaQuery.padding.bottom + AppSpacing.lg,
         ),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFF5F4FA),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+          borderRadius: dialog
+              ? BorderRadius.circular(34)
+              : const BorderRadius.vertical(top: Radius.circular(34)),
         ),
         child: AnimatedBuilder(
           animation: controller,

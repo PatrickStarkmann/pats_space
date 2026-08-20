@@ -140,6 +140,9 @@ class GardenStage extends StatelessWidget {
       builder: (context, constraints) {
         final stageSize = Size(constraints.maxWidth, constraints.maxHeight);
         final shortestSide = math.min(stageSize.width, stageSize.height);
+        final visualSize = MediaQuery.sizeOf(context).shortestSide >= 600
+            ? math.min(shortestSide, 650.0)
+            : shortestSide;
         final usableGardenHeight =
             stageSize.height -
             MediaQuery.paddingOf(context).bottom -
@@ -211,7 +214,7 @@ class GardenStage extends StatelessWidget {
             _PositionedCharacter(
               stageSize: stageSize,
               usableGardenHeight: usableGardenHeight,
-              characterSize: shortestSide * .56,
+              characterSize: visualSize * .56,
             ),
             for (final decoration in frontDecorations)
               _PositionedDecoration(
@@ -236,7 +239,7 @@ class GardenStage extends StatelessWidget {
                 coins: coins,
                 stageSize: stageSize,
                 usableGardenHeight: usableGardenHeight,
-                potSize: shortestSide * potSlots[index].sizeFactor,
+                potSize: visualSize * potSlots[index].sizeFactor,
                 arranging: arrangingDecorations,
                 movable: !_isFixedPotSlot(index),
                 selected: selectedArrangedPotIndex == index,
@@ -315,6 +318,9 @@ class _PositionedDecorationState extends State<_PositionedDecoration> {
       widget.stageSize.width,
       widget.stageSize.height,
     );
+    final visualSize = MediaQuery.sizeOf(context).shortestSide >= 600
+        ? math.min(shortestSide, 650.0)
+        : shortestSide;
     final spec = switch (widget.decoration) {
       GardenDecoration.bench => const _DecorationSpec(
         alignmentX: .16,
@@ -358,7 +364,7 @@ class _PositionedDecorationState extends State<_PositionedDecoration> {
           alignmentX: spec.alignmentX,
           alignmentY: spec.alignmentY,
         );
-    final size = shortestSide * spec.sizeFactor * resolvedPlacement.scale;
+    final size = visualSize * spec.sizeFactor * resolvedPlacement.scale;
 
     return Positioned(
       left: widget.stageSize.width * resolvedPlacement.alignmentX - size / 2,

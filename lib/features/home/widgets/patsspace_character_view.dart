@@ -19,8 +19,9 @@ class PatsspaceCharacterView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = compact ? 280.0 : 355.0;
-    final height = compact ? 220.0 : 285.0;
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final width = tablet ? 470.0 : (compact ? 280.0 : 355.0);
+    final height = tablet ? 375.0 : (compact ? 220.0 : 285.0);
     final responsiveVerticalOffset = compact
         ? verticalOffset * 0.67
         : verticalOffset;

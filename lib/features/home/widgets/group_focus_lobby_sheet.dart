@@ -16,6 +16,27 @@ Future<GroupFocusLobbySelection?> showGroupFocusLobbySheet({
   required SocialFocusLobbySnapshot snapshot,
   required Stream<SocialFocusLobbySnapshot> snapshots,
 }) {
+  final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+  if (isTablet) {
+    return showDialog<GroupFocusLobbySelection>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+        child: SizedBox(
+          width: 760,
+          height: MediaQuery.sizeOf(context).height * .82,
+          child: GroupFocusLobbySheet(
+            initialSnapshot: snapshot,
+            snapshots: snapshots,
+            dialog: true,
+          ),
+        ),
+      ),
+    );
+  }
+
   return showModalBottomSheet<GroupFocusLobbySelection>(
     context: context,
     isScrollControlled: true,
@@ -42,10 +63,12 @@ class GroupFocusLobbySheet extends StatelessWidget {
     super.key,
     required this.initialSnapshot,
     required this.snapshots,
+    this.dialog = false,
   });
 
   final SocialFocusLobbySnapshot initialSnapshot;
   final Stream<SocialFocusLobbySnapshot> snapshots;
+  final bool dialog;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +78,7 @@ class GroupFocusLobbySheet extends StatelessWidget {
       builder: (context, snapshot) {
         return _GroupFocusLobbyContent(
           snapshot: snapshot.data ?? initialSnapshot,
+          dialog: dialog,
         );
       },
     );
@@ -62,9 +86,10 @@ class GroupFocusLobbySheet extends StatelessWidget {
 }
 
 class _GroupFocusLobbyContent extends StatelessWidget {
-  const _GroupFocusLobbyContent({required this.snapshot});
+  const _GroupFocusLobbyContent({required this.snapshot, required this.dialog});
 
   final SocialFocusLobbySnapshot snapshot;
+  final bool dialog;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +102,9 @@ class _GroupFocusLobbyContent extends StatelessWidget {
       top: false,
       bottom: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
+        constraints: dialog
+            ? const BoxConstraints.expand()
+            : BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
         child: Container(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg,
@@ -87,9 +114,11 @@ class _GroupFocusLobbyContent extends StatelessWidget {
                 mediaQuery.padding.bottom +
                 AppSpacing.lg,
           ),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFFF5F4FA),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+            borderRadius: dialog
+                ? BorderRadius.circular(34)
+                : const BorderRadius.vertical(top: Radius.circular(34)),
           ),
           child: Column(
             children: [

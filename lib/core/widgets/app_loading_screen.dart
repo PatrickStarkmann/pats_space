@@ -97,7 +97,12 @@ class _AppLoadingScreenState extends State<AppLoadingScreen>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final characterSize = (width * .92).clamp(320.0, 500.0);
+          final tablet =
+              constraints.maxWidth >= 600 && constraints.maxHeight >= 600;
+          final characterSize = (width * (tablet ? .72 : .92)).clamp(
+            320.0,
+            tablet ? 680.0 : 500.0,
+          );
 
           return Stack(
             fit: StackFit.expand,

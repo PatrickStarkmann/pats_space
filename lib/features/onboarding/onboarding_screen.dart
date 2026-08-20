@@ -28,19 +28,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: AppSpacing.maxContentWidth,
+            constraints: BoxConstraints(
+              maxWidth: tablet ? 620 : AppSpacing.maxContentWidth,
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
+              padding: EdgeInsets.fromLTRB(
+                tablet ? AppSpacing.xxl : AppSpacing.lg,
                 AppSpacing.md,
-                AppSpacing.lg,
+                tablet ? AppSpacing.xxl : AppSpacing.lg,
                 AppSpacing.lg,
               ),
               child: AnimatedSwitcher(
