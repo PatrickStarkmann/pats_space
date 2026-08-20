@@ -33,6 +33,11 @@ dev_dependencies:
   flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4
 
+# Temporary iOS workaround: 2.6.0 embeds objective_c.framework, whose current
+# Flutter/Xcode build path can leave an invalid device signature.
+dependency_overrides:
+  path_provider_foundation: 2.5.1
+
 flutter_native_splash:
   color: "#FEFFFF"
   image: assets/images/ui/splash_character.png
