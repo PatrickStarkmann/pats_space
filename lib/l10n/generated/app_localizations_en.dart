@@ -95,6 +95,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
+  String get friendsThisWeek => 'Weekly ranking';
+
+  @override
+  String get friendsLeaderboard => 'Friends leaderboard';
+
+  @override
+  String focusMinutes(Object minutes) {
+    return '${minutes}min';
+  }
+
+  @override
+  String get noFriendsLeaderboard =>
+      'Add friends to compare your focus time each week.';
+
+  @override
+  String get viewLeaderboard => 'View leaderboard';
+
+  @override
+  String get you => 'You';
+
+  @override
   String get account => 'Account';
 
   @override

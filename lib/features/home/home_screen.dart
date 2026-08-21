@@ -39,6 +39,7 @@ import 'package:pats_space/features/home/widgets/group_focus_room_sheet.dart';
 import 'package:pats_space/features/home/widgets/patsspace_character_view.dart';
 import 'package:pats_space/features/home/widgets/social_focus_group_view.dart';
 import 'package:pats_space/features/home/widgets/time_settings_sheet.dart';
+import 'package:pats_space/features/leaderboard/controllers/friends_leaderboard_controller.dart';
 import 'package:pats_space/features/social_focus/controllers/social_focus_controller.dart';
 import 'package:pats_space/features/social_focus/models/social_focus_models.dart';
 import 'package:pats_space/features/social_focus/repositories/firebase_social_focus_repository.dart';
@@ -63,6 +64,7 @@ class HomeScreen extends StatefulWidget {
     required this.focusBlockingController,
     required this.soundController,
     required this.notificationController,
+    required this.leaderboardController,
     this.tutorialFocusDuration,
     this.tutorialFocusWaterReward = 0,
     this.onTutorialFocusCompleted,
@@ -81,6 +83,7 @@ class HomeScreen extends StatefulWidget {
   final FocusBlockingController focusBlockingController;
   final SoundController soundController;
   final NotificationController notificationController;
+  final FriendsLeaderboardController leaderboardController;
   final Duration? tutorialFocusDuration;
   final int tutorialFocusWaterReward;
   final VoidCallback? onTutorialFocusCompleted;
@@ -118,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       focusDurationOverride: widget.tutorialFocusDuration,
       startBreakAfterFocus: widget.tutorialFocusDuration == null,
       onFocusSessionCompleted: _handleFocusSessionCompleted,
+      onFocusTimeEnded: widget.leaderboardController.addFocusTime,
       onFocusRoundCompleted: _handleFocusRoundCompleted,
       onFocusPeriodCompleted: _playFocusOrBreakEndSound,
       onBreakPeriodCompleted: _playFocusOrBreakEndSound,

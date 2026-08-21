@@ -19,6 +19,7 @@ class FocusTimerController extends ChangeNotifier {
     this.startBreakAfterFocus = true,
     this.tickStep = const Duration(seconds: 1),
     this.onFocusSessionCompleted,
+    this.onFocusTimeEnded,
     this.onFocusRoundCompleted,
     this.onFocusPeriodCompleted,
     this.onBreakPeriodCompleted,
@@ -49,6 +50,7 @@ class FocusTimerController extends ChangeNotifier {
   final Duration tickStep;
   final bool startBreakAfterFocus;
   final ValueChanged<FocusSessionRecord>? onFocusSessionCompleted;
+  final ValueChanged<Duration>? onFocusTimeEnded;
   final VoidCallback? onFocusRoundCompleted;
   final VoidCallback? onFocusPeriodCompleted;
   final VoidCallback? onBreakPeriodCompleted;
@@ -125,6 +127,7 @@ class FocusTimerController extends ChangeNotifier {
   }
 
   void updateSettings(FocusTimerSettings settings) {
+    _reportUnfinishedFocusTime();
     _settings = settings;
     _focusDuration = settings.focusDuration;
     _resetToIdleWithoutNotify();
@@ -132,6 +135,7 @@ class FocusTimerController extends ChangeNotifier {
   }
 
   void restartCurrentSession() {
+    _reportUnfinishedFocusTime();
     switch (_phase) {
       case FocusSessionPhase.focus:
         _startFocus();
@@ -164,6 +168,7 @@ class FocusTimerController extends ChangeNotifier {
 
     _ticker?.cancel();
     if (_remainingSeconds > 0) {
+      onFocusTimeEnded?.call(Duration(seconds: _remainingSeconds));
       _recordCompletedStopwatchSession();
     }
     _resetToIdleWithoutNotify();
@@ -187,6 +192,7 @@ class FocusTimerController extends ChangeNotifier {
   void skip() {
     switch (_phase) {
       case FocusSessionPhase.focus:
+        _reportUnfinishedFocusTime();
         _startBreak();
         onFocusPeriodCompleted?.call();
       case FocusSessionPhase.breakTime:
@@ -198,6 +204,7 @@ class FocusTimerController extends ChangeNotifier {
   }
 
   void resetToIdle() {
+    _reportUnfinishedFocusTime();
     _resetToIdleWithoutNotify();
     notifyListeners();
   }
@@ -393,6 +400,7 @@ class FocusTimerController extends ChangeNotifier {
     bool emitSoundEvent = true,
     bool recordCompletion = true,
   }) {
+    onFocusTimeEnded?.call(_focusDuration);
     if (recordCompletion) {
       _recordCompletedFocusSession();
     }
@@ -468,5 +476,12 @@ class FocusTimerController extends ChangeNotifier {
     _focusStartedAt = null;
     _backgroundStartedAt = null;
     _remainingSeconds = isStopwatch ? 0 : _focusDuration.inSeconds;
+  }
+
+  void _reportUnfinishedFocusTime() {
+    final duration = elapsedFocusDuration;
+    if (duration > Duration.zero) {
+      onFocusTimeEnded?.call(duration);
+    }
   }
 }

@@ -98,6 +98,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loading => 'Lädt...';
 
   @override
+  String get friendsThisWeek => 'Wochenranking';
+
+  @override
+  String get friendsLeaderboard => 'Freunde-Bestenliste';
+
+  @override
+  String focusMinutes(Object minutes) {
+    return '${minutes}min';
+  }
+
+  @override
+  String get noFriendsLeaderboard =>
+      'Füge Freunde hinzu, um eure Fokuszeit jede Woche zu vergleichen.';
+
+  @override
+  String get viewLeaderboard => 'Bestenliste ansehen';
+
+  @override
+  String get you => 'Du';
+
+  @override
   String get account => 'Account';
 
   @override

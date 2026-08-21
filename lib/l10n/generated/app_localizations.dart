@@ -266,6 +266,42 @@ abstract class AppLocalizations {
   /// **'Loading...'**
   String get loading;
 
+  /// No description provided for @friendsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly ranking'**
+  String get friendsThisWeek;
+
+  /// No description provided for @friendsLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends leaderboard'**
+  String get friendsLeaderboard;
+
+  /// No description provided for @focusMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}min'**
+  String focusMinutes(Object minutes);
+
+  /// No description provided for @noFriendsLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends to compare your focus time each week.'**
+  String get noFriendsLeaderboard;
+
+  /// No description provided for @viewLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'View leaderboard'**
+  String get viewLeaderboard;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
   /// No description provided for @account.
   ///
   /// In en, this message translates to:

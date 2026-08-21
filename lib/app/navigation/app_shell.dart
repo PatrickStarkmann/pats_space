@@ -34,6 +34,8 @@ import 'package:pats_space/features/focus/repositories/active_timer_state_reposi
 import 'package:pats_space/features/focus/repositories/shared_preferences_active_timer_state_repository.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
 import 'package:pats_space/features/home/home_screen.dart';
+import 'package:pats_space/features/leaderboard/controllers/friends_leaderboard_controller.dart';
+import 'package:pats_space/features/leaderboard/repositories/firebase_friends_leaderboard_repository.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/notifications/repositories/shared_preferences_notification_settings_repository.dart';
 import 'package:pats_space/features/notifications/services/flutter_local_timer_notification_service.dart';
@@ -93,6 +95,13 @@ class _AppShellState extends State<AppShell> {
   GardenController? _gardenController;
   SoundController? _soundController;
   NotificationController? _notificationController;
+  late final FriendsLeaderboardController _leaderboardController =
+      FriendsLeaderboardController(
+        repository: FirebaseFriendsLeaderboardRepository(
+          auth: FirebaseAuth.instance,
+          firestore: FirebaseFirestore.instance,
+        ),
+      );
   _ConnectivityNotice? _connectivityNotice;
   bool _gardenTutorialActive = false;
   bool _onboardingFocusChallengeActive = false;
@@ -192,6 +201,7 @@ class _AppShellState extends State<AppShell> {
     _gardenController?.dispose();
     _soundController?.dispose();
     _notificationController?.dispose();
+    _leaderboardController.dispose();
     _focusBlockingController.dispose();
     super.dispose();
   }
@@ -254,6 +264,7 @@ class _AppShellState extends State<AppShell> {
                   weekStartDay: _weekStartDay,
                   onWeekStartDayChanged: _handleWeekStartDayChanged,
                   focusBlockingController: _focusBlockingController,
+                  leaderboardController: _leaderboardController,
                 ),
         );
       },
@@ -460,6 +471,7 @@ class _AppShellState extends State<AppShell> {
     _gardenController = gardenController;
     _soundController = soundController;
     _notificationController = notificationController;
+    unawaited(_leaderboardController.initialize(records));
 
     final bundle = _AppPersistenceBundle(
       preferences: preferences,
@@ -1335,6 +1347,7 @@ class _AppShellContent extends StatelessWidget {
     required this.weekStartDay,
     required this.onWeekStartDayChanged,
     required this.focusBlockingController,
+    required this.leaderboardController,
   });
 
   final AppTab selectedTab;
@@ -1355,6 +1368,7 @@ class _AppShellContent extends StatelessWidget {
   final WeekStartDay weekStartDay;
   final ValueChanged<WeekStartDay> onWeekStartDayChanged;
   final FocusBlockingController focusBlockingController;
+  final FriendsLeaderboardController leaderboardController;
 
   @override
   Widget build(BuildContext context) {
@@ -1402,6 +1416,7 @@ class _AppShellContent extends StatelessWidget {
                 focusBlockingController: focusBlockingController,
                 soundController: bundle.soundController,
                 notificationController: bundle.notificationController,
+                leaderboardController: leaderboardController,
                 tutorialFocusDuration: onboardingFocusChallengeActive
                     ? _AppShellState._onboardingFocusChallengeDuration
                     : null,
@@ -1422,6 +1437,7 @@ class _AppShellContent extends StatelessWidget {
               StatsScreen(
                 historyController: bundle.historyController,
                 weekStartDay: weekStartDay,
+                leaderboardController: leaderboardController,
               ),
               SettingsScreen(
                 language: language,
