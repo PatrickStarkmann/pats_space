@@ -745,8 +745,7 @@ class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future<void>.delayed(const Duration(milliseconds: 120));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
