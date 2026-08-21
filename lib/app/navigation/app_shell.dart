@@ -85,6 +85,8 @@ class _AppShellState extends State<AppShell> {
   AppTab _selectedTab = AppTab.home;
   late Future<_AppPersistenceBundle> _persistenceFuture;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _incomingFriendRequestsSubscription;
   StreamSubscription<bool>? _networkSubscription;
   Timer? _remoteAvailabilityTimer;
   Timer? _connectivityNoticeTimer;
@@ -112,6 +114,7 @@ class _AppShellState extends State<AppShell> {
   bool _connectivityNoticesReady = false;
   bool _showedOfflineNoticeInSession = false;
   bool _syncingPendingRewards = false;
+  bool _hasIncomingFriendRequests = false;
   WeekStartDay _weekStartDay = WeekStartDay.defaultValue;
   late final AccountAuthService _accountAuthService =
       FirebaseAccountAuthService(
@@ -134,6 +137,7 @@ class _AppShellState extends State<AppShell> {
       _focusBlockingController.initialize(languageCode: _blockingLanguageCode),
     );
     _requestedPersistenceUid = FirebaseAuth.instance.currentUser?.uid;
+    _watchIncomingFriendRequests(FirebaseAuth.instance.currentUser);
     _persistenceFuture = _loadPersistence();
     _remoteAvailabilityTimer = Timer.periodic(
       const Duration(seconds: 15),
@@ -142,6 +146,7 @@ class _AppShellState extends State<AppShell> {
     _networkSubscription = _remoteAvailabilityService.hasNetworkConnection
         .listen(_handleNetworkConnectionChanged);
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _watchIncomingFriendRequests(user);
       final uid = user?.uid;
       if (uid == null) {
         return;
@@ -192,6 +197,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _incomingFriendRequestsSubscription?.cancel();
     _networkSubscription?.cancel();
     _remoteAvailabilityTimer?.cancel();
     _connectivityNoticeTimer?.cancel();
@@ -204,6 +210,29 @@ class _AppShellState extends State<AppShell> {
     _leaderboardController.dispose();
     _focusBlockingController.dispose();
     super.dispose();
+  }
+
+  void _watchIncomingFriendRequests(User? user) {
+    _incomingFriendRequestsSubscription?.cancel();
+    if (user == null) {
+      if (_hasIncomingFriendRequests && mounted) {
+        setState(() => _hasIncomingFriendRequests = false);
+      }
+      return;
+    }
+
+    _incomingFriendRequestsSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('friend_requests')
+        .snapshots()
+        .listen((snapshot) {
+          final hasIncomingRequests = snapshot.docs.isNotEmpty;
+          if (!mounted || hasIncomingRequests == _hasIncomingFriendRequests) {
+            return;
+          }
+          setState(() => _hasIncomingFriendRequests = hasIncomingRequests);
+        }, onError: (_, _) {});
   }
 
   String get _blockingLanguageCode =>
@@ -265,6 +294,7 @@ class _AppShellState extends State<AppShell> {
                   onWeekStartDayChanged: _handleWeekStartDayChanged,
                   focusBlockingController: _focusBlockingController,
                   leaderboardController: _leaderboardController,
+                  hasIncomingFriendRequests: _hasIncomingFriendRequests,
                 ),
         );
       },
@@ -1348,6 +1378,7 @@ class _AppShellContent extends StatelessWidget {
     required this.onWeekStartDayChanged,
     required this.focusBlockingController,
     required this.leaderboardController,
+    required this.hasIncomingFriendRequests,
   });
 
   final AppTab selectedTab;
@@ -1369,6 +1400,7 @@ class _AppShellContent extends StatelessWidget {
   final ValueChanged<WeekStartDay> onWeekStartDayChanged;
   final FocusBlockingController focusBlockingController;
   final FriendsLeaderboardController leaderboardController;
+  final bool hasIncomingFriendRequests;
 
   @override
   Widget build(BuildContext context) {
@@ -1392,6 +1424,7 @@ class _AppShellContent extends StatelessWidget {
       bottomNavigation: PatsspaceBottomNavBar(
         selectedTab: selectedTab,
         enabled: !gardenTutorialActive && !onboardingFocusChallengeActive,
+        showSettingsIndicator: hasIncomingFriendRequests,
         onTabSelected: onTabSelected,
       ),
       child: Stack(

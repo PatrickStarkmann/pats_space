@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:pats_space/features/focus/models/focus_accent_color.dart';
@@ -30,7 +31,10 @@ class FocusTimerController extends ChangeNotifier {
        _focusDuration = focusDurationOverride ?? initialSettings.focusDuration,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
            ? 0
-           : (focusDurationOverride ?? initialSettings.focusDuration).inSeconds;
+           : (focusDurationOverride ?? initialSettings.focusDuration)
+                 .inSeconds {
+    _prepareShufflePreview();
+  }
 
   static const defaultSettings = FocusTimerSettings(
     mode: FocusMode.pomodoro,
@@ -66,12 +70,19 @@ class FocusTimerController extends ChangeNotifier {
   int _completedSessions = 0;
   DateTime? _focusStartedAt;
   DateTime? _backgroundStartedAt;
+  FocusAnimationPair? _activeAnimationPair;
+  FocusAnimationPair? _lastShuffledAnimationPair;
 
   FocusTimerSettings get settings => _settings;
   FocusSessionPhase get phase => _phase;
   bool get paused => _paused;
   int get remainingSeconds => _remainingSeconds;
   int get completedSessions => _completedSessions;
+  FocusAnimationPair get activeAnimationPair =>
+      _activeAnimationPair ??
+      (_settings.animationPair == FocusAnimationPair.shuffle
+          ? FocusAnimationPair.standard
+          : _settings.animationPair);
 
   bool get active => _phase != FocusSessionPhase.idle;
   bool get running => active && !_paused;
@@ -86,6 +97,7 @@ class FocusTimerController extends ChangeNotifier {
       remainingSeconds: _remainingSeconds,
       savedAt: _clock(),
       focusStartedAt: _focusStartedAt,
+      animationPair: _activeAnimationPair,
     );
   }
 
@@ -219,6 +231,11 @@ class FocusTimerController extends ChangeNotifier {
     );
     _remainingSeconds = state.remainingSeconds;
     _focusStartedAt = state.focusStartedAt;
+    _activeAnimationPair = state.animationPair != FocusAnimationPair.shuffle
+        ? state.animationPair
+        : (_settings.animationPair == FocusAnimationPair.shuffle
+              ? FocusAnimationPair.standard
+              : _settings.animationPair);
     _backgroundStartedAt = null;
     if (!_paused) {
       final elapsedSeconds = _clock().difference(state.savedAt).inSeconds;
@@ -277,6 +294,7 @@ class FocusTimerController extends ChangeNotifier {
     _phase = FocusSessionPhase.focus;
     _paused = false;
     _focusStartedAt = _clock();
+    _activeAnimationPair ??= _selectAnimationPair();
     if (_completedSessions >= _settings.sessionsPerRound) {
       _completedSessions = 0;
     }
@@ -290,6 +308,7 @@ class FocusTimerController extends ChangeNotifier {
     _phase = FocusSessionPhase.stopwatch;
     _paused = false;
     _focusStartedAt = _clock();
+    _activeAnimationPair ??= _selectAnimationPair();
     _remainingSeconds = 0;
     _startTicker();
     notifyListeners();
@@ -329,6 +348,7 @@ class FocusTimerController extends ChangeNotifier {
     );
 
     if (_completedSessions < _settings.sessionsPerRound) {
+      _activeAnimationPair = null;
       _startFocus();
       if (!_settings.autoContinue) {
         _pause();
@@ -341,6 +361,8 @@ class FocusTimerController extends ChangeNotifier {
 
     _phase = FocusSessionPhase.idle;
     _paused = false;
+    _activeAnimationPair = null;
+    _prepareShufflePreview();
     _remainingSeconds = _focusDuration.inSeconds;
     notifyListeners();
     onFocusRoundCompleted?.call();
@@ -409,6 +431,8 @@ class FocusTimerController extends ChangeNotifier {
       _phase = FocusSessionPhase.idle;
       _paused = false;
       _focusStartedAt = null;
+      _activeAnimationPair = null;
+      _prepareShufflePreview();
       _remainingSeconds = 0;
       notifyListeners();
       if (emitSoundEvent) {
@@ -442,7 +466,7 @@ class FocusTimerController extends ChangeNotifier {
         focusDuration: _focusDuration,
         startedAt: startedAt,
         completedAt: completedAt,
-        animationPair: _settings.animationPair,
+        animationPair: activeAnimationPair,
       ),
     );
   }
@@ -464,7 +488,7 @@ class FocusTimerController extends ChangeNotifier {
         focusDuration: duration,
         startedAt: startedAt,
         completedAt: completedAt,
-        animationPair: _settings.animationPair,
+        animationPair: activeAnimationPair,
       ),
     );
   }
@@ -475,6 +499,8 @@ class FocusTimerController extends ChangeNotifier {
     _paused = false;
     _focusStartedAt = null;
     _backgroundStartedAt = null;
+    _activeAnimationPair = null;
+    _prepareShufflePreview();
     _remainingSeconds = isStopwatch ? 0 : _focusDuration.inSeconds;
   }
 
@@ -482,6 +508,26 @@ class FocusTimerController extends ChangeNotifier {
     final duration = elapsedFocusDuration;
     if (duration > Duration.zero) {
       onFocusTimeEnded?.call(duration);
+    }
+  }
+
+  FocusAnimationPair _selectAnimationPair() {
+    if (_settings.animationPair != FocusAnimationPair.shuffle) {
+      return _settings.animationPair;
+    }
+
+    final candidates = FocusAnimationPair.values
+        .where((pair) => pair != FocusAnimationPair.shuffle)
+        .where((pair) => pair != _lastShuffledAnimationPair)
+        .toList();
+    final selected = candidates[Random().nextInt(candidates.length)];
+    _lastShuffledAnimationPair = selected;
+    return selected;
+  }
+
+  void _prepareShufflePreview() {
+    if (_settings.animationPair == FocusAnimationPair.shuffle) {
+      _activeAnimationPair = _selectAnimationPair();
     }
   }
 }

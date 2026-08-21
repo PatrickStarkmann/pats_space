@@ -49,7 +49,11 @@ class AnimationPairSettingsCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 _SmallActionButton(
                   icon: CupertinoIcons.shuffle,
-                  onPressed: () => onChanged(_nextPair),
+                  onPressed: () => onChanged(
+                    selectedPair == FocusAnimationPair.shuffle
+                        ? FocusAnimationPair.standard
+                        : FocusAnimationPair.shuffle,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 _SmallActionButton(
@@ -78,12 +82,6 @@ class AnimationPairSettingsCard extends StatelessWidget {
     if (picked != null) {
       onChanged(picked);
     }
-  }
-
-  FocusAnimationPair get _nextPair {
-    final values = FocusAnimationPair.values;
-    final index = values.indexOf(selectedPair);
-    return values[(index + 1) % values.length];
   }
 }
 
@@ -157,6 +155,7 @@ class _AnimationPairPickerDialog extends StatefulWidget {
 class _AnimationPairPickerDialogState
     extends State<_AnimationPairPickerDialog> {
   late FocusAnimationPair _pair = widget.initialPair;
+  late bool _shuffle = widget.initialPair == FocusAnimationPair.shuffle;
   Timer? _timer;
   int _tick = 0;
 
@@ -188,9 +187,10 @@ class _AnimationPairPickerDialogState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final showingBreak = (_tick ~/ 4).isOdd;
+    final previewPair = _shuffle ? FocusAnimationPair.standard : _pair;
     final spec = showingBreak
-        ? FocusAnimationCatalog.breakSpec(_pair)
-        : FocusAnimationCatalog.focusSpec(_pair);
+        ? FocusAnimationCatalog.breakSpec(previewPair)
+        : FocusAnimationCatalog.focusSpec(previewPair);
     final assetPath = spec.frames[_tick % spec.frames.length];
 
     return Center(
@@ -217,7 +217,9 @@ class _AnimationPairPickerDialogState
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${_pair.label} · ${showingBreak ? l10n.breakLabel : l10n.focus}',
+                  _shuffle
+                      ? 'Shuffle'
+                      : '${_pair.label} · ${showingBreak ? l10n.breakLabel : l10n.focus}',
                   style: _noDecoration(AppTextStyles.bodyMuted),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -251,7 +253,9 @@ class _AnimationPairPickerDialogState
                     Expanded(
                       child: _DialogButton(
                         label: l10n.select,
-                        onPressed: () => Navigator.of(context).pop(_pair),
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pop(_shuffle ? FocusAnimationPair.shuffle : _pair),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -272,18 +276,24 @@ class _AnimationPairPickerDialogState
   }
 
   void _previousPair() {
-    final values = FocusAnimationPair.values;
+    final values = FocusAnimationPair.values
+        .where((pair) => pair != FocusAnimationPair.shuffle)
+        .toList();
     final index = values.indexOf(_pair);
     setState(() {
+      _shuffle = false;
       _pair = values[(index - 1 + values.length) % values.length];
       _tick = 0;
     });
   }
 
   void _nextPair() {
-    final values = FocusAnimationPair.values;
+    final values = FocusAnimationPair.values
+        .where((pair) => pair != FocusAnimationPair.shuffle)
+        .toList();
     final index = values.indexOf(_pair);
     setState(() {
+      _shuffle = false;
       _pair = values[(index + 1) % values.length];
       _tick = 0;
     });

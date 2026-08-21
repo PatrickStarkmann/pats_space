@@ -103,6 +103,10 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final UserProfileRepository _profileRepository;
+  StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _incomingFriendRequestsSubscription;
+  bool _hasIncomingFriendRequests = false;
 
   @override
   void initState() {
@@ -111,6 +115,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
     );
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(
+      _watchIncomingFriendRequests,
+    );
+  }
+
+  void _watchIncomingFriendRequests(User? user) {
+    _incomingFriendRequestsSubscription?.cancel();
+    _hasIncomingFriendRequests = false;
+    if (user == null) {
+      if (mounted) setState(() {});
+      return;
+    }
+
+    _incomingFriendRequestsSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('friend_requests')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
+            setState(
+              () => _hasIncomingFriendRequests = snapshot.docs.isNotEmpty,
+            );
+          },
+          onError: (_, _) {
+            if (!mounted) return;
+            setState(() => _hasIncomingFriendRequests = false);
+          },
+        );
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    _incomingFriendRequestsSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -127,6 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             soundController: widget.soundController,
             notificationController: widget.notificationController,
             weekStartDay: widget.weekStartDay,
+            hasIncomingFriendRequests: _hasIncomingFriendRequests,
             onLanguagePressed: () {
               Navigator.of(routeContext).push(
                 _settingsRoute(
@@ -244,6 +286,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.soundController,
     required this.notificationController,
     required this.weekStartDay,
+    required this.hasIncomingFriendRequests,
     required this.onLanguagePressed,
     required this.onSoundsPressed,
     required this.onNotificationsPressed,
@@ -263,6 +306,7 @@ class _MainSettingsPage extends StatelessWidget {
   final SoundController soundController;
   final NotificationController notificationController;
   final WeekStartDay weekStartDay;
+  final bool hasIncomingFriendRequests;
   final VoidCallback onLanguagePressed;
   final VoidCallback onSoundsPressed;
   final VoidCallback onNotificationsPressed;
@@ -300,6 +344,7 @@ class _MainSettingsPage extends StatelessWidget {
               icon: PhosphorIconsRegular.users,
               title: l10n.friends,
               subtitle: l10n.friendsSettingsSubtitle,
+              showIconIndicator: hasIncomingFriendRequests,
               trailing: const _Chevron(),
               onTap: onFriendsPressed,
             ),
@@ -1404,64 +1449,64 @@ class _NotificationsSettingsPage extends StatelessWidget {
         final detailControlsEnabled = controller.enabled;
 
         return _SettingsScrollView(
-        title: l10n.notifications,
-        leading: _BackButton(onPressed: onBack),
-        children: [
-          _SettingsGroup(
-            children: [
-              _SettingsRow(
-                icon: PhosphorIconsRegular.bell,
-                title: l10n.timerNotifications,
-                subtitle: l10n.timerNotificationsDescription,
-                trailing: CupertinoSwitch(
-                  value: controller.enabled,
-                  activeTrackColor: AppColors.charcoal,
-                  onChanged: (value) {
-                    unawaited(controller.setEnabled(value));
-                  },
+          title: l10n.notifications,
+          leading: _BackButton(onPressed: onBack),
+          children: [
+            _SettingsGroup(
+              children: [
+                _SettingsRow(
+                  icon: PhosphorIconsRegular.bell,
+                  title: l10n.timerNotifications,
+                  subtitle: l10n.timerNotificationsDescription,
+                  trailing: CupertinoSwitch(
+                    value: controller.enabled,
+                    activeTrackColor: AppColors.charcoal,
+                    onChanged: (value) {
+                      unawaited(controller.setEnabled(value));
+                    },
+                  ),
                 ),
-              ),
-              const _SettingsDivider(),
-              _SettingsRow(
-                icon: PhosphorIconsRegular.timer,
-                title: l10n.focusEndNotification,
-                subtitle: l10n.focusEndNotificationDescription,
-                trailing: CupertinoSwitch(
-                  value: detailControlsEnabled && controller.focusEndEnabled,
-                  activeTrackColor: AppColors.charcoal,
-                  onChanged: detailControlsEnabled
-                      ? (value) {
-                          unawaited(controller.setFocusEndEnabled(value));
-                        }
-                      : null,
+                const _SettingsDivider(),
+                _SettingsRow(
+                  icon: PhosphorIconsRegular.timer,
+                  title: l10n.focusEndNotification,
+                  subtitle: l10n.focusEndNotificationDescription,
+                  trailing: CupertinoSwitch(
+                    value: detailControlsEnabled && controller.focusEndEnabled,
+                    activeTrackColor: AppColors.charcoal,
+                    onChanged: detailControlsEnabled
+                        ? (value) {
+                            unawaited(controller.setFocusEndEnabled(value));
+                          }
+                        : null,
+                  ),
                 ),
-              ),
-              const _SettingsDivider(),
-              _SettingsRow(
-                icon: PhosphorIconsRegular.coffee,
-                title: l10n.breakEndNotification,
-                subtitle: l10n.breakEndNotificationDescription,
-                trailing: CupertinoSwitch(
-                  value: detailControlsEnabled && controller.breakEndEnabled,
-                  activeTrackColor: AppColors.charcoal,
-                  onChanged: detailControlsEnabled
-                      ? (value) {
-                          unawaited(controller.setBreakEndEnabled(value));
-                        }
-                      : null,
+                const _SettingsDivider(),
+                _SettingsRow(
+                  icon: PhosphorIconsRegular.coffee,
+                  title: l10n.breakEndNotification,
+                  subtitle: l10n.breakEndNotificationDescription,
+                  trailing: CupertinoSwitch(
+                    value: detailControlsEnabled && controller.breakEndEnabled,
+                    activeTrackColor: AppColors.charcoal,
+                    onChanged: detailControlsEnabled
+                        ? (value) {
+                            unawaited(controller.setBreakEndEnabled(value));
+                          }
+                        : null,
+                  ),
                 ),
+              ],
+            ),
+            if (controller.permissionDenied) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l10n.notificationPermissionDenied,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMuted,
               ),
             ],
-          ),
-          if (controller.permissionDenied) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.notificationPermissionDenied,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMuted,
-            ),
           ],
-        ],
         );
       },
     );
@@ -2413,6 +2458,7 @@ class _SettingsRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.destructive = false,
+    this.showIconIndicator = false,
   });
 
   final Object icon;
@@ -2421,6 +2467,7 @@ class _SettingsRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool destructive;
+  final bool showIconIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -2433,12 +2480,37 @@ class _SettingsRow extends StatelessWidget {
           children: [
             SizedBox(
               width: 40,
-              child: _SettingsIcon(
-                icon,
-                color: destructive
-                    ? CupertinoColors.systemRed
-                    : AppColors.charcoal,
-                size: 27,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _SettingsIcon(
+                      icon,
+                      color: destructive
+                          ? CupertinoColors.systemRed
+                          : AppColors.charcoal,
+                      size: 27,
+                    ),
+                  ),
+                  if (showIconIndicator)
+                    Positioned(
+                      top: 0,
+                      right: 3,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemRed,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.surface,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

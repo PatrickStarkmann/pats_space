@@ -1,4 +1,5 @@
 enum FocusAnimationPair {
+  shuffle,
   standard,
   pair02,
   pair03,
@@ -8,6 +9,7 @@ enum FocusAnimationPair {
 
   String get label {
     return switch (this) {
+      FocusAnimationPair.shuffle => 'Shuffle',
       FocusAnimationPair.standard => 'Standard',
       FocusAnimationPair.pair02 => 'Set 2',
       FocusAnimationPair.pair03 => 'Set 3',

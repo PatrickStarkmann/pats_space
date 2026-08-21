@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
 import 'package:pats_space/features/focus/models/active_timer_state.dart';
 import 'package:pats_space/features/focus/models/focus_mode.dart';
+import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 
@@ -151,6 +152,49 @@ void main() {
       expect(controller.phase, FocusSessionPhase.breakTime);
       expect(controller.paused, isTrue);
       expect(controller.remainingSeconds, 30);
+    });
+
+    test(
+      'shuffle chooses one set per session and avoids an immediate repeat',
+      () {
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            animationPair: FocusAnimationPair.shuffle,
+          ),
+        );
+        addTearDown(controller.dispose);
+
+        final previewPair = controller.activeAnimationPair;
+        controller.toggle();
+        final firstPair = controller.activeAnimationPair;
+        expect(firstPair, previewPair);
+        expect(firstPair, isNot(FocusAnimationPair.shuffle));
+
+        controller.cancelFocusRound();
+        controller.toggle();
+        expect(controller.activeAnimationPair, isNot(firstPair));
+      },
+    );
+
+    test('restores the shuffled set currently used by an active timer', () {
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          animationPair: FocusAnimationPair.shuffle,
+        ),
+      );
+      final restored = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          animationPair: FocusAnimationPair.shuffle,
+        ),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(restored.dispose);
+
+      controller.toggle();
+      final selectedPair = controller.activeAnimationPair;
+      restored.restore(controller.persistentState!);
+
+      expect(restored.activeAnimationPair, selectedPair);
     });
 
     testWidgets(

@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:pats_space/app/navigation/app_tab.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -13,11 +13,13 @@ class PatsspaceBottomNavBar extends StatelessWidget {
     required this.selectedTab,
     required this.onTabSelected,
     this.enabled = true,
+    this.showSettingsIndicator = false,
   });
 
   final AppTab selectedTab;
   final ValueChanged<AppTab> onTabSelected;
   final bool enabled;
+  final bool showSettingsIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +63,35 @@ class PatsspaceBottomNavBar extends StatelessWidget {
                       child: SizedBox(
                         width: 52,
                         height: 44,
-                        child: PhosphorIcon(
-                          selected ? tab.selectedIcon : tab.icon,
-                          color: selected
-                              ? AppColors.charcoal
-                              : AppColors.grayWarm,
-                          size: selected ? 28 : 26,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: [
+                            PhosphorIcon(
+                              selected ? tab.selectedIcon : tab.icon,
+                              color: selected
+                                  ? AppColors.charcoal
+                                  : AppColors.grayWarm,
+                              size: selected ? 28 : 26,
+                            ),
+                            if (tab == AppTab.settings && showSettingsIndicator)
+                              Positioned(
+                                top: 2,
+                                right: 5,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.systemRed,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.surface,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     );

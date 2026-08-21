@@ -1,4 +1,5 @@
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
+import 'package:pats_space/features/focus/models/focus_animation_pair.dart';
 
 class ActiveTimerState {
   const ActiveTimerState({
@@ -8,6 +9,7 @@ class ActiveTimerState {
     required this.remainingSeconds,
     required this.savedAt,
     this.focusStartedAt,
+    this.animationPair,
   });
 
   final FocusSessionPhase phase;
@@ -16,6 +18,7 @@ class ActiveTimerState {
   final int remainingSeconds;
   final DateTime savedAt;
   final DateTime? focusStartedAt;
+  final FocusAnimationPair? animationPair;
 
   Map<String, Object?> toJson() => {
     'phase': phase.name,
@@ -24,6 +27,7 @@ class ActiveTimerState {
     'remainingSeconds': remainingSeconds,
     'savedAt': savedAt.toIso8601String(),
     'focusStartedAt': focusStartedAt?.toIso8601String(),
+    'animationPair': animationPair?.name,
   };
 
   static ActiveTimerState? fromJson(Map<String, dynamic> json) {
@@ -45,7 +49,16 @@ class ActiveTimerState {
       focusStartedAt: DateTime.tryParse(
         json['focusStartedAt'] as String? ?? '',
       ),
+      animationPair: _animationPair(json['animationPair']),
     );
+  }
+
+  static FocusAnimationPair? _animationPair(Object? value) {
+    if (value is! String) return null;
+    for (final pair in FocusAnimationPair.values) {
+      if (pair.name == value) return pair;
+    }
+    return null;
   }
 
   @override
@@ -56,7 +69,8 @@ class ActiveTimerState {
       other.completedSessions == completedSessions &&
       other.remainingSeconds == remainingSeconds &&
       other.savedAt == savedAt &&
-      other.focusStartedAt == focusStartedAt;
+      other.focusStartedAt == focusStartedAt &&
+      other.animationPair == animationPair;
 
   @override
   int get hashCode => Object.hash(
@@ -66,5 +80,6 @@ class ActiveTimerState {
     remainingSeconds,
     savedAt,
     focusStartedAt,
+    animationPair,
   );
 }

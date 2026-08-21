@@ -82,6 +82,7 @@ class FocusAnimationCatalog {
 
   static FocusAnimationSpec focusSpec(FocusAnimationPair pair) {
     return switch (pair) {
+      FocusAnimationPair.shuffle => pair01Focus,
       FocusAnimationPair.standard => pair01Focus,
       FocusAnimationPair.pair02 => pair02Focus,
       FocusAnimationPair.pair03 => pair03Focus,
@@ -93,6 +94,7 @@ class FocusAnimationCatalog {
 
   static FocusAnimationSpec breakSpec(FocusAnimationPair pair) {
     return switch (pair) {
+      FocusAnimationPair.shuffle => pair01Break,
       FocusAnimationPair.standard => pair01Break,
       FocusAnimationPair.pair02 => pair02Break,
       FocusAnimationPair.pair03 => pair03Break,

@@ -482,12 +482,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             !_timerController.running);
 
     return showBreakAnimation
-        ? FocusAnimationCatalog.breakSpec(
-            _timerController.settings.animationPair,
-          )
-        : FocusAnimationCatalog.focusSpec(
-            _timerController.settings.animationPair,
-          );
+        ? FocusAnimationCatalog.breakSpec(_timerController.activeAnimationPair)
+        : FocusAnimationCatalog.focusSpec(_timerController.activeAnimationPair);
   }
 
   Future<void> _handleFocusViewModeChanged(_FocusViewMode mode) async {
