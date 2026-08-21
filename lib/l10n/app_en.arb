@@ -258,6 +258,9 @@
   "gardenOfflineMessage": "Reconnect to use the garden and shop.",
   "meadowLockedTitle": "A new space is waiting",
   "meadowLockedMessage": "{remaining, plural, =1{Bloom 1 more plant to unlock it.} other{Bloom {remaining} more plants to unlock it.}}",
+  "meadowUnlockedTitle": "New space unlocked",
+  "meadowUnlockedBody": "Your Meadow is ready.",
+  "meadowUnlockAction": "Explore space",
   "@meadowLockedMessage": {
     "placeholders": {
       "remaining": {
@@ -344,7 +347,7 @@
   "plantDescriptionHanging": "Only grows in hanging pots",
   "potSkin": "Pot skin",
   "plantAction": "Plant {plant}",
-  "plantActionWithCost": "Plant {plant} · {cost} water",
+  "plantActionWithCost": "Plant · {cost} water",
   "plantNeedWater": "Need {cost} water",
   "plantLocked": "Locked",
   "readyToHarvest": "Ready to harvest · {count} harvests left",
@@ -464,8 +467,8 @@
   "notNow": "Not now",
   "gardenTutorialPickHomeTitle": "Pick a pot",
   "gardenTutorialPickHomeBody": "Tap the glowing pot.",
-  "gardenTutorialPlantDaisyTitle": "Plant your seed",
-  "gardenTutorialPlantDaisyBody": "Daisy is ready. Plant it here.",
+  "gardenTutorialPlantDaisyTitle": "Plant a seed",
+  "gardenTutorialPlantDaisyBody": "Tap Plant.",
   "gardenTutorialGiveWaterTitle": "Give it water",
   "gardenTutorialGiveWaterBody": "Tap the drop until it sprouts.",
   "gardenTutorialSpaceGrowingTitle": "It sprouted",

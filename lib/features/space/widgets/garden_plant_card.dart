@@ -24,6 +24,15 @@ String _plantName(AppLocalizations l10n, GardenPlantType plantType) {
   };
 }
 
+String _plantCardName(AppLocalizations l10n, GardenPlantType plantType) {
+  final name = _plantName(l10n, plantType);
+  return switch (plantType) {
+    GardenPlantType.daisy => name.replaceFirst('Gänse', 'Gänse\u200B'),
+    GardenPlantType.hangingFlower => name.replaceFirst('Hänge', 'Hänge\u200B'),
+    _ => name,
+  };
+}
+
 String _plantSpecialLabel(AppLocalizations l10n, GardenPlantType plantType) {
   return switch (plantType) {
     GardenPlantType.daisy => l10n.plantSpecialStarter,
@@ -489,13 +498,16 @@ class _PlantCarouselCard extends StatelessWidget {
                       if (unlocked) ...[
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          _plantName(AppLocalizations.of(context), plantType),
+                          _plantCardName(
+                            AppLocalizations.of(context),
+                            plantType,
+                          ),
                           style: AppTextStyles.body.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.charcoal,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ],
@@ -759,10 +771,7 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
                 child: Text(
                   unlocked
                       ? enabled
-                            ? l10n.plantActionWithCost(
-                                plantType.plantCost,
-                                _plantName(l10n, plantType),
-                              )
+                            ? l10n.plantActionWithCost(plantType.plantCost)
                             : l10n.plantNeedWater(plantType.plantCost)
                       : l10n.plantLocked,
                   style: AppTextStyles.body.copyWith(
@@ -1042,7 +1051,7 @@ class _PlantInfoContentState extends State<_PlantInfoContent>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _plantName(l10n, pot.plantType),
+                          _plantCardName(l10n, pot.plantType),
                           style: AppTextStyles.headline,
                         ),
                         const SizedBox(height: AppSpacing.xs),

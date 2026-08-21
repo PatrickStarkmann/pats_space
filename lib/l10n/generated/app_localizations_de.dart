@@ -716,6 +716,15 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get meadowUnlockedTitle => 'Neuer Space freigeschaltet';
+
+  @override
+  String get meadowUnlockedBody => 'Dein neuer Space ist bereit.';
+
+  @override
+  String get meadowUnlockAction => 'Space entdecken';
+
+  @override
   String needItem(Object item) {
     return 'Benötigt $item';
   }
@@ -901,8 +910,8 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String plantActionWithCost(Object cost, Object plant) {
-    return '$plant pflanzen · $cost Wasser';
+  String plantActionWithCost(Object cost) {
+    return 'Pflanzen · $cost Wasser';
   }
 
   @override
@@ -1294,11 +1303,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gardenTutorialPickHomeBody => 'Tippe auf den leuchtenden Topf.';
 
   @override
-  String get gardenTutorialPlantDaisyTitle => 'Pflanz deinen Seed';
+  String get gardenTutorialPlantDaisyTitle => 'Pflanze einen Samen';
 
   @override
-  String get gardenTutorialPlantDaisyBody =>
-      'Daisy ist bereit. Pflanz sie hier.';
+  String get gardenTutorialPlantDaisyBody => 'Tippe auf Pflanzen.';
 
   @override
   String get gardenTutorialGiveWaterTitle => 'Gieß sie';

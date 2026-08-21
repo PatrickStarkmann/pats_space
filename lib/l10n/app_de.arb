@@ -258,6 +258,9 @@
   "gardenOfflineMessage": "Verbinde dich wieder, um Garden und Shop zu nutzen.",
   "meadowLockedTitle": "Ein neuer Space wartet",
   "meadowLockedMessage": "{remaining, plural, =1{Bringe noch 1 Pflanze zum Blühen, um ihn freizuschalten.} other{Bringe noch {remaining} Pflanzen zum Blühen, um ihn freizuschalten.}}",
+  "meadowUnlockedTitle": "Neuer Space freigeschaltet",
+  "meadowUnlockedBody": "Dein neuer Space ist bereit.",
+  "meadowUnlockAction": "Space entdecken",
   "@meadowLockedMessage": {
     "placeholders": {
       "remaining": {
@@ -344,7 +347,7 @@
   "plantDescriptionHanging": "Wächst nur in Hänge-Töpfen",
   "potSkin": "Topf-Design",
   "plantAction": "{plant} pflanzen",
-  "plantActionWithCost": "{plant} pflanzen · {cost} Wasser",
+  "plantActionWithCost": "Pflanzen · {cost} Wasser",
   "plantNeedWater": "{cost} Wasser benötigt",
   "plantLocked": "Gesperrt",
   "readyToHarvest": "Bereit zur Ernte · noch {count} Ernten",
@@ -464,8 +467,8 @@
   "notNow": "Nicht jetzt",
   "gardenTutorialPickHomeTitle": "Wähl einen Topf",
   "gardenTutorialPickHomeBody": "Tippe auf den leuchtenden Topf.",
-  "gardenTutorialPlantDaisyTitle": "Pflanz deinen Seed",
-  "gardenTutorialPlantDaisyBody": "Daisy ist bereit. Pflanz sie hier.",
+  "gardenTutorialPlantDaisyTitle": "Pflanze einen Samen",
+  "gardenTutorialPlantDaisyBody": "Tippe auf Pflanzen.",
   "gardenTutorialGiveWaterTitle": "Gieß sie",
   "gardenTutorialGiveWaterBody": "Tippe auf den Drop, bis sie sprießt.",
   "gardenTutorialSpaceGrowingTitle": "Sie sprießt",

@@ -1364,6 +1364,24 @@ abstract class AppLocalizations {
   /// **'{remaining, plural, =1{Bloom 1 more plant to unlock it.} other{Bloom {remaining} more plants to unlock it.}}'**
   String meadowLockedMessage(int remaining);
 
+  /// No description provided for @meadowUnlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New space unlocked'**
+  String get meadowUnlockedTitle;
+
+  /// No description provided for @meadowUnlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Meadow is ready.'**
+  String get meadowUnlockedBody;
+
+  /// No description provided for @meadowUnlockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore space'**
+  String get meadowUnlockAction;
+
   /// No description provided for @needItem.
   ///
   /// In en, this message translates to:
@@ -1697,8 +1715,8 @@ abstract class AppLocalizations {
   /// No description provided for @plantActionWithCost.
   ///
   /// In en, this message translates to:
-  /// **'Plant {plant} · {cost} water'**
-  String plantActionWithCost(Object cost, Object plant);
+  /// **'Plant · {cost} water'**
+  String plantActionWithCost(Object cost);
 
   /// No description provided for @plantNeedWater.
   ///
@@ -2417,13 +2435,13 @@ abstract class AppLocalizations {
   /// No description provided for @gardenTutorialPlantDaisyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Plant your seed'**
+  /// **'Plant a seed'**
   String get gardenTutorialPlantDaisyTitle;
 
   /// No description provided for @gardenTutorialPlantDaisyBody.
   ///
   /// In en, this message translates to:
-  /// **'Daisy is ready. Plant it here.'**
+  /// **'Tap Plant.'**
   String get gardenTutorialPlantDaisyBody;
 
   /// No description provided for @gardenTutorialGiveWaterTitle.

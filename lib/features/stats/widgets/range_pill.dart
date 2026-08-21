@@ -8,11 +8,13 @@ class RangePill extends StatelessWidget {
     required this.title,
     required this.onPrevious,
     required this.onNext,
+    this.width = 162,
   });
 
   final String title;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class RangePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: SizedBox(
-        width: 162,
+        width: width,
         height: 42,
         child: Row(
           children: [
@@ -34,7 +36,6 @@ class RangePill extends StatelessWidget {
               child: Text(
                 title,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.headline.copyWith(
                   fontSize: 15,

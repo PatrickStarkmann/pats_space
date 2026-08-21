@@ -700,6 +700,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get meadowUnlockedTitle => 'New space unlocked';
+
+  @override
+  String get meadowUnlockedBody => 'Your Meadow is ready.';
+
+  @override
+  String get meadowUnlockAction => 'Explore space';
+
+  @override
   String needItem(Object item) {
     return 'Need $item';
   }
@@ -885,8 +894,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String plantActionWithCost(Object cost, Object plant) {
-    return 'Plant $plant · $cost water';
+  String plantActionWithCost(Object cost) {
+    return 'Plant · $cost water';
   }
 
   @override
@@ -1275,10 +1284,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gardenTutorialPickHomeBody => 'Tap the glowing pot.';
 
   @override
-  String get gardenTutorialPlantDaisyTitle => 'Plant your seed';
+  String get gardenTutorialPlantDaisyTitle => 'Plant a seed';
 
   @override
-  String get gardenTutorialPlantDaisyBody => 'Daisy is ready. Plant it here.';
+  String get gardenTutorialPlantDaisyBody => 'Tap Plant.';
 
   @override
   String get gardenTutorialGiveWaterTitle => 'Give it water';

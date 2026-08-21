@@ -50,8 +50,10 @@ class _SpaceScreenState extends State<SpaceScreen> {
   final List<_CoinFlight> _coinFlights = [];
   final List<_PlantUnlockReveal> _plantUnlockReveals = [];
   late Set<GardenPlantType> _knownUnlockedPlantTypes;
+  late bool _knownMeadowUnlocked;
   int _nextCoinFlightId = 0;
   int _nextPlantUnlockRevealId = 0;
+  bool _showMeadowUnlockReveal = false;
   bool _arrangingDecorations = false;
   GardenDecoration? _selectedDecoration;
   int? _selectedArrangedPotIndex;
@@ -64,6 +66,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
     _knownUnlockedPlantTypes = {
       ...widget.gardenController.state.unlockedPlantTypes,
     };
+    _knownMeadowUnlocked = widget.gardenController.state.meadowUnlocked;
     widget.gardenController.addListener(_handleGardenChanged);
   }
 
@@ -78,6 +81,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
     _knownUnlockedPlantTypes = {
       ...widget.gardenController.state.unlockedPlantTypes,
     };
+    _knownMeadowUnlocked = widget.gardenController.state.meadowUnlocked;
     widget.gardenController.addListener(_handleGardenChanged);
   }
 
@@ -91,6 +95,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
     _handleDecorationArrangementRequest();
 
     final unlockedPlantTypes = widget.gardenController.state.unlockedPlantTypes;
+    final meadowUnlocked = widget.gardenController.state.meadowUnlocked;
     final newlyUnlocked = GardenPlantType.plantable
         .where(
           (plantType) =>
@@ -100,14 +105,21 @@ class _SpaceScreenState extends State<SpaceScreen> {
         .toList();
 
     _knownUnlockedPlantTypes = {...unlockedPlantTypes};
+    final meadowJustUnlocked = meadowUnlocked && !_knownMeadowUnlocked;
+    _knownMeadowUnlocked = meadowUnlocked;
 
-    if (newlyUnlocked.isEmpty || !mounted) {
+    if ((newlyUnlocked.isEmpty && !meadowJustUnlocked) || !mounted) {
       return;
     }
 
     for (final plantType in newlyUnlocked) {
       unawaited(
         AppAnalytics.instance.logGardenItemUnlocked(itemType: plantType.name),
+      );
+    }
+    if (meadowJustUnlocked) {
+      unawaited(
+        AppAnalytics.instance.logGardenItemUnlocked(itemType: 'meadow'),
       );
     }
 
@@ -125,6 +137,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
               plantType: plantType,
             ),
           );
+        }
+        if (meadowJustUnlocked) {
+          _showMeadowUnlockReveal = true;
         }
       });
     });
@@ -206,6 +221,16 @@ class _SpaceScreenState extends State<SpaceScreen> {
     setState(() {
       _plantUnlockReveals.removeWhere((reveal) => reveal.id == id);
     });
+  }
+
+  void _dismissMeadowUnlockReveal({bool openMeadow = false}) {
+    if (!mounted) {
+      return;
+    }
+    setState(() => _showMeadowUnlockReveal = false);
+    if (openMeadow) {
+      _selectArea(GardenArea.second);
+    }
   }
 
   Future<void> _confirmCleanUpGarden() async {
@@ -670,6 +695,14 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   key: ValueKey(reveal.id),
                   plantType: reveal.plantType,
                   onCompleted: () => _removePlantUnlockReveal(reveal.id),
+                ),
+              ),
+            if (_showMeadowUnlockReveal)
+              Positioned.fill(
+                child: _MeadowUnlockRevealOverlay(
+                  onDismissed: _dismissMeadowUnlockReveal,
+                  onOpenMeadow: () =>
+                      _dismissMeadowUnlockReveal(openMeadow: true),
                 ),
               ),
             if (widget.tutorialActive)
@@ -1503,6 +1536,165 @@ class _PlantUnlockReveal {
 
   final int id;
   final GardenPlantType plantType;
+}
+
+class _MeadowUnlockRevealOverlay extends StatefulWidget {
+  const _MeadowUnlockRevealOverlay({
+    required this.onDismissed,
+    required this.onOpenMeadow,
+  });
+
+  final VoidCallback onDismissed;
+  final VoidCallback onOpenMeadow;
+
+  @override
+  State<_MeadowUnlockRevealOverlay> createState() =>
+      _MeadowUnlockRevealOverlayState();
+}
+
+class _MeadowUnlockRevealOverlayState extends State<_MeadowUnlockRevealOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 720),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final value = _controller.value;
+        final entrance = Curves.easeOutBack.transform(
+          (value / .72).clamp(0, 1),
+        );
+
+        return Opacity(
+          opacity: value.clamp(0.0, 1.0),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onDismissed,
+                  child: ColoredBox(
+                    color: AppColors.charcoal.withValues(alpha: .16 * value),
+                  ),
+                ),
+              ),
+              Center(
+                child: Transform.translate(
+                  offset: Offset(0, 28 - entrance * 28),
+                  child: Transform.scale(
+                    scale: .86 + entrance * .14,
+                    child: _MeadowUnlockCard(onOpenMeadow: widget.onOpenMeadow),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MeadowUnlockCard extends StatelessWidget {
+  const _MeadowUnlockCard({required this.onOpenMeadow});
+
+  final VoidCallback onOpenMeadow;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: .98),
+          borderRadius: BorderRadius.circular(34),
+          border: Border.all(color: AppColors.sage.withValues(alpha: .34)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: .16),
+              blurRadius: 36,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 82,
+                height: 82,
+                decoration: const BoxDecoration(
+                  color: AppColors.sageSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const PhosphorIcon(
+                  PhosphorIconsFill.treeEvergreen,
+                  color: AppColors.sagePressed,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                l10n.meadowUnlockedTitle,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.title.copyWith(fontSize: 30),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.meadowUnlockedBody,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMuted,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onOpenMeadow,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.charcoal,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Text(
+                      l10n.meadowUnlockAction,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.surface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _PlantUnlockRevealOverlay extends StatefulWidget {

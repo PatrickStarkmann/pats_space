@@ -29,48 +29,57 @@ class FocusLineChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StatsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 380;
+          final summary = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value,
-                      style: AppTextStyles.title.copyWith(fontSize: 34),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      title,
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.grayWarm,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+              Text(value, style: AppTextStyles.title.copyWith(fontSize: 34)),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                title,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.grayWarm,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              RangePill(
-                title: rangeTitle,
-                onPrevious: onPreviousRange,
-                onNext: onNextRange,
+            ],
+          );
+          final rangePill = RangePill(
+            title: rangeTitle,
+            width: compact ? constraints.maxWidth : 162,
+            onPrevious: onPreviousRange,
+            onNext: onNextRange,
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (compact) ...[
+                summary,
+                const SizedBox(height: AppSpacing.md),
+                rangePill,
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: summary),
+                    rangePill,
+                  ],
+                ),
+              const SizedBox(height: AppSpacing.xl),
+              SizedBox(
+                height: 150,
+                child: CustomPaint(
+                  painter: LineChartPainter(values: values, labels: labels),
+                  size: Size.infinite,
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          SizedBox(
-            height: 150,
-            child: CustomPaint(
-              painter: LineChartPainter(values: values, labels: labels),
-              size: Size.infinite,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
