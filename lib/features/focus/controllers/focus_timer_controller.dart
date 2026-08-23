@@ -88,6 +88,24 @@ class FocusTimerController extends ChangeNotifier {
   bool get running => active && !_paused;
   bool get isStopwatch => _settings.mode == FocusMode.stopwatch;
 
+  int get currentPhaseTotalSeconds {
+    return switch (_phase) {
+      FocusSessionPhase.focus => _focusDuration.inSeconds,
+      FocusSessionPhase.breakTime =>
+        _settings
+            .breakDuration(
+              isLongBreak:
+                  (_completedSessions + 1) %
+                      (_settings.longBreakInterval <= 0
+                          ? 1
+                          : _settings.longBreakInterval) ==
+                  0,
+            )
+            .inSeconds,
+      FocusSessionPhase.stopwatch || FocusSessionPhase.idle => 0,
+    };
+  }
+
   ActiveTimerState? get persistentState {
     if (!active) return null;
     return ActiveTimerState(

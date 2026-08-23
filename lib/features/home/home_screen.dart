@@ -22,6 +22,7 @@ import 'package:pats_space/features/focus/models/focus_mode.dart';
 import 'package:pats_space/features/focus/models/focus_session_record.dart';
 import 'package:pats_space/features/focus/models/focus_session_phase.dart';
 import 'package:pats_space/features/focus/models/focus_timer_settings.dart';
+import 'package:pats_space/features/live_activity/services/focus_live_activity_service.dart';
 import 'package:pats_space/features/focus/repositories/focus_settings_repository.dart';
 import 'package:pats_space/features/focus/repositories/active_timer_state_repository.dart';
 import 'package:pats_space/features/focus/repositories/pending_focus_reward_repository.dart';
@@ -105,6 +106,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   FocusSessionPhase _lastTimerPhase = FocusSessionPhase.idle;
   bool _appInForeground = true;
   String? _lastPersistedTimerSignature;
+  String? _lastLiveActivitySignature;
+  final _liveActivityService = const FocusLiveActivityService();
 
   @override
   void initState() {
@@ -133,6 +136,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     _timerController.addListener(_syncAnimation);
     _characterAnimator = FocusCharacterAnimator();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncAnimation();
+    });
     if (widget.gardenOnline) {
       _restoreSocialFocusRoom();
     }
@@ -180,6 +187,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       unawaited(widget.notificationController.setAppForeground(true));
       _timerController.resumeFromBackground();
       _persistActiveTimerState(force: true);
+      unawaited(_syncLiveActivity(force: true));
       _appInForeground = true;
       return;
     }
@@ -900,6 +908,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
     _syncTimerNotification();
     _persistActiveTimerState();
+    unawaited(_syncLiveActivity());
 
     if (_timerController.running) {
       _characterAnimator.start();
@@ -927,6 +936,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!force && signature == _lastPersistedTimerSignature) return;
     _lastPersistedTimerSignature = signature;
     unawaited(widget.activeTimerStateRepository.save(state));
+  }
+
+  Future<void> _syncLiveActivity({bool force = false}) {
+    final timer = _timerController;
+    final signature = timer.active
+        ? '${timer.phase.name}:$timer.paused:$_focusLabel'
+        : 'idle';
+    if (!force && signature == _lastLiveActivitySignature) {
+      return Future.value();
+    }
+    _lastLiveActivitySignature = signature;
+    return _liveActivityService.sync(timer, title: _focusLabel);
   }
 
   void _syncTimerNotification() {
@@ -1008,6 +1029,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _handlePlayPause() async {
     if (_timerController.active) {
       _timerController.toggle();
+      await _syncLiveActivity(force: true);
       return;
     }
 

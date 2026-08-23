@@ -4,6 +4,7 @@ import UIKit
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let focusBlockingChannelName = "pats_space/focus_blocking"
+  private let focusLiveActivityChannelName = "pats_space/focus_live_activity"
   private lazy var focusBlockingManager = FocusBlockingManager()
 
   override func application(
@@ -18,6 +19,47 @@ import UIKit
     registerFocusBlockingChannel(
       messenger: engineBridge.applicationRegistrar.messenger()
     )
+    registerFocusLiveActivityChannel(
+      messenger: engineBridge.applicationRegistrar.messenger()
+    )
+  }
+
+  private func registerFocusLiveActivityChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(
+      name: focusLiveActivityChannelName,
+      binaryMessenger: messenger
+    )
+
+    channel.setMethodCallHandler { call, result in
+      Task { @MainActor in
+        guard #available(iOS 16.1, *) else {
+          result(nil)
+          return
+        }
+        let manager = FocusLiveActivityManager()
+
+        do {
+          switch call.method {
+          case "sync":
+            try await manager.sync(arguments: call.arguments as? [String: Any])
+            result(nil)
+          case "end":
+            await manager.end()
+            result(nil)
+          default:
+            result(FlutterMethodNotImplemented)
+          }
+        } catch {
+          result(
+            FlutterError(
+              code: "live_activity_error",
+              message: error.localizedDescription,
+              details: nil
+            )
+          )
+        }
+      }
+    }
   }
 
   private func registerFocusBlockingChannel(messenger: FlutterBinaryMessenger) {
