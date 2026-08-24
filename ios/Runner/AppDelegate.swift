@@ -5,7 +5,11 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let focusBlockingChannelName = "pats_space/focus_blocking"
   private let focusLiveActivityChannelName = "pats_space/focus_live_activity"
+  private let focusHomeWidgetChannelName = "pats_space/focus_home_widget"
+  private let focusLifecycleChannelName = "pats_space/focus_lifecycle"
   private lazy var focusBlockingManager = FocusBlockingManager()
+  private lazy var focusHomeWidgetManager = FocusHomeWidgetManager()
+  private var focusLifecycleChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -16,12 +20,36 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    focusLifecycleChannel = FlutterMethodChannel(
+      name: focusLifecycleChannelName,
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
     registerFocusBlockingChannel(
       messenger: engineBridge.applicationRegistrar.messenger()
     )
     registerFocusLiveActivityChannel(
       messenger: engineBridge.applicationRegistrar.messenger()
     )
+    registerFocusHomeWidgetChannel(
+      messenger: engineBridge.applicationRegistrar.messenger()
+    )
+  }
+
+  func focusSceneDidBecomeActive() {
+    focusLifecycleChannel?.invokeMethod("foreground", arguments: nil)
+  }
+
+  private func registerFocusHomeWidgetChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: focusHomeWidgetChannelName, binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { result(nil); return }
+      if call.method == "sync" {
+        self.focusHomeWidgetManager.sync(arguments: call.arguments as? [String: Any])
+        result(nil)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 
   private func registerFocusLiveActivityChannel(messenger: FlutterBinaryMessenger) {

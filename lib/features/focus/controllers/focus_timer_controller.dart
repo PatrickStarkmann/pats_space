@@ -70,13 +70,24 @@ class FocusTimerController extends ChangeNotifier {
   int _completedSessions = 0;
   DateTime? _focusStartedAt;
   DateTime? _backgroundStartedAt;
+  DateTime? _lastTickerTickAt;
+  DateTime? _phaseDeadline;
   FocusAnimationPair? _activeAnimationPair;
   FocusAnimationPair? _lastShuffledAnimationPair;
 
   FocusTimerSettings get settings => _settings;
   FocusSessionPhase get phase => _phase;
   bool get paused => _paused;
-  int get remainingSeconds => _remainingSeconds;
+  int get remainingSeconds {
+    final deadline = _phaseDeadline;
+    if (!running || deadline == null || _phase == FocusSessionPhase.stopwatch) {
+      return _remainingSeconds;
+    }
+    final remaining = deadline.difference(_clock());
+    if (remaining <= Duration.zero) return 0;
+    return (remaining.inMilliseconds + 999) ~/ Duration.millisecondsPerSecond;
+  }
+
   int get completedSessions => _completedSessions;
   FocusAnimationPair get activeAnimationPair =>
       _activeAnimationPair ??
@@ -112,7 +123,7 @@ class FocusTimerController extends ChangeNotifier {
       phase: _phase,
       paused: _paused,
       completedSessions: _completedSessions,
-      remainingSeconds: _remainingSeconds,
+      remainingSeconds: remainingSeconds,
       savedAt: _clock(),
       focusStartedAt: _focusStartedAt,
       animationPair: _activeAnimationPair,
@@ -122,12 +133,12 @@ class FocusTimerController extends ChangeNotifier {
   Duration get elapsedFocusDuration {
     return switch (_phase) {
       FocusSessionPhase.focus => Duration(
-        seconds: (_focusDuration.inSeconds - _remainingSeconds).clamp(
+        seconds: (_focusDuration.inSeconds - remainingSeconds).clamp(
           0,
           _focusDuration.inSeconds,
         ),
       ),
-      FocusSessionPhase.stopwatch => Duration(seconds: _remainingSeconds),
+      FocusSessionPhase.stopwatch => Duration(seconds: remainingSeconds),
       FocusSessionPhase.breakTime || FocusSessionPhase.idle => Duration.zero,
     };
   }
@@ -255,6 +266,7 @@ class FocusTimerController extends ChangeNotifier {
               ? FocusAnimationPair.standard
               : _settings.animationPair);
     _backgroundStartedAt = null;
+    _phaseDeadline = null;
     if (!_paused) {
       final elapsedSeconds = _clock().difference(state.savedAt).inSeconds;
       if (elapsedSeconds > 0) {
@@ -274,16 +286,29 @@ class FocusTimerController extends ChangeNotifier {
       return;
     }
     _ticker?.cancel();
+    _lastTickerTickAt = null;
     _backgroundStartedAt = _clock();
   }
 
   void resumeFromBackground({bool emitSoundEvents = false}) {
     final backgroundStartedAt = _backgroundStartedAt;
-    if (backgroundStartedAt == null) {
+    final lastTickerTickAt = _lastTickerTickAt;
+    if (backgroundStartedAt == null && lastTickerTickAt == null) {
       return;
     }
+
+    final checkpoint = backgroundStartedAt ?? lastTickerTickAt!;
+    final elapsedSeconds = _clock().difference(checkpoint).inSeconds;
+
+    // A repeated foreground callback has nothing to reconcile. More
+    // importantly, avoid restarting an already healthy foreground ticker.
+    if (backgroundStartedAt == null && elapsedSeconds <= 0) {
+      return;
+    }
+
     _backgroundStartedAt = null;
-    final elapsedSeconds = _clock().difference(backgroundStartedAt).inSeconds;
+    _ticker?.cancel();
+    _lastTickerTickAt = null;
     if (elapsedSeconds > 0) {
       _elapse(elapsedSeconds, emitSoundEvents: emitSoundEvents);
     }
@@ -333,7 +358,10 @@ class FocusTimerController extends ChangeNotifier {
   }
 
   void _pause() {
+    _remainingSeconds = remainingSeconds;
     _ticker?.cancel();
+    _lastTickerTickAt = null;
+    _phaseDeadline = null;
     _paused = true;
     notifyListeners();
   }
@@ -360,6 +388,8 @@ class FocusTimerController extends ChangeNotifier {
 
   void _completeBreak({bool emitSoundEvent = true}) {
     _ticker?.cancel();
+    _lastTickerTickAt = null;
+    _phaseDeadline = null;
     _completedSessions = (_completedSessions + 1).clamp(
       0,
       _settings.sessionsPerRound,
@@ -379,6 +409,7 @@ class FocusTimerController extends ChangeNotifier {
 
     _phase = FocusSessionPhase.idle;
     _paused = false;
+    _phaseDeadline = null;
     _activeAnimationPair = null;
     _prepareShufflePreview();
     _remainingSeconds = _focusDuration.inSeconds;
@@ -391,17 +422,28 @@ class FocusTimerController extends ChangeNotifier {
 
   void _startTicker() {
     _ticker?.cancel();
+    _lastTickerTickAt = _clock();
+    if (_phase == FocusSessionPhase.focus ||
+        _phase == FocusSessionPhase.breakTime) {
+      _phaseDeadline = _clock().add(Duration(seconds: _remainingSeconds));
+    }
     _ticker = Timer.periodic(tickStep, (_) => _handleTick());
   }
 
   void _handleTick() {
-    if (_phase == FocusSessionPhase.stopwatch) {
-      _remainingSeconds += 1;
-      notifyListeners();
-      return;
-    }
+    final now = _clock();
+    final previousTickAt = _lastTickerTickAt ?? now;
+    final minimumElapsedSeconds = max(1, tickStep.inSeconds);
+    final elapsedSeconds = now
+        .difference(previousTickAt)
+        .inSeconds
+        .clamp(minimumElapsedSeconds, 1 << 30)
+        .toInt();
 
-    _elapse(1);
+    // Keep the sub-second remainder, so delayed Dart callbacks cannot make
+    // the in-app timer lag behind the wall-clock based home-screen widget.
+    _lastTickerTickAt = previousTickAt.add(Duration(seconds: elapsedSeconds));
+    _elapse(elapsedSeconds);
   }
 
   void _elapse(
@@ -446,6 +488,7 @@ class FocusTimerController extends ChangeNotifier {
     }
     if (!startBreakAfterFocus) {
       _ticker?.cancel();
+      _phaseDeadline = null;
       _phase = FocusSessionPhase.idle;
       _paused = false;
       _focusStartedAt = null;
@@ -513,6 +556,8 @@ class FocusTimerController extends ChangeNotifier {
 
   void _resetToIdleWithoutNotify() {
     _ticker?.cancel();
+    _lastTickerTickAt = null;
+    _phaseDeadline = null;
     _phase = FocusSessionPhase.idle;
     _paused = false;
     _focusStartedAt = null;

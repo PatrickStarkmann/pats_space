@@ -26,6 +26,7 @@
 		B20000000000000000000004 /* FocusLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000013 /* FocusLiveActivity.swift */; };
 		B20000000000000000000005 /* PatsspaceFocusLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000015 /* PatsspaceFocusLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B20000000000000000000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000017 /* Assets.xcassets */; };
+		C10000000000000000000001 /* FocusHomeWidgetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000011 /* FocusHomeWidgetManager.swift */; };
 		D5C0908F451A3A8AE9DA5769 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79530DB13860D7B83F4E8B8F /* Pods_Runner.framework */; };
 		E3F3C54E80A1A28504B2C2D3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 062D25C75C052084780EE23F /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
@@ -117,6 +118,8 @@
 		B20000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B20000000000000000000015 /* PatsspaceFocusLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PatsspaceFocusLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20000000000000000000017 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B20000000000000000000018 /* PatsspaceFocusLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PatsspaceFocusLiveActivity.entitlements; sourceTree = "<group>"; };
+		C10000000000000000000011 /* FocusHomeWidgetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusHomeWidgetManager.swift; sourceTree = "<group>"; };
 		CE6A8E3948FCF041171CFCB7 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E40B3FB7C9881B11CBCD0C1E /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -228,6 +231,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				A10000000000000000000011 /* FocusBlockingManager.swift */,
+				C10000000000000000000011 /* FocusHomeWidgetManager.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -252,6 +256,7 @@
 				B20000000000000000000013 /* FocusLiveActivity.swift */,
 				B20000000000000000000017 /* Assets.xcassets */,
 				B20000000000000000000014 /* Info.plist */,
+				B20000000000000000000018 /* PatsspaceFocusLiveActivity.entitlements */,
 			);
 			path = PatsspaceFocusLiveActivity;
 			sourceTree = "<group>";
@@ -601,6 +606,7 @@
 				A10000000000000000000001 /* FocusBlockingManager.swift in Sources */,
 				B20000000000000000000001 /* FocusLiveActivityManager.swift in Sources */,
 				B20000000000000000000002 /* FocusLiveActivityAttributes.swift in Sources */,
+				C10000000000000000000001 /* FocusHomeWidgetManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1011,6 +1017,7 @@
 			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PatsspaceFocusLiveActivity/PatsspaceFocusLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 4TGHNDUKAR;
@@ -1032,6 +1039,7 @@
 			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PatsspaceFocusLiveActivity/PatsspaceFocusLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 4TGHNDUKAR;
@@ -1051,6 +1059,7 @@
 			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PatsspaceFocusLiveActivity/PatsspaceFocusLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 4TGHNDUKAR;

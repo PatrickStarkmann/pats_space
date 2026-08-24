@@ -34,6 +34,43 @@ void main() {
       },
     );
 
+    test(
+      'catches up from the last tick when iOS misses the background callback',
+      () {
+        var now = DateTime(2026, 8, 12, 16);
+        final controller = FocusTimerController(
+          initialSettings: FocusTimerController.defaultSettings.copyWith(
+            focusSeconds: 30,
+          ),
+          clock: () => now,
+        );
+        addTearDown(controller.dispose);
+
+        controller.toggle();
+        now = now.add(const Duration(seconds: 12));
+        controller.resumeFromBackground();
+
+        expect(controller.phase, FocusSessionPhase.focus);
+        expect(controller.remainingSeconds, 18);
+      },
+    );
+
+    test('reads a running countdown from its wall-clock deadline', () {
+      var now = DateTime(2026, 8, 12, 16);
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          focusSeconds: 30,
+        ),
+        clock: () => now,
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      now = now.add(const Duration(seconds: 12));
+
+      expect(controller.remainingSeconds, 18);
+    });
+
     testWidgets('uses the optional 30-second focus duration', (tester) async {
       final controller = FocusTimerController(
         initialSettings: FocusTimerController.defaultSettings.copyWith(

@@ -22,6 +22,7 @@ class NotificationController extends ChangeNotifier {
   bool _appForeground = true;
   bool _permissionDenied = false;
   List<TimerNotificationRequest> _scheduledNotifications = const [];
+  Future<void> _timerNotificationQueue = Future.value();
 
   static const _notificationIdStart = 41001;
   static const _notificationIdCount = 24;
@@ -115,18 +116,31 @@ class NotificationController extends ChangeNotifier {
     ]);
   }
 
-  Future<void> syncTimerNotifications(
+  Future<void> syncTimerNotifications(List<TimerNotificationRequest> requests) {
+    // Calls originate from lifecycle callbacks and timer updates. Keep them in
+    // order so an older schedule request can never finish after a newer cancel.
+    final requestSnapshot = List<TimerNotificationRequest>.unmodifiable(
+      requests,
+    );
+    return _enqueueTimerNotificationOperation(() async {
+      await _syncTimerNotifications(requestSnapshot);
+    });
+  }
+
+  Future<void> _syncTimerNotifications(
     List<TimerNotificationRequest> requests,
   ) async {
-    final enabledRequests = requests.where((request) {
-      return switch (request.kind) {
-      TimerNotificationKind.focusEnd => focusEndEnabled,
-      TimerNotificationKind.breakEnd ||
-      TimerNotificationKind.roundEnd => breakEndEnabled,
-      };
-    }).toList(growable: false);
+    final enabledRequests = requests
+        .where((request) {
+          return switch (request.kind) {
+            TimerNotificationKind.focusEnd => focusEndEnabled,
+            TimerNotificationKind.breakEnd ||
+            TimerNotificationKind.roundEnd => breakEndEnabled,
+          };
+        })
+        .toList(growable: false);
     if (!enabled || _appForeground || enabledRequests.isEmpty) {
-      await cancelTimerNotification();
+      await _cancelTimerNotification();
       return;
     }
     if (_sameRequests(_scheduledNotifications, enabledRequests)) {
@@ -149,7 +163,13 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
-  Future<void> cancelTimerNotification({bool force = false}) async {
+  Future<void> cancelTimerNotification({bool force = false}) {
+    return _enqueueTimerNotificationOperation(() async {
+      await _cancelTimerNotification(force: force);
+    });
+  }
+
+  Future<void> _cancelTimerNotification({bool force = false}) async {
     if (_scheduledNotifications.isEmpty && !force) {
       return;
     }
@@ -161,8 +181,18 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
-  Iterable<int> get _notificationIds =>
-      Iterable<int>.generate(_notificationIdCount, (index) => _notificationIdStart + index);
+  Future<void> _enqueueTimerNotificationOperation(
+    Future<void> Function() operation,
+  ) {
+    final queuedOperation = _timerNotificationQueue.then((_) => operation());
+    _timerNotificationQueue = queuedOperation.catchError((_) {});
+    return queuedOperation;
+  }
+
+  Iterable<int> get _notificationIds => Iterable<int>.generate(
+    _notificationIdCount,
+    (index) => _notificationIdStart + index,
+  );
 
   bool _sameRequests(
     List<TimerNotificationRequest> first,

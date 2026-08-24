@@ -24,8 +24,9 @@
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>app-1-1051905230507-ios-7f4ba15b9f0773d04199ee</string>
+		<array>
+			<string>pats-space</string>
+			<string>app-1-1051905230507-ios-7f4ba15b9f0773d04199ee</string>
 					<string>com.googleusercontent.apps.1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d</string>
 				</array>
 			</dict>

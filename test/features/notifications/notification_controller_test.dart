@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/notifications/models/notification_settings.dart';
@@ -103,33 +105,36 @@ void main() {
       expect(service.scheduled, hasLength(1));
     });
 
-    test('schedules each future transition while auto continue is active', () async {
-      service.permissionsGrantedResult = true;
-      final controller = createController(
-        settings: const NotificationSettings(enabled: true),
-      );
-      addTearDown(controller.dispose);
-      await controller.initialize();
-      await controller.setAppForeground(false);
-      final now = DateTime.now();
+    test(
+      'schedules each future transition while auto continue is active',
+      () async {
+        service.permissionsGrantedResult = true;
+        final controller = createController(
+          settings: const NotificationSettings(enabled: true),
+        );
+        addTearDown(controller.dispose);
+        await controller.initialize();
+        await controller.setAppForeground(false);
+        final now = DateTime.now();
 
-      await controller.syncTimerNotifications([
-        TimerNotificationRequest(
-          kind: TimerNotificationKind.focusEnd,
-          scheduledAt: now.add(const Duration(seconds: 30)),
-          title: 'Focus complete',
-          body: 'Take a break',
-        ),
-        TimerNotificationRequest(
-          kind: TimerNotificationKind.breakEnd,
-          scheduledAt: now.add(const Duration(seconds: 60)),
-          title: 'Break complete',
-          body: 'Focus again',
-        ),
-      ]);
+        await controller.syncTimerNotifications([
+          TimerNotificationRequest(
+            kind: TimerNotificationKind.focusEnd,
+            scheduledAt: now.add(const Duration(seconds: 30)),
+            title: 'Focus complete',
+            body: 'Take a break',
+          ),
+          TimerNotificationRequest(
+            kind: TimerNotificationKind.breakEnd,
+            scheduledAt: now.add(const Duration(seconds: 60)),
+            title: 'Break complete',
+            body: 'Focus again',
+          ),
+        ]);
 
-      expect(service.scheduled, hasLength(2));
-    });
+        expect(service.scheduled, hasLength(2));
+      },
+    );
 
     test('cancels a pending notification when foregrounded', () async {
       service.permissionsGrantedResult = true;
@@ -150,6 +155,34 @@ void main() {
 
       expect(service.cancelCount, 3);
     });
+
+    test(
+      'does not leave a notification behind when a timer is ended quickly',
+      () async {
+        service.permissionsGrantedResult = true;
+        service.holdNextSchedule = true;
+        final controller = createController(
+          settings: const NotificationSettings(enabled: true),
+        );
+        addTearDown(controller.dispose);
+        await controller.initialize();
+        await controller.setAppForeground(false);
+
+        final schedule = controller.syncTimerNotification(
+          kind: TimerNotificationKind.focusEnd,
+          remaining: const Duration(minutes: 5),
+          title: 'Focus complete',
+          body: 'Take a break',
+        );
+        await service.scheduleStarted.future;
+        final cancel = controller.cancelTimerNotification();
+
+        service.releaseSchedule();
+        await Future.wait([schedule, cancel]);
+
+        expect(service.pendingNotificationIds, isEmpty);
+      },
+    );
 
     test('respects individual focus notification setting', () async {
       service.permissionsGrantedResult = true;
@@ -195,6 +228,10 @@ class _FakeTimerNotificationService implements TimerNotificationService {
   bool permissionRequestResult = true;
   int permissionRequestCount = 0;
   int cancelCount = 0;
+  bool holdNextSchedule = false;
+  final scheduleStarted = Completer<void>();
+  Completer<void>? _scheduleRelease;
+  final Set<int> pendingNotificationIds = {};
   final List<({DateTime scheduledAt, String title, String body})> scheduled =
       [];
 
@@ -217,11 +254,21 @@ class _FakeTimerNotificationService implements TimerNotificationService {
     required String title,
     required String body,
   }) async {
+    if (holdNextSchedule) {
+      holdNextSchedule = false;
+      _scheduleRelease = Completer<void>();
+      scheduleStarted.complete();
+      await _scheduleRelease!.future;
+    }
+    pendingNotificationIds.add(id);
     scheduled.add((scheduledAt: scheduledAt, title: title, body: body));
   }
+
+  void releaseSchedule() => _scheduleRelease?.complete();
 
   @override
   Future<void> cancel(Iterable<int> ids) async {
     cancelCount += 1;
+    pendingNotificationIds.removeAll(ids);
   }
 }
