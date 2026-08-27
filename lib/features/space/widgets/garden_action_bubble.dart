@@ -74,19 +74,64 @@ class GardenActionBubble extends StatelessWidget {
                       dashed: stage.isEmpty,
                     ),
                     child: Center(
-                      child: stage.hasCoins
-                          ? GardenCoinIcon(size: size * .52)
-                          : Icon(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          if (stage.hasCoins)
+                            GardenCoinIcon(size: size * .52)
+                          else
+                            Icon(
                               stage.actionIcon,
                               size: size * .44,
                               color: color,
                             ),
+                          if (stage.hasCoins && pot.bloomCharges > 1)
+                            Positioned(
+                              top: -size * .06,
+                              right: -size * .14,
+                              child: _StoredHarvestBadge(
+                                count: pot.bloomCharges,
+                                size: size * .38,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoredHarvestBadge extends StatelessWidget {
+  const _StoredHarvestBadge({required this.count, required this.size});
+
+  final int count;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.charcoal,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.surface, width: 1.5),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          color: AppColors.surface,
+          fontSize: size * .54,
+          fontWeight: FontWeight.w800,
+          height: 1,
         ),
       ),
     );

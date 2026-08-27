@@ -78,6 +78,12 @@ class _PlantStageImage extends StatelessWidget {
 
   double get _plantSizeFactor {
     final base = potStyle.plantSizeFactorFor(pot.stage);
+    if (pot.plantType == GardenPlantType.cherryBlossom &&
+        (pot.stage == GardenGrowthStage.bloom ||
+            pot.stage == GardenGrowthStage.dry)) {
+      return base * 1.14;
+    }
+
     if (potStyle != GardenPotStyle.hanging ||
         pot.plantType != GardenPlantType.hangingFlower) {
       return base;
@@ -94,6 +100,14 @@ class _PlantStageImage extends StatelessWidget {
 
   double get _plantBottomFactor {
     final base = potStyle.plantBottomFactorFor(pot.stage);
+    if (pot.plantType == GardenPlantType.strawberry) {
+      return switch (pot.stage) {
+        GardenGrowthStage.bloom => base - .06,
+        GardenGrowthStage.dry => base - .04,
+        _ => base,
+      };
+    }
+
     if (potStyle != GardenPotStyle.hanging ||
         pot.plantType != GardenPlantType.hangingFlower) {
       return base;

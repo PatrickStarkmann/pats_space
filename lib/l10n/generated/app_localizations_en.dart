@@ -851,7 +851,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plantHangingFlower => 'Hanging flower';
 
   @override
+  String get plantCherryBlossom => 'Cherry blossom';
+
+  @override
+  String get plantStrawberry => 'Strawberry';
+
+  @override
   String get plantUnlocked => 'Unlocked';
+
+  @override
+  String get plantPremium => 'Pro plant';
 
   @override
   String plantBloomRequirement(Object plant) {
@@ -874,6 +883,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plantSpecialHanging => 'Hanging';
 
   @override
+  String get plantSpecialPetalRain => 'Petal rain';
+
+  @override
+  String get plantSpecialStoredHarvest => 'Stored harvest';
+
+  @override
   String get plantDescriptionBonus => 'More coins, slower drops';
 
   @override
@@ -884,6 +899,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plantDescriptionHanging => 'Only grows in hanging pots';
+
+  @override
+  String get plantDescriptionPetalRain =>
+      'Gives another blooming plant an instant coin drop';
+
+  @override
+  String get plantDescriptionStoredHarvest => 'Stores up to 2 coin drops';
+
+  @override
+  String get seedUnlocked => 'Seed unlocked';
+
+  @override
+  String get plantReadyToPlant => 'Ready to plant';
+
+  @override
+  String get tapAnywhereToContinue => 'Tap anywhere to continue';
+
+  @override
+  String get plantUnlockBenefitStarter => 'Starter';
+
+  @override
+  String get plantUnlockBenefitBonus => 'Bigger drops';
+
+  @override
+  String get plantUnlockBenefitLucky => 'Double chance';
+
+  @override
+  String get plantUnlockBenefitJackpot => 'Big payout';
+
+  @override
+  String get plantUnlockBenefitHanging => 'Hanging pot';
+
+  @override
+  String get plantUnlockBenefitPetalRain => 'Extra drop';
+
+  @override
+  String get plantUnlockBenefitStoredHarvest => 'Up to 2 drops';
 
   @override
   String get potSkin => 'Pot skin';
@@ -1121,6 +1173,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get potWhite => 'White pot';
+
+  @override
+  String get potFrog => 'Frog pot';
+
+  @override
+  String get potCloud => 'Cloud pot';
 
   @override
   String get decorBench => 'Garden bench';

@@ -214,6 +214,75 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
     });
 
+    test('cherry blossom grows from seed to sprout straight into bloom', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(
+          water: 100,
+          unlockedPlantTypes: {GardenPlantType.cherryBlossom},
+        ),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.cherryBlossom);
+      _performActions(
+        controller,
+        GardenPlantType.cherryBlossom.balance.seedWater,
+      );
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+
+      _performActions(
+        controller,
+        GardenPlantType.cherryBlossom.balance.sproutWater,
+      );
+      expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);
+    });
+
+    test('strawberry stores two coin drops', () {
+      final lastChargeAt = DateTime.now()
+          .subtract(GardenPlantType.strawberry.coinDropInterval * 2)
+          .millisecondsSinceEpoch;
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(
+          pots: [
+            _bloomingPot(
+              charges: 0,
+              plantType: GardenPlantType.strawberry,
+              lastChargeAtMillis: lastChargeAt,
+            ),
+            const GardenPot.empty(),
+            const GardenPot.empty(),
+            const GardenPot.empty(),
+          ],
+        ),
+      );
+      addTearDown(controller.dispose);
+
+      expect(controller.state.pots[0].bloomCharges, 2);
+    });
+
+    test('cherry blossom collection gives another bloom an instant drop', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(
+          coins: 0,
+          pots: [
+            _bloomingPot(charges: 1, plantType: GardenPlantType.cherryBlossom),
+            _bloomingPot(charges: 0, plantType: GardenPlantType.daisy),
+            const GardenPot.empty(),
+            const GardenPot.empty(),
+          ],
+        ),
+        randomDouble: () => 0,
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.performSelectedPotAction();
+
+      expect(controller.state.coins, GardenPlantType.cherryBlossom.coinReward);
+      expect(controller.state.pots[1].bloomCharges, 1);
+    });
+
     test('hanging flower grows from seed to sprout to bloom', () {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(
@@ -258,6 +327,25 @@ void main() {
       expect(
         controller.state.unlockedPlantTypes,
         contains(GardenPlantType.tulip),
+      );
+    });
+
+    test('cherry blossom and strawberry follow the regular unlock path', () {
+      expect(
+        GardenPlantType.sunflower.nextUnlock,
+        GardenPlantType.cherryBlossom,
+      );
+      expect(
+        GardenPlantType.cherryBlossom.unlockRequirement,
+        GardenPlantType.sunflower,
+      );
+      expect(
+        GardenPlantType.cherryBlossom.nextUnlock,
+        GardenPlantType.strawberry,
+      );
+      expect(
+        GardenPlantType.strawberry.unlockRequirement,
+        GardenPlantType.cherryBlossom,
       );
     });
 
@@ -495,6 +583,18 @@ void main() {
 
       expect(controller.state.pots[0].potStyle, GardenPotStyle.classic);
       expect(controller.state.pots[1].potStyle, GardenPotStyle.blue);
+    });
+
+    test('new frog and cloud pot styles can be bought', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(coins: 600),
+      );
+      addTearDown(controller.dispose);
+
+      expect(controller.buyPotStyle(GardenPotStyle.frog), isTrue);
+      expect(controller.buyPotStyle(GardenPotStyle.cloud), isTrue);
+      expect(controller.state.ownedPotStyles, contains(GardenPotStyle.frog));
+      expect(controller.state.ownedPotStyles, contains(GardenPotStyle.cloud));
     });
 
     test('decorations can be bought once', () {

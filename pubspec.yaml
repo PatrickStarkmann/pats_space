@@ -93,5 +93,7 @@ flutter:
     - assets/images/garden/plants/clover/stages/
     - assets/images/garden/plants/sunflower/stages/
     - assets/images/garden/plants/hanging_flower/stages/
+    - assets/images/garden/plants/cherryblossom/stages/
+    - assets/images/garden/plants/strawberry/stages/
     - assets/images/garden/ui/
     - assets/images/ui/

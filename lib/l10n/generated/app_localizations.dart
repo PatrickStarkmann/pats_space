@@ -1634,11 +1634,29 @@ abstract class AppLocalizations {
   /// **'Hanging flower'**
   String get plantHangingFlower;
 
+  /// No description provided for @plantCherryBlossom.
+  ///
+  /// In en, this message translates to:
+  /// **'Cherry blossom'**
+  String get plantCherryBlossom;
+
+  /// No description provided for @plantStrawberry.
+  ///
+  /// In en, this message translates to:
+  /// **'Strawberry'**
+  String get plantStrawberry;
+
   /// No description provided for @plantUnlocked.
   ///
   /// In en, this message translates to:
   /// **'Unlocked'**
   String get plantUnlocked;
+
+  /// No description provided for @plantPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro plant'**
+  String get plantPremium;
 
   /// No description provided for @plantBloomRequirement.
   ///
@@ -1676,6 +1694,18 @@ abstract class AppLocalizations {
   /// **'Hanging'**
   String get plantSpecialHanging;
 
+  /// No description provided for @plantSpecialPetalRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Petal rain'**
+  String get plantSpecialPetalRain;
+
+  /// No description provided for @plantSpecialStoredHarvest.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored harvest'**
+  String get plantSpecialStoredHarvest;
+
   /// No description provided for @plantDescriptionBonus.
   ///
   /// In en, this message translates to:
@@ -1699,6 +1729,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only grows in hanging pots'**
   String get plantDescriptionHanging;
+
+  /// No description provided for @plantDescriptionPetalRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Gives another blooming plant an instant coin drop'**
+  String get plantDescriptionPetalRain;
+
+  /// No description provided for @plantDescriptionStoredHarvest.
+  ///
+  /// In en, this message translates to:
+  /// **'Stores up to 2 coin drops'**
+  String get plantDescriptionStoredHarvest;
+
+  /// No description provided for @seedUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed unlocked'**
+  String get seedUnlocked;
+
+  /// No description provided for @plantReadyToPlant.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to plant'**
+  String get plantReadyToPlant;
+
+  /// No description provided for @tapAnywhereToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere to continue'**
+  String get tapAnywhereToContinue;
+
+  /// No description provided for @plantUnlockBenefitStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter'**
+  String get plantUnlockBenefitStarter;
+
+  /// No description provided for @plantUnlockBenefitBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bigger drops'**
+  String get plantUnlockBenefitBonus;
+
+  /// No description provided for @plantUnlockBenefitLucky.
+  ///
+  /// In en, this message translates to:
+  /// **'Double chance'**
+  String get plantUnlockBenefitLucky;
+
+  /// No description provided for @plantUnlockBenefitJackpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Big payout'**
+  String get plantUnlockBenefitJackpot;
+
+  /// No description provided for @plantUnlockBenefitHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanging pot'**
+  String get plantUnlockBenefitHanging;
+
+  /// No description provided for @plantUnlockBenefitPetalRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra drop'**
+  String get plantUnlockBenefitPetalRain;
+
+  /// No description provided for @plantUnlockBenefitStoredHarvest.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 2 drops'**
+  String get plantUnlockBenefitStoredHarvest;
 
   /// No description provided for @potSkin.
   ///
@@ -2125,6 +2227,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'White pot'**
   String get potWhite;
+
+  /// No description provided for @potFrog.
+  ///
+  /// In en, this message translates to:
+  /// **'Frog pot'**
+  String get potFrog;
+
+  /// No description provided for @potCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud pot'**
+  String get potCloud;
 
   /// No description provided for @decorBench.
   ///

@@ -114,6 +114,12 @@ class AppAssets {
   static const gardenPotWhite = 'assets/images/garden/pots/white_pot.png';
   static const gardenPotWhiteNoShadow =
       'assets/images/garden/pots/white_pot_no_shadow.png';
+  static const gardenPotFrog = 'assets/images/garden/pots/frog_pot.png';
+  static const gardenPotFrogNoShadow =
+      'assets/images/garden/pots/frog_pot_no_shadow.png';
+  static const gardenPotCloud = 'assets/images/garden/pots/cloud_pot.png';
+  static const gardenPotCloudNoShadow =
+      'assets/images/garden/pots/cloud_pot_no_shadow.png';
   static const gardenDecorBench = 'assets/images/garden/decorations/bench.png';
   static const gardenDecorHangingPlantFrame =
       'assets/images/garden/decorations/hanging_plant_frame.png';
@@ -151,6 +157,14 @@ class AppAssets {
       'assets/images/garden/plants/hanging_flower/stages/hanging_flower_bloom.png';
   static const gardenHangingFlowerDry =
       'assets/images/garden/plants/hanging_flower/stages/hanging_flower_dry.png';
+  static const gardenCherryBlossomBloom =
+      'assets/images/garden/plants/cherryblossom/stages/cherryblossom_bloom.png';
+  static const gardenCherryBlossomDry =
+      'assets/images/garden/plants/cherryblossom/stages/cherryblossom_dry.png';
+  static const gardenStrawberryBloom =
+      'assets/images/garden/plants/strawberry/stages/strawberry_bloom.png';
+  static const gardenStrawberryDry =
+      'assets/images/garden/plants/strawberry/stages/strawberry_dry.png';
 
   static const characterFocus = focusPair01Focus01;
 

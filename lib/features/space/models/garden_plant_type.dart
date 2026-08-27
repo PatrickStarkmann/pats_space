@@ -6,13 +6,17 @@ enum GardenPlantType {
   tulip,
   clover,
   sunflower,
-  hangingFlower;
+  hangingFlower,
+  cherryBlossom,
+  strawberry;
 
   static const groundPlantable = [
     GardenPlantType.daisy,
     GardenPlantType.tulip,
     GardenPlantType.clover,
     GardenPlantType.sunflower,
+    GardenPlantType.cherryBlossom,
+    GardenPlantType.strawberry,
   ];
 
   static const hangingPlantable = [GardenPlantType.hangingFlower];
@@ -30,14 +34,18 @@ enum GardenPlantType {
     GardenPlantType.clover => 'Clover',
     GardenPlantType.sunflower => 'Sunflower',
     GardenPlantType.hangingFlower => 'Hanging flower',
+    GardenPlantType.cherryBlossom => 'Cherry blossom',
+    GardenPlantType.strawberry => 'Strawberry',
   };
 
   GardenPlantType? get nextUnlock => switch (this) {
     GardenPlantType.daisy => GardenPlantType.tulip,
     GardenPlantType.tulip => GardenPlantType.clover,
     GardenPlantType.clover => GardenPlantType.sunflower,
-    GardenPlantType.sunflower => null,
+    GardenPlantType.sunflower => GardenPlantType.cherryBlossom,
     GardenPlantType.hangingFlower => null,
+    GardenPlantType.cherryBlossom => GardenPlantType.strawberry,
+    GardenPlantType.strawberry => null,
   };
 
   GardenPlantType? get unlockRequirement => switch (this) {
@@ -46,6 +54,8 @@ enum GardenPlantType {
     GardenPlantType.clover => GardenPlantType.tulip,
     GardenPlantType.sunflower => GardenPlantType.clover,
     GardenPlantType.hangingFlower => null,
+    GardenPlantType.cherryBlossom => GardenPlantType.sunflower,
+    GardenPlantType.strawberry => GardenPlantType.cherryBlossom,
   };
 
   String get unlockRequirementLabel {
@@ -101,6 +111,23 @@ enum GardenPlantType {
       sproutWater: 17,
       dryWater: 5,
     ),
+    GardenPlantType.cherryBlossom => const GardenPlantBalance(
+      coinReward: 10,
+      coinDropInterval: Duration(hours: 10),
+      plantCost: 4,
+      seedWater: 8,
+      sproutWater: 16,
+      dryWater: 7,
+    ),
+    GardenPlantType.strawberry => const GardenPlantBalance(
+      coinReward: 7,
+      coinDropInterval: Duration(hours: 6),
+      plantCost: 3,
+      seedWater: 6,
+      sproutWater: 10,
+      budWater: 16,
+      dryWater: 6,
+    ),
   };
 
   int get coinReward => balance.coinReward;
@@ -113,6 +140,13 @@ enum GardenPlantType {
     GardenPlantType.clover => '8h',
     GardenPlantType.sunflower => '12h',
     GardenPlantType.hangingFlower => '9h',
+    GardenPlantType.cherryBlossom => '10h',
+    GardenPlantType.strawberry => '6h',
+  };
+
+  int get maxBloomCharges => switch (this) {
+    GardenPlantType.strawberry => 2,
+    _ => 1,
   };
 
   int get plantCost => balance.plantCost;
@@ -123,6 +157,8 @@ enum GardenPlantType {
     GardenPlantType.clover => 'Lucky',
     GardenPlantType.sunflower => 'Jackpot',
     GardenPlantType.hangingFlower => 'Hanging',
+    GardenPlantType.cherryBlossom => 'Petal rain',
+    GardenPlantType.strawberry => 'Stored harvest',
   };
 
   String get specialDescription => switch (this) {
@@ -131,6 +167,9 @@ enum GardenPlantType {
     GardenPlantType.clover => '20% chance for double coins',
     GardenPlantType.sunflower => 'Biggest payout, slowest drop',
     GardenPlantType.hangingFlower => 'Only grows in hanging pots',
+    GardenPlantType.cherryBlossom =>
+      'Gives another blooming plant an instant coin drop',
+    GardenPlantType.strawberry => 'Stores up to 2 coin drops',
   };
 
   int waterRequiredFor(GardenGrowthStage stage) {
@@ -142,6 +181,8 @@ enum GardenPlantType {
       (GardenPlantType.clover, GardenGrowthStage.sprout) =>
         GardenGrowthStage.bloom,
       (GardenPlantType.hangingFlower, GardenGrowthStage.sprout) =>
+        GardenGrowthStage.bloom,
+      (GardenPlantType.cherryBlossom, GardenGrowthStage.sprout) =>
         GardenGrowthStage.bloom,
       (_, GardenGrowthStage.empty) => GardenGrowthStage.seed,
       (_, GardenGrowthStage.seed) => GardenGrowthStage.sprout,
@@ -171,6 +212,8 @@ enum GardenPlantType {
     GardenPlantType.clover => AppAssets.gardenCloverBloom,
     GardenPlantType.sunflower => AppAssets.gardenSunflowerBloom,
     GardenPlantType.hangingFlower => AppAssets.gardenHangingFlowerBloom,
+    GardenPlantType.cherryBlossom => AppAssets.gardenCherryBlossomBloom,
+    GardenPlantType.strawberry => AppAssets.gardenStrawberryBloom,
   };
 
   String get dryAsset => switch (this) {
@@ -179,6 +222,8 @@ enum GardenPlantType {
     GardenPlantType.clover => AppAssets.gardenCloverDry,
     GardenPlantType.sunflower => AppAssets.gardenSunflowerDry,
     GardenPlantType.hangingFlower => AppAssets.gardenHangingFlowerDry,
+    GardenPlantType.cherryBlossom => AppAssets.gardenCherryBlossomDry,
+    GardenPlantType.strawberry => AppAssets.gardenStrawberryDry,
   };
 
   static GardenPlantType? fromStoredName(Object? value) {
@@ -198,6 +243,8 @@ enum GardenPlantType {
       'clover' => GardenPlantType.clover,
       'sunflower' => GardenPlantType.sunflower,
       'hanging_flower' || 'hangingflower' => GardenPlantType.hangingFlower,
+      'cherryblossom' || 'cherry_blossom' => GardenPlantType.cherryBlossom,
+      'strawberry' => GardenPlantType.strawberry,
       _ => null,
     };
   }

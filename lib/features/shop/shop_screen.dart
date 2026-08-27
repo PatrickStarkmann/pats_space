@@ -216,6 +216,8 @@ String _potStyleName(GardenPotStyle style, AppLocalizations l10n) {
     GardenPotStyle.hanging => l10n.potHanging,
     GardenPotStyle.round => l10n.potRound,
     GardenPotStyle.white => l10n.potWhite,
+    GardenPotStyle.frog => l10n.potFrog,
+    GardenPotStyle.cloud => l10n.potCloud,
   };
 }
 

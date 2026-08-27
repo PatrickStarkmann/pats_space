@@ -317,8 +317,17 @@ class GardenController extends ChangeNotifier {
       return;
     }
 
-    final updatedPot = _updatedPotAfterPrimaryAction(pot, DateTime.now());
-    final updatedPots = [..._state.pots]..[index] = updatedPot;
+    final now = DateTime.now();
+    final updatedPot = _updatedPotAfterPrimaryAction(pot, now);
+    var updatedPots = [..._state.pots]..[index] = updatedPot;
+    if (pot.plantType == GardenPlantType.cherryBlossom &&
+        pot.hasCollectableCoins) {
+      updatedPots = _potsAfterCherryBlossomCollection(
+        pots: updatedPots,
+        cherryBlossomIndex: index,
+        now: now,
+      );
+    }
     final unlockedPlantTypes = _unlockedPlantTypesAfterAction(pot, updatedPot);
     final bloomCompleted = !pot.stage.hasCoins && updatedPot.stage.hasCoins;
 
@@ -495,6 +504,40 @@ class GardenController extends ChangeNotifier {
     return baseReward;
   }
 
+  List<GardenPot> _potsAfterCherryBlossomCollection({
+    required List<GardenPot> pots,
+    required int cherryBlossomIndex,
+    required DateTime now,
+  }) {
+    final eligibleIndexes = <int>[];
+    for (var index = 0; index < pots.length; index += 1) {
+      final pot = pots[index];
+      if (index == cherryBlossomIndex ||
+          !pot.stage.hasCoins ||
+          pot.bloomCharges >= pot.plantType.maxBloomCharges) {
+        continue;
+      }
+      eligibleIndexes.add(index);
+    }
+
+    if (eligibleIndexes.isEmpty) {
+      return pots;
+    }
+
+    final candidateIndex = (_randomDouble() * eligibleIndexes.length)
+        .floor()
+        .clamp(0, eligibleIndexes.length - 1)
+        .toInt();
+    final targetIndex = eligibleIndexes[candidateIndex];
+    final target = pots[targetIndex];
+    final updatedPots = [...pots];
+    updatedPots[targetIndex] = target.copyWith(
+      bloomCharges: target.bloomCharges + 1,
+      lastBloomChargeAtMillis: now.millisecondsSinceEpoch,
+    );
+    return updatedPots;
+  }
+
   Set<GardenPlantType> _unlockedPlantTypesAfterAction(
     GardenPot oldPot,
     GardenPot updatedPot,
@@ -607,26 +650,27 @@ class GardenController extends ChangeNotifier {
       return pot.copyWith(bloomCharges: 0, clearLastBloomChargeAt: true);
     }
 
+    final maxCharges = pot.plantType.maxBloomCharges;
     final nowMillis = now.millisecondsSinceEpoch;
     final lastChargeAt = pot.lastBloomChargeAtMillis;
     if (lastChargeAt == null) {
       return pot.copyWith(
         bloomCharges: math
             .max(1, pot.bloomCharges)
-            .clamp(0, maxBloomCharges)
+            .clamp(0, maxCharges)
             .toInt(),
         lastBloomChargeAtMillis: nowMillis,
       );
     }
 
-    if (pot.bloomCharges > maxBloomCharges) {
+    if (pot.bloomCharges > maxCharges) {
       return pot.copyWith(
-        bloomCharges: maxBloomCharges,
+        bloomCharges: maxCharges,
         lastBloomChargeAtMillis: nowMillis,
       );
     }
 
-    if (pot.bloomCharges == maxBloomCharges) {
+    if (pot.bloomCharges == maxCharges) {
       return pot;
     }
 
@@ -637,8 +681,8 @@ class GardenController extends ChangeNotifier {
     }
 
     final intervals = elapsedMillis ~/ intervalMillis;
-    final newCharges = math.min(maxBloomCharges, pot.bloomCharges + intervals);
-    final newLastChargeAt = newCharges >= maxBloomCharges
+    final newCharges = math.min(maxCharges, pot.bloomCharges + intervals);
+    final newLastChargeAt = newCharges >= maxCharges
         ? nowMillis
         : lastChargeAt + intervals * intervalMillis;
 

@@ -21,6 +21,8 @@ String _plantName(AppLocalizations l10n, GardenPlantType plantType) {
     GardenPlantType.clover => l10n.plantClover,
     GardenPlantType.sunflower => l10n.plantSunflower,
     GardenPlantType.hangingFlower => l10n.plantHangingFlower,
+    GardenPlantType.cherryBlossom => l10n.plantCherryBlossom,
+    GardenPlantType.strawberry => l10n.plantStrawberry,
   };
 }
 
@@ -28,6 +30,7 @@ String _plantCardName(AppLocalizations l10n, GardenPlantType plantType) {
   final name = _plantName(l10n, plantType);
   return switch (plantType) {
     GardenPlantType.daisy => name.replaceFirst('Gänse', 'Gänse\u200B'),
+    GardenPlantType.sunflower => name.replaceFirst('Sonnen', 'Sonnen\u200B'),
     GardenPlantType.hangingFlower => name.replaceFirst('Hänge', 'Hänge\u200B'),
     _ => name,
   };
@@ -40,6 +43,8 @@ String _plantSpecialLabel(AppLocalizations l10n, GardenPlantType plantType) {
     GardenPlantType.clover => l10n.plantSpecialLucky,
     GardenPlantType.sunflower => l10n.plantSpecialJackpot,
     GardenPlantType.hangingFlower => l10n.plantSpecialHanging,
+    GardenPlantType.cherryBlossom => l10n.plantSpecialPetalRain,
+    GardenPlantType.strawberry => l10n.plantSpecialStoredHarvest,
   };
 }
 
@@ -53,6 +58,8 @@ String _plantSpecialDescription(
     GardenPlantType.clover => l10n.plantDescriptionLucky,
     GardenPlantType.sunflower => l10n.plantDescriptionJackpot,
     GardenPlantType.hangingFlower => l10n.plantDescriptionHanging,
+    GardenPlantType.cherryBlossom => l10n.plantDescriptionPetalRain,
+    GardenPlantType.strawberry => l10n.plantDescriptionStoredHarvest,
   };
 }
 
@@ -64,6 +71,8 @@ String _potStyleName(AppLocalizations l10n, GardenPotStyle style) {
     GardenPotStyle.hanging => l10n.potHanging,
     GardenPotStyle.round => l10n.potRound,
     GardenPotStyle.white => l10n.potWhite,
+    GardenPotStyle.frog => l10n.potFrog,
+    GardenPotStyle.cloud => l10n.potCloud,
   };
 }
 
@@ -1474,8 +1483,6 @@ class _BloomInfoRow extends StatelessWidget {
               fontWeight: emphasis ? FontWeight.w800 : FontWeight.w700,
               fontSize: 12,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

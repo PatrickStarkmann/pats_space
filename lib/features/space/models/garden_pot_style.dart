@@ -7,13 +7,17 @@ enum GardenPotStyle {
   colorful,
   hanging,
   round,
-  white;
+  white,
+  frog,
+  cloud;
 
   static const shopStyles = [
     GardenPotStyle.blue,
     GardenPotStyle.colorful,
     GardenPotStyle.round,
     GardenPotStyle.white,
+    GardenPotStyle.frog,
+    GardenPotStyle.cloud,
   ];
 
   static const initiallyOwned = {GardenPotStyle.classic};
@@ -25,6 +29,8 @@ enum GardenPotStyle {
     GardenPotStyle.hanging => 'Hanging pot',
     GardenPotStyle.round => 'Round pot',
     GardenPotStyle.white => 'White pot',
+    GardenPotStyle.frog => 'Frog pot',
+    GardenPotStyle.cloud => 'Cloud pot',
   };
 
   int get cost => switch (this) {
@@ -34,6 +40,8 @@ enum GardenPotStyle {
     GardenPotStyle.hanging => 220,
     GardenPotStyle.round => 150,
     GardenPotStyle.white => 160,
+    GardenPotStyle.frog => 240,
+    GardenPotStyle.cloud => 250,
   };
 
   String get assetPath => switch (this) {
@@ -43,6 +51,8 @@ enum GardenPotStyle {
     GardenPotStyle.hanging => AppAssets.gardenPotHanging,
     GardenPotStyle.round => AppAssets.gardenPotRound,
     GardenPotStyle.white => AppAssets.gardenPotWhite,
+    GardenPotStyle.frog => AppAssets.gardenPotFrog,
+    GardenPotStyle.cloud => AppAssets.gardenPotCloud,
   };
 
   String get noShadowAssetPath => switch (this) {
@@ -52,6 +62,8 @@ enum GardenPotStyle {
     GardenPotStyle.hanging => AppAssets.gardenPotHanging,
     GardenPotStyle.round => AppAssets.gardenPotRoundNoShadow,
     GardenPotStyle.white => AppAssets.gardenPotWhiteNoShadow,
+    GardenPotStyle.frog => AppAssets.gardenPotFrogNoShadow,
+    GardenPotStyle.cloud => AppAssets.gardenPotCloudNoShadow,
   };
 
   double get renderOffsetYFactor => switch (this) {
@@ -72,6 +84,7 @@ enum GardenPotStyle {
     return switch (this) {
       GardenPotStyle.round => base * .94,
       GardenPotStyle.colorful => base * .96,
+      GardenPotStyle.cloud => base * .96,
       GardenPotStyle.hanging => base * .73,
       _ => base,
     };
@@ -87,12 +100,27 @@ enum GardenPotStyle {
       GardenGrowthStage.empty => 0.0,
     };
 
+    if (this == GardenPotStyle.frog &&
+        (stage == GardenGrowthStage.bud || stage == GardenGrowthStage.dry)) {
+      return base + .01;
+    }
+
+    if (this == GardenPotStyle.cloud &&
+        (stage == GardenGrowthStage.seed ||
+            stage == GardenGrowthStage.sprout ||
+            stage == GardenGrowthStage.bud ||
+            stage == GardenGrowthStage.dry)) {
+      return base - .02;
+    }
+
     return switch (this) {
       GardenPotStyle.round => base - .13,
       GardenPotStyle.hanging => base - .28,
       GardenPotStyle.colorful => base - .04,
       GardenPotStyle.blue => base - .02,
       GardenPotStyle.white => base - .02,
+      GardenPotStyle.frog => base - .01,
+      GardenPotStyle.cloud => base - .04,
       _ => base,
     };
   }

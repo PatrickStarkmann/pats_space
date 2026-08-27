@@ -1803,6 +1803,7 @@ class _PlantUnlockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -1836,14 +1837,14 @@ class _PlantUnlockCard extends StatelessWidget {
                 _PlantRevealIcon(plantType: plantType, reveal: reveal),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  plantType.displayName,
+                  _localizedPlantName(l10n, plantType),
                   style: AppTextStyles.headline.copyWith(fontSize: 34),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Ready to plant',
+                  l10n.plantReadyToPlant,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.grayWarm,
@@ -1869,15 +1870,15 @@ class _PlantUnlockCard extends StatelessWidget {
                           color: AppColors.sage,
                           size: 21,
                         ),
-                        title: plantType.specialLabel,
-                        caption: _unlockBenefitCaption(plantType),
+                        title: _localizedPlantSpecialLabel(l10n, plantType),
+                        caption: _unlockBenefitCaption(l10n, plantType),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Tap anywhere to continue',
+                  l10n.tapAnywhereToContinue,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.grayWarm.withValues(alpha: .78),
                     fontWeight: FontWeight.w700,
@@ -1893,13 +1894,42 @@ class _PlantUnlockCard extends StatelessWidget {
   }
 }
 
-String _unlockBenefitCaption(GardenPlantType plantType) {
+String _localizedPlantName(AppLocalizations l10n, GardenPlantType plantType) {
   return switch (plantType) {
-    GardenPlantType.daisy => 'starter',
-    GardenPlantType.tulip => 'bigger drops',
-    GardenPlantType.clover => 'double chance',
-    GardenPlantType.sunflower => 'big payout',
-    GardenPlantType.hangingFlower => 'hanging pot',
+    GardenPlantType.daisy => l10n.plantDaisy,
+    GardenPlantType.tulip => l10n.plantTulip,
+    GardenPlantType.clover => l10n.plantClover,
+    GardenPlantType.sunflower => l10n.plantSunflower,
+    GardenPlantType.hangingFlower => l10n.plantHangingFlower,
+    GardenPlantType.cherryBlossom => l10n.plantCherryBlossom,
+    GardenPlantType.strawberry => l10n.plantStrawberry,
+  };
+}
+
+String _localizedPlantSpecialLabel(
+  AppLocalizations l10n,
+  GardenPlantType plantType,
+) {
+  return switch (plantType) {
+    GardenPlantType.daisy => l10n.plantSpecialStarter,
+    GardenPlantType.tulip => l10n.plantSpecialBonus,
+    GardenPlantType.clover => l10n.plantSpecialLucky,
+    GardenPlantType.sunflower => l10n.plantSpecialJackpot,
+    GardenPlantType.hangingFlower => l10n.plantSpecialHanging,
+    GardenPlantType.cherryBlossom => l10n.plantSpecialPetalRain,
+    GardenPlantType.strawberry => l10n.plantSpecialStoredHarvest,
+  };
+}
+
+String _unlockBenefitCaption(AppLocalizations l10n, GardenPlantType plantType) {
+  return switch (plantType) {
+    GardenPlantType.daisy => l10n.plantUnlockBenefitStarter,
+    GardenPlantType.tulip => l10n.plantUnlockBenefitBonus,
+    GardenPlantType.clover => l10n.plantUnlockBenefitLucky,
+    GardenPlantType.sunflower => l10n.plantUnlockBenefitJackpot,
+    GardenPlantType.hangingFlower => l10n.plantUnlockBenefitHanging,
+    GardenPlantType.cherryBlossom => l10n.plantUnlockBenefitPetalRain,
+    GardenPlantType.strawberry => l10n.plantUnlockBenefitStoredHarvest,
   };
 }
 
@@ -1910,6 +1940,7 @@ class _UnlockEyebrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.sageSoft.withValues(alpha: .72 + reveal * .18),
@@ -1919,7 +1950,7 @@ class _UnlockEyebrow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Text(
-          'Seed unlocked',
+          l10n.seedUnlocked,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.sagePressed,
             fontWeight: FontWeight.w900,
@@ -2030,8 +2061,8 @@ class _UnlockDetailChip extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       fontSize: 13,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.clip,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -2041,8 +2072,8 @@ class _UnlockDetailChip extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.clip,
                   ),
                 ],
               ),
