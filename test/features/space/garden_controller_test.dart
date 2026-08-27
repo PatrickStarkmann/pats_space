@@ -11,7 +11,7 @@ import 'package:pats_space/features/space/models/garden_state.dart';
 
 void main() {
   group('GardenController', () {
-    test('plant balance scales starter to premium plants', () {
+    test('plant balance scales from starter to late-game plants', () {
       expect(GardenPlantType.daisy.balance.totalWaterToFirstBloom, 17);
       expect(GardenPlantType.clover.balance.totalWaterToFirstBloom, 20);
       expect(GardenPlantType.tulip.balance.totalWaterToFirstBloom, 28);

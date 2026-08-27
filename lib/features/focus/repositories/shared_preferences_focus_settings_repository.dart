@@ -10,11 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesFocusSettingsRepository
     implements FocusSettingsRepository {
-  const SharedPreferencesFocusSettingsRepository(this._preferences);
+  const SharedPreferencesFocusSettingsRepository(
+    this._preferences, {
+    required this.userId,
+  });
 
-  static const _settingsKey = 'focus_settings_v1';
+  static const _keyPrefix = 'focus_settings.v2';
 
   final SharedPreferences _preferences;
+  final String userId;
+
+  String get _settingsKey => _keyFor(userId);
 
   @override
   Future<FocusTimerSettings?> loadSettings() async {
@@ -70,6 +76,15 @@ class SharedPreferencesFocusSettingsRepository
       }),
     );
   }
+
+  static Future<void> clearSettingsForUser(
+    SharedPreferences preferences, {
+    required String userId,
+  }) {
+    return preferences.remove(_keyFor(userId));
+  }
+
+  static String _keyFor(String userId) => '$_keyPrefix.$userId';
 
   T? _enumValue<T extends Enum>(List<T> values, Object? name) {
     if (name is! String) {

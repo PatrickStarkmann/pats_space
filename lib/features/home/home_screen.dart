@@ -126,10 +126,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         firestore: FirebaseFirestore.instance,
       ),
     );
+    final isTutorial = widget.tutorialFocusDuration != null;
     _timerController = FocusTimerController(
-      initialSettings: widget.initialSettings,
+      // A tutorial is always the same short Pomodoro. It must not inherit a
+      // prior account's mode or animation choice (especially Stopwatch).
+      initialSettings: isTutorial
+          ? FocusTimerController.defaultSettings
+          : widget.initialSettings,
       focusDurationOverride: widget.tutorialFocusDuration,
-      startBreakAfterFocus: widget.tutorialFocusDuration == null,
+      startBreakAfterFocus: !isTutorial,
       onFocusSessionCompleted: _handleFocusSessionCompleted,
       onFocusTimeEnded: widget.leaderboardController.addFocusTime,
       onFocusRoundCompleted: _handleFocusRoundCompleted,
@@ -138,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onFocusRoundFinished: _playRoundEndSound,
     );
     final initialTimerState = widget.initialActiveTimerState;
-    if (initialTimerState != null) {
+    if (!isTutorial && initialTimerState != null) {
       _timerController.restore(initialTimerState);
     }
     _timerController.addListener(_syncAnimation);

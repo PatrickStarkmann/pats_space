@@ -38,4 +38,11 @@ class SharedPreferencesActiveTimerStateRepository
 
   @override
   Future<void> clear() => _preferences.remove(_key);
+
+  static Future<void> clearStateForUser(
+    SharedPreferences preferences, {
+    required String userId,
+  }) {
+    return preferences.remove('$_keyPrefix.$userId');
+  }
 }

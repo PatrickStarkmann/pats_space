@@ -389,6 +389,7 @@ class _AppShellState extends State<AppShell> {
     final userId = requireCurrentUser(FirebaseAuth.instance).uid;
     final settingsRepository = SharedPreferencesFocusSettingsRepository(
       preferences,
+      userId: userId,
     );
     final activeTimerStateRepository =
         SharedPreferencesActiveTimerStateRepository(
@@ -971,6 +972,14 @@ class _AppShellState extends State<AppShell> {
       userId: deletedUserId,
     );
     await PendingFocusRewardRepository.clearRewardsForUser(
+      preferences,
+      userId: deletedUserId,
+    );
+    await SharedPreferencesFocusSettingsRepository.clearSettingsForUser(
+      preferences,
+      userId: deletedUserId,
+    );
+    await SharedPreferencesActiveTimerStateRepository.clearStateForUser(
       preferences,
       userId: deletedUserId,
     );
