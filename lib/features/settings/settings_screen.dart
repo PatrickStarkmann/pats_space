@@ -16,6 +16,7 @@ import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
 import 'package:pats_space/core/widgets/primary_button.dart';
+import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/models/user_profile.dart';
 import 'package:pats_space/features/settings/models/week_start_day.dart';
@@ -83,6 +84,7 @@ class SettingsScreen extends StatefulWidget {
     required this.focusBlockingController,
     required this.soundController,
     required this.notificationController,
+    required this.rewardedWaterController,
   });
 
   final AppLanguage language;
@@ -96,6 +98,7 @@ class SettingsScreen extends StatefulWidget {
   final FocusBlockingController focusBlockingController;
   final SoundController soundController;
   final NotificationController notificationController;
+  final RewardedWaterController rewardedWaterController;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -167,6 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onEnsureOnlineAction: widget.onEnsureOnlineAction,
             soundController: widget.soundController,
             notificationController: widget.notificationController,
+            rewardedWaterController: widget.rewardedWaterController,
             weekStartDay: widget.weekStartDay,
             hasIncomingFriendRequests: _hasIncomingFriendRequests,
             onLanguagePressed: () {
@@ -248,6 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _settingsRoute(
                   (othersContext) => _OthersSettingsPage(
                     onBack: () => Navigator.of(othersContext).maybePop(),
+                    rewardedWaterController: widget.rewardedWaterController,
                   ),
                 ),
               );
@@ -285,6 +290,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onEnsureOnlineAction,
     required this.soundController,
     required this.notificationController,
+    required this.rewardedWaterController,
     required this.weekStartDay,
     required this.hasIncomingFriendRequests,
     required this.onLanguagePressed,
@@ -305,6 +311,7 @@ class _MainSettingsPage extends StatelessWidget {
   final Future<bool> Function() onEnsureOnlineAction;
   final SoundController soundController;
   final NotificationController notificationController;
+  final RewardedWaterController rewardedWaterController;
   final WeekStartDay weekStartDay;
   final bool hasIncomingFriendRequests;
   final VoidCallback onLanguagePressed;
@@ -2260,9 +2267,13 @@ class _ProviderActionLabel extends StatelessWidget {
 }
 
 class _OthersSettingsPage extends StatelessWidget {
-  const _OthersSettingsPage({required this.onBack});
+  const _OthersSettingsPage({
+    required this.onBack,
+    required this.rewardedWaterController,
+  });
 
   final VoidCallback onBack;
+  final RewardedWaterController rewardedWaterController;
 
   @override
   Widget build(BuildContext context) {
@@ -2285,7 +2296,38 @@ class _OthersSettingsPage extends StatelessWidget {
               title: l10n.termsOfUse,
               trailing: const _Chevron(),
             ),
-            const _SettingsDivider(),
+            AnimatedBuilder(
+              animation: rewardedWaterController,
+              builder: (context, _) {
+                return rewardedWaterController.isPrivacyOptionsRequired
+                    ? const _SettingsDivider()
+                    : const SizedBox.shrink();
+              },
+            ),
+            AnimatedBuilder(
+              animation: rewardedWaterController,
+              builder: (context, _) {
+                if (!rewardedWaterController.isPrivacyOptionsRequired) {
+                  return const SizedBox.shrink();
+                }
+                return _SettingsRow(
+                  icon: PhosphorIconsRegular.shieldCheck,
+                  title: l10n.adPrivacy,
+                  trailing: const _Chevron(),
+                  onTap: () {
+                    unawaited(rewardedWaterController.showPrivacyOptions());
+                  },
+                );
+              },
+            ),
+            AnimatedBuilder(
+              animation: rewardedWaterController,
+              builder: (context, _) {
+                return rewardedWaterController.isPrivacyOptionsRequired
+                    ? const _SettingsDivider()
+                    : const SizedBox.shrink();
+              },
+            ),
             _SettingsRow(
               icon: PhosphorIconsRegular.info,
               title: l10n.version,

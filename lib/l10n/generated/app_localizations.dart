@@ -1874,6 +1874,72 @@ abstract class AppLocalizations {
   /// **'Water'**
   String get water;
 
+  /// No description provided for @rewardedWaterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'More Waterdrops'**
+  String get rewardedWaterTitle;
+
+  /// No description provided for @rewardedWaterShopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refill Waterdrops'**
+  String get rewardedWaterShopTitle;
+
+  /// No description provided for @rewardedWaterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose to watch a short ad and receive {amount} Waterdrops for your Space.'**
+  String rewardedWaterBody(Object amount);
+
+  /// No description provided for @rewardedWaterRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {total} videos left today'**
+  String rewardedWaterRemaining(Object remaining, Object total);
+
+  /// No description provided for @rewardedWaterWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad'**
+  String get rewardedWaterWatch;
+
+  /// No description provided for @rewardedWaterPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing ad …'**
+  String get rewardedWaterPreparing;
+
+  /// No description provided for @rewardedWaterLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get rewardedWaterLater;
+
+  /// No description provided for @rewardedWaterEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'+{amount} Waterdrops'**
+  String rewardedWaterEarned(Object amount);
+
+  /// No description provided for @rewardedWaterUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The video is still preparing. Please try again shortly.'**
+  String get rewardedWaterUnavailable;
+
+  /// No description provided for @rewardedWaterDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have used all videos for today.'**
+  String get rewardedWaterDailyLimit;
+
+  /// No description provided for @adPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy choices'**
+  String get adPrivacy;
+
   /// No description provided for @recoveryProgress.
   ///
   /// In en, this message translates to:

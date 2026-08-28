@@ -1,4 +1,5 @@
 import Flutter
+import AppTrackingTransparency
 import UIKit
 
 @main
@@ -7,6 +8,7 @@ import UIKit
   private let focusLiveActivityChannelName = "pats_space/focus_live_activity"
   private let focusHomeWidgetChannelName = "pats_space/focus_home_widget"
   private let focusLifecycleChannelName = "pats_space/focus_lifecycle"
+  private let trackingConsentChannelName = "pats_space/tracking_consent"
   private lazy var focusBlockingManager = FocusBlockingManager()
   private lazy var focusHomeWidgetManager = FocusHomeWidgetManager()
   private var focusLifecycleChannel: FlutterMethodChannel?
@@ -33,6 +35,31 @@ import UIKit
     registerFocusHomeWidgetChannel(
       messenger: engineBridge.applicationRegistrar.messenger()
     )
+    registerTrackingConsentChannel(
+      messenger: engineBridge.applicationRegistrar.messenger()
+    )
+  }
+
+  private func registerTrackingConsentChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(
+      name: trackingConsentChannelName,
+      binaryMessenger: messenger
+    )
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "requestTrackingAuthorization" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+
+      guard #available(iOS 14, *) else {
+        result(nil)
+        return
+      }
+
+      ATTrackingManager.requestTrackingAuthorization { _ in
+        result(nil)
+      }
+    }
   }
 
   func focusSceneDidBecomeActive() {

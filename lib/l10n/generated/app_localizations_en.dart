@@ -984,6 +984,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get water => 'Water';
 
   @override
+  String get rewardedWaterTitle => 'More Waterdrops';
+
+  @override
+  String get rewardedWaterShopTitle => 'Refill Waterdrops';
+
+  @override
+  String rewardedWaterBody(Object amount) {
+    return 'Choose to watch a short ad and receive $amount Waterdrops for your Space.';
+  }
+
+  @override
+  String rewardedWaterRemaining(Object remaining, Object total) {
+    return '$remaining of $total videos left today';
+  }
+
+  @override
+  String get rewardedWaterWatch => 'Watch ad';
+
+  @override
+  String get rewardedWaterPreparing => 'Preparing ad …';
+
+  @override
+  String get rewardedWaterLater => 'Not now';
+
+  @override
+  String rewardedWaterEarned(Object amount) {
+    return '+$amount Waterdrops';
+  }
+
+  @override
+  String get rewardedWaterUnavailable =>
+      'The video is still preparing. Please try again shortly.';
+
+  @override
+  String get rewardedWaterDailyLimit => 'You have used all videos for today.';
+
+  @override
+  String get adPrivacy => 'Privacy choices';
+
+  @override
   String get recoveryProgress => 'Recovery progress';
 
   @override

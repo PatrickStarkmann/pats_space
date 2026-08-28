@@ -40,6 +40,7 @@ class GardenStage extends StatelessWidget {
     this.tutorialInteractivePotIndex,
     required this.onPotSelected,
     required this.onPotAction,
+    required this.onWaterEmpty,
     required this.onCoinCollected,
     required this.onDecorationSelected,
     required this.onDecorationPlacementChanged,
@@ -63,6 +64,7 @@ class GardenStage extends StatelessWidget {
   final int? tutorialInteractivePotIndex;
   final ValueChanged<int> onPotSelected;
   final ValueChanged<int> onPotAction;
+  final VoidCallback onWaterEmpty;
   final CoinCollectedCallback onCoinCollected;
   final ValueChanged<GardenDecoration> onDecorationSelected;
   final void Function(
@@ -258,6 +260,7 @@ class GardenStage extends StatelessWidget {
                 onMoveEnded: (alignmentX, alignmentY) =>
                     onPotMoveEnded(index, alignmentX, alignmentY),
                 onActionTap: () => onPotAction(index),
+                onWaterEmpty: onWaterEmpty,
                 onCoinCollected: onCoinCollected,
               ),
             if (arrangingDecorations)
@@ -490,6 +493,7 @@ class _PositionedPot extends StatefulWidget {
     required this.onMoved,
     required this.onMoveEnded,
     required this.onActionTap,
+    required this.onWaterEmpty,
     required this.onCoinCollected,
   });
 
@@ -510,6 +514,7 @@ class _PositionedPot extends StatefulWidget {
   final void Function(double alignmentX, double alignmentY) onMoved;
   final void Function(double alignmentX, double alignmentY) onMoveEnded;
   final VoidCallback onActionTap;
+  final VoidCallback onWaterEmpty;
   final CoinCollectedCallback onCoinCollected;
 
   @override
@@ -651,7 +656,7 @@ class _PositionedPotState extends State<_PositionedPot>
     if (pot.stage.needsWater && widget.water <= 0) {
       AppHaptics.error();
       _triggerUnavailableShake();
-      widget.onTap();
+      widget.onWaterEmpty();
       return;
     }
 

@@ -9,6 +9,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The official AdMob sample app ID keeps debug builds usable until the
+// Patsspace production ID is supplied in android/gradle.properties.
+val admobAppId =
+    providers.gradleProperty("admobAppId").orNull
+        ?: "ca-app-pub-3940256099942544~3347511713"
+
 android {
     namespace = "com.patsspace.app"
     compileSdk = flutter.compileSdkVersion
@@ -33,13 +39,24 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders["admobAppId"] = admobAppId
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] = admobAppId
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            val releaseAdmobAppId = providers.gradleProperty("admobAppId").orNull
+            if (releaseAdmobAppId.isNullOrBlank()) {
+                throw GradleException(
+                    "Missing admobAppId in android/gradle.properties for release builds.",
+                )
+            }
+            manifestPlaceholders["admobAppId"] = releaseAdmobAppId
         }
     }
 }

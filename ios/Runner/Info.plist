@@ -33,6 +33,10 @@
 		</array>
 		<key>GIDClientID</key>
 		<string>1051905230507-8ad4kgg11dt94mvuf3fmtdh1bq60190d.apps.googleusercontent.com</string>
+		<key>GADApplicationIdentifier</key>
+		<string>ca-app-pub-6349447773462495~9653405954</string>
+		<key>NSUserTrackingUsageDescription</key>
+		<string>Pats Space uses your permission to show more relevant optional ads. If you do not allow tracking, ads may still be shown without using your device advertising identifier.</string>
 		<key>CFBundleShortVersionString</key>
 		<string>$(FLUTTER_BUILD_NAME)</string>
 		<key>CFBundleSignature</key>

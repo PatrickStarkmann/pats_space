@@ -9,10 +9,12 @@ class GardenResourceCounter extends StatelessWidget {
     super.key,
     required this.water,
     required this.coins,
+    this.onWaterTap,
   });
 
   final int water;
   final int coins;
+  final VoidCallback? onWaterTap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,7 @@ class GardenResourceCounter extends StatelessWidget {
               size: 24,
             ),
             value: water,
+            onTap: onWaterTap,
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -48,20 +51,37 @@ class GardenResourceCounter extends StatelessWidget {
 }
 
 class _ResourceValue extends StatelessWidget {
-  const _ResourceValue({required this.icon, required this.value});
+  const _ResourceValue({required this.icon, required this.value, this.onTap});
 
   final Widget icon;
   final int value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         icon,
         const SizedBox(width: AppSpacing.xs),
-        Text(value.toString()),
+        Text(
+          value.toString(),
+          style: AppTextStyles.body.copyWith(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppColors.charcoal,
+          ),
+        ),
       ],
+    );
+    if (onTap == null) {
+      return content;
+    }
+    return CupertinoButton(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      minimumSize: const Size(36, 36),
+      onPressed: onTap,
+      child: content,
     );
   }
 }

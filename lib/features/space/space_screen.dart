@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show showModalBottomSheet;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
@@ -9,6 +10,9 @@ import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
+import 'package:pats_space/features/ads/services/ads_config.dart';
+import 'package:pats_space/features/ads/widgets/rewarded_water_sheet.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
@@ -30,6 +34,7 @@ class SpaceScreen extends StatefulWidget {
     required this.gardenController,
     required this.gardenOnline,
     required this.onEnsureGardenActionOnline,
+    required this.rewardedWaterController,
     this.tutorialActive = false,
     this.onTutorialCompleted,
   });
@@ -37,6 +42,7 @@ class SpaceScreen extends StatefulWidget {
   final GardenController gardenController;
   final bool gardenOnline;
   final Future<bool> Function() onEnsureGardenActionOnline;
+  final RewardedWaterController rewardedWaterController;
   final bool tutorialActive;
   final VoidCallback? onTutorialCompleted;
 
@@ -89,6 +95,66 @@ class _SpaceScreenState extends State<SpaceScreen> {
   void dispose() {
     widget.gardenController.removeListener(_handleGardenChanged);
     super.dispose();
+  }
+
+  Future<void> _showRewardedWaterSheet() async {
+    if (widget.tutorialActive) {
+      return;
+    }
+    await widget.rewardedWaterController.initialize();
+    if (!mounted) {
+      return;
+    }
+    final shouldShowAd = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: AppColors.transparent,
+      builder: (context) => AnimatedBuilder(
+        animation: widget.rewardedWaterController,
+        builder: (context, _) => RewardedWaterSheet(
+          remainingClaims: widget.rewardedWaterController.remainingClaimsToday,
+          ready: widget.rewardedWaterController.isReady,
+          loading: widget.rewardedWaterController.isLoadingAd,
+        ),
+      ),
+    );
+    if (shouldShowAd != true || !mounted) {
+      return;
+    }
+
+    final result = await widget.rewardedWaterController.claimWater();
+    if (!mounted) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    switch (result) {
+      case RewardedWaterClaimResult.earned:
+        widget.gardenController.addWater(AdsConfig.rewardedWaterAmount);
+        _showWaterRewardFeedback(
+          l10n.rewardedWaterEarned(AdsConfig.rewardedWaterAmount),
+        );
+      case RewardedWaterClaimResult.dailyLimitReached:
+        _showWaterRewardFeedback(l10n.rewardedWaterDailyLimit);
+      case RewardedWaterClaimResult.unavailable:
+        _showWaterRewardFeedback(l10n.rewardedWaterUnavailable);
+    }
+  }
+
+  void _showWaterRewardFeedback(String message) {
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleGardenChanged() {
@@ -399,6 +465,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                         () => widget.gardenController.performPotAction(index),
                       );
                     },
+                    onWaterEmpty: widget.tutorialActive
+                        ? () {}
+                        : _showRewardedWaterSheet,
                     onCoinCollected: _launchCoinFlight,
                     onDecorationSelected: (decoration) {
                       setState(() {
@@ -608,6 +677,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
                       widget.gardenController.performSelectedPotAction,
                     );
                   },
+                  onWaterEmpty: widget.tutorialActive
+                      ? () {}
+                      : _showRewardedWaterSheet,
                   onPlantSelected: (plantType) {
                     _runGardenAction(() {
                       final shouldCloseAfterPlanting =
@@ -640,6 +712,9 @@ class _SpaceScreenState extends State<SpaceScreen> {
               child: GardenResourceCounter(
                 water: garden.water,
                 coins: garden.coins,
+                onWaterTap: widget.tutorialActive
+                    ? null
+                    : _showRewardedWaterSheet,
               ),
             ),
             if (!activeAreaUnlocked)

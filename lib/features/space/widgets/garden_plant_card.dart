@@ -96,6 +96,7 @@ class GardenPlantCard extends StatefulWidget {
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
     required this.onPrimaryAction,
+    required this.onWaterEmpty,
     required this.onPlantSelected,
     required this.onPotStyleSelected,
     required this.onRemovePlant,
@@ -108,6 +109,7 @@ class GardenPlantCard extends StatefulWidget {
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
   final VoidCallback onPrimaryAction;
+  final VoidCallback onWaterEmpty;
   final ValueChanged<GardenPlantType> onPlantSelected;
   final ValueChanged<GardenPotStyle> onPotStyleSelected;
   final VoidCallback onRemovePlant;
@@ -218,6 +220,7 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                     unlockedPlantTypes: widget.unlockedPlantTypes,
                     ownedPotStyles: widget.ownedPotStyles,
                     onPlantSelected: widget.onPlantSelected,
+                    onWaterEmpty: widget.onWaterEmpty,
                     onPotStyleSelected: widget.onPotStyleSelected,
                   )
                 else
@@ -246,6 +249,7 @@ class _PlantSelectionContent extends StatefulWidget {
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
     required this.onPlantSelected,
+    required this.onWaterEmpty,
     required this.onPotStyleSelected,
   });
 
@@ -255,6 +259,7 @@ class _PlantSelectionContent extends StatefulWidget {
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
   final ValueChanged<GardenPlantType> onPlantSelected;
+  final VoidCallback onWaterEmpty;
   final ValueChanged<GardenPotStyle> onPotStyleSelected;
 
   @override
@@ -374,6 +379,9 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
             AppHaptics.lightImpact();
             widget.onPlantSelected(_selectedPlantType);
           },
+          onWaterEmpty: widget.unlockedPlantTypes.contains(_selectedPlantType)
+              ? widget.onWaterEmpty
+              : null,
         ),
       ],
     );
@@ -726,12 +734,14 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
     required this.unlocked,
     required this.enabled,
     required this.onTap,
+    this.onWaterEmpty,
   });
 
   final GardenPlantType plantType;
   final bool unlocked;
   final bool enabled;
   final VoidCallback onTap;
+  final VoidCallback? onWaterEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -741,7 +751,12 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
       enabled: enabled,
       label: l10n.plantAction(_plantName(l10n, plantType)),
       child: _PressableScale(
-        onTap: enabled ? onTap : AppHaptics.error,
+        onTap: enabled
+            ? onTap
+            : () {
+                AppHaptics.error();
+                onWaterEmpty?.call();
+              },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,

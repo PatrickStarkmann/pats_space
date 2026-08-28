@@ -19,6 +19,7 @@ import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_scaffold.dart';
 import 'package:pats_space/core/widgets/app_loading_screen.dart';
 import 'package:pats_space/core/widgets/patsspace_bottom_nav_bar.dart';
+import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
 import 'package:pats_space/features/focus/models/active_timer_state.dart';
@@ -97,6 +98,8 @@ class _AppShellState extends State<AppShell> {
   GardenController? _gardenController;
   SoundController? _soundController;
   NotificationController? _notificationController;
+  RewardedWaterController? _rewardedWaterController;
+  RewardedWaterController? _adsInitializedForController;
   late final FriendsLeaderboardController _leaderboardController =
       FriendsLeaderboardController(
         repository: FirebaseFriendsLeaderboardRepository(
@@ -158,11 +161,14 @@ class _AppShellState extends State<AppShell> {
       _requestedPersistenceUid = uid;
       _historyController?.dispose();
       _gardenController?.dispose();
+      _rewardedWaterController?.dispose();
       _soundController?.dispose();
       unawaited(_notificationController?.cancelTimerNotification());
       _notificationController?.dispose();
       _historyController = null;
       _gardenController = null;
+      _rewardedWaterController = null;
+      _adsInitializedForController = null;
       _soundController = null;
       _notificationController = null;
       setState(() {
@@ -205,6 +211,7 @@ class _AppShellState extends State<AppShell> {
     _networkOfflineConfirmationTimer?.cancel();
     _historyController?.dispose();
     _gardenController?.dispose();
+    _rewardedWaterController?.dispose();
     _soundController?.dispose();
     _notificationController?.dispose();
     _leaderboardController.dispose();
@@ -251,6 +258,7 @@ class _AppShellState extends State<AppShell> {
           _hasLoadedPersistence = true;
           _reportInitialPersistenceLoaded();
           _scheduleConnectivityNoticeReadiness();
+          _initializeAdsAfterFirstFrame(bundle.rewardedWaterController);
         }
 
         return AnimatedSwitcher(
@@ -299,6 +307,24 @@ class _AppShellState extends State<AppShell> {
         );
       },
     );
+  }
+
+  void _initializeAdsAfterFirstFrame(RewardedWaterController controller) {
+    if (identical(_adsInitializedForController, controller)) {
+      return;
+    }
+
+    _adsInitializedForController = controller;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !identical(_rewardedWaterController, controller)) {
+        return;
+      }
+
+      await controller.initialize();
+      if (mounted && identical(_rewardedWaterController, controller)) {
+        setState(() {});
+      }
+    });
   }
 
   Widget _buildPersistenceFallback() {
@@ -467,6 +493,10 @@ class _AppShellState extends State<AppShell> {
       ),
       initialState: gardenState,
     );
+    final rewardedWaterController = RewardedWaterController(
+      preferences: preferences,
+      userId: userId,
+    );
     var onboardingCompleted = await _loadScopedBool(
       preferences,
       key: _onboardingCompletedKey,
@@ -500,6 +530,7 @@ class _AppShellState extends State<AppShell> {
     }
     _historyController = historyController;
     _gardenController = gardenController;
+    _rewardedWaterController = rewardedWaterController;
     _soundController = soundController;
     _notificationController = notificationController;
     unawaited(_leaderboardController.initialize(records));
@@ -516,6 +547,7 @@ class _AppShellState extends State<AppShell> {
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
       notificationController: notificationController,
+      rewardedWaterController: rewardedWaterController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -1459,6 +1491,7 @@ class _AppShellContent extends StatelessWidget {
                 soundController: bundle.soundController,
                 notificationController: bundle.notificationController,
                 leaderboardController: leaderboardController,
+                rewardedWaterController: bundle.rewardedWaterController,
                 tutorialFocusDuration: onboardingFocusChallengeActive
                     ? _AppShellState._onboardingFocusChallengeDuration
                     : null,
@@ -1473,6 +1506,7 @@ class _AppShellContent extends StatelessWidget {
                 gardenController: bundle.gardenController,
                 gardenOnline: bundle.remoteAvailable,
                 onEnsureGardenActionOnline: onEnsureGardenActionOnline,
+                rewardedWaterController: bundle.rewardedWaterController,
                 tutorialActive: gardenTutorialActive,
                 onTutorialCompleted: onGardenTutorialCompleted,
               ),
@@ -1493,6 +1527,7 @@ class _AppShellContent extends StatelessWidget {
                 focusBlockingController: focusBlockingController,
                 soundController: bundle.soundController,
                 notificationController: bundle.notificationController,
+                rewardedWaterController: bundle.rewardedWaterController,
               ),
             ],
           ),
@@ -1613,6 +1648,7 @@ class _AppPersistenceBundle {
     required this.pendingRewardRepository,
     required this.soundController,
     required this.notificationController,
+    required this.rewardedWaterController,
     required this.remoteAvailable,
     required this.userId,
   });
@@ -1628,6 +1664,7 @@ class _AppPersistenceBundle {
   final PendingFocusRewardRepository pendingRewardRepository;
   final SoundController soundController;
   final NotificationController notificationController;
+  final RewardedWaterController rewardedWaterController;
   final bool remoteAvailable;
   final String userId;
 
@@ -1644,6 +1681,7 @@ class _AppPersistenceBundle {
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
       notificationController: notificationController,
+      rewardedWaterController: rewardedWaterController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );
@@ -1662,6 +1700,7 @@ class _AppPersistenceBundle {
       pendingRewardRepository: pendingRewardRepository,
       soundController: soundController,
       notificationController: notificationController,
+      rewardedWaterController: rewardedWaterController,
       remoteAvailable: remoteAvailable,
       userId: userId,
     );

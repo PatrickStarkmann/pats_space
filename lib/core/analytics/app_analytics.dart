@@ -11,6 +11,7 @@ class AnalyticsEventNames {
   static const socialFocusLeft = 'social_focus_left';
   static const gardenItemUnlocked = 'garden_item_unlocked';
   static const acquisitionSourceSelected = 'acquisition_source_selected';
+  static const rewardedWaterEarned = 'rewarded_water_earned';
 }
 
 class AppAnalytics {
@@ -105,6 +106,12 @@ class AppAnalytics {
   Future<void> logAcquisitionSourceSelected({required String source}) {
     return _logEvent(AnalyticsEventNames.acquisitionSourceSelected, {
       'source': source,
+    });
+  }
+
+  Future<void> logRewardedWaterEarned({required int amount}) {
+    return _logEvent(AnalyticsEventNames.rewardedWaterEarned, {
+      'amount': amount,
     });
   }
 

@@ -12,6 +12,9 @@ import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
+import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
+import 'package:pats_space/features/ads/services/ads_config.dart';
+import 'package:pats_space/features/ads/widgets/rewarded_water_sheet.dart';
 import 'package:pats_space/features/focus/controllers/focus_character_animator.dart';
 import 'package:pats_space/features/focus/controllers/focus_history_controller.dart';
 import 'package:pats_space/features/focus/controllers/focus_timer_controller.dart';
@@ -68,6 +71,7 @@ class HomeScreen extends StatefulWidget {
     required this.soundController,
     required this.notificationController,
     required this.leaderboardController,
+    required this.rewardedWaterController,
     this.tutorialFocusDuration,
     this.tutorialFocusWaterReward = 0,
     this.onTutorialFocusCompleted,
@@ -87,6 +91,7 @@ class HomeScreen extends StatefulWidget {
   final SoundController soundController;
   final NotificationController notificationController;
   final FriendsLeaderboardController leaderboardController;
+  final RewardedWaterController rewardedWaterController;
   final Duration? tutorialFocusDuration;
   final int tutorialFocusWaterReward;
   final VoidCallback? onTutorialFocusCompleted;
@@ -106,6 +111,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   _FocusCompletionReward? _completionReward;
   Duration _pendingRewardDuration = Duration.zero;
   int _pendingWaterReward = 0;
+  int _rewardlessFocusCompletionsSinceAdPrompt = 0;
+  bool _showWaterAdAfterCompletion = false;
   _FocusViewMode _focusViewMode = _FocusViewMode.solo;
   SocialFocusMemberStatus? _lastSyncedSocialFocusStatus;
   FocusSessionPhase _lastTimerPhase = FocusSessionPhase.idle;
@@ -1302,6 +1309,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     setState(() {
+      final canSuggestWaterAd =
+          widget.onTutorialFocusCompleted == null &&
+          waterReward == 0 &&
+          widget.gardenController.state.water == 0;
+      if (canSuggestWaterAd) {
+        _rewardlessFocusCompletionsSinceAdPrompt += 1;
+        _showWaterAdAfterCompletion =
+            _rewardlessFocusCompletionsSinceAdPrompt >= 3;
+        if (_showWaterAdAfterCompletion) {
+          _rewardlessFocusCompletionsSinceAdPrompt = 0;
+        }
+      } else {
+        _rewardlessFocusCompletionsSinceAdPrompt = 0;
+        _showWaterAdAfterCompletion = false;
+      }
       _completionReward = _FocusCompletionReward(
         focusDuration: focusDuration,
         waterReward: waterReward,
@@ -1329,7 +1351,65 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _dismissCompletionReward() {
     setState(() {
       _completionReward = null;
+      _showWaterAdAfterCompletion = false;
     });
+  }
+
+  Future<void> _showWaterAdAfterFocus() async {
+    await widget.rewardedWaterController.initialize();
+    if (!mounted) {
+      return;
+    }
+
+    final shouldShowAd = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.transparent,
+      builder: (context) => AnimatedBuilder(
+        animation: widget.rewardedWaterController,
+        builder: (context, _) => RewardedWaterSheet(
+          remainingClaims: widget.rewardedWaterController.remainingClaimsToday,
+          ready: widget.rewardedWaterController.isReady,
+          loading: widget.rewardedWaterController.isLoadingAd,
+        ),
+      ),
+    );
+    if (shouldShowAd != true || !mounted) {
+      return;
+    }
+
+    final result = await widget.rewardedWaterController.claimWater();
+    if (!mounted) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context);
+    switch (result) {
+      case RewardedWaterClaimResult.earned:
+        widget.gardenController.addWater(AdsConfig.rewardedWaterAmount);
+        _showRewardedWaterFeedback(
+          l10n.rewardedWaterEarned(AdsConfig.rewardedWaterAmount),
+        );
+      case RewardedWaterClaimResult.dailyLimitReached:
+        _showRewardedWaterFeedback(l10n.rewardedWaterDailyLimit);
+      case RewardedWaterClaimResult.unavailable:
+        _showRewardedWaterFeedback(l10n.rewardedWaterUnavailable);
+    }
+  }
+
+  void _showRewardedWaterFeedback(String message) {
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleCompletionContinue() {
@@ -1338,7 +1418,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
+    final shouldShowWaterAd = _showWaterAdAfterCompletion;
     _prepareNextRoundAfterCompletion();
+    if (shouldShowWaterAd) {
+      unawaited(_showWaterAdAfterFocus());
+    }
   }
 
   void _handleCompletionOpenSpace() {
