@@ -181,6 +181,7 @@ class FirebaseAccountAuthService implements AccountAuthService {
     final incoming = await userRef.collection('friend_requests').get();
     final sent = await userRef.collection('sent_friend_requests').get();
     final privateDocs = await userRef.collection('private').get();
+    final leaderboardDocs = await userRef.collection('leaderboard').get();
     var batch = _firestore.batch();
     var writeCount = 0;
 
@@ -227,6 +228,12 @@ class FirebaseAccountAuthService implements AccountAuthService {
       );
     }
     for (final doc in privateDocs.docs) {
+      await queueDelete(doc.reference);
+    }
+    // Deleting a Firestore document does not recursively delete its
+    // subcollections. Remove historic weekly scores as well, otherwise the
+    // console keeps showing this UID as an empty ancestor document.
+    for (final doc in leaderboardDocs.docs) {
       await queueDelete(doc.reference);
     }
     if (friendCode != null && friendCode.isNotEmpty) {

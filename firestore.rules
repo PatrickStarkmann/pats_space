@@ -70,8 +70,7 @@ service cloud.firestore {
         userId == request.auth.uid ||
         exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(userId))
       );
-      allow create, update: if signedIn() && userId == request.auth.uid;
-      allow delete: if false;
+      allow create, update, delete: if signedIn() && userId == request.auth.uid;
     }
 
     match /friend_codes/{friendCode} {
