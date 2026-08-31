@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show showModalBottomSheet;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
@@ -107,18 +106,16 @@ class _SpaceScreenState extends State<SpaceScreen> {
     if (!mounted) {
       return;
     }
-    final shouldShowAd = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      backgroundColor: AppColors.transparent,
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final shouldShowAd = await showRewardedWaterPrompt(
+      context,
       builder: (context) => AnimatedBuilder(
         animation: widget.rewardedWaterController,
         builder: (context, _) => RewardedWaterSheet(
           remainingClaims: widget.rewardedWaterController.remainingClaimsToday,
           ready: widget.rewardedWaterController.isReady,
           loading: widget.rewardedWaterController.isLoadingAd,
+          dialog: tablet,
         ),
       ),
     );

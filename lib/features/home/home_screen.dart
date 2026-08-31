@@ -1366,16 +1366,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final shouldShowAd = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.transparent,
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final shouldShowAd = await showRewardedWaterPrompt(
+      context,
       builder: (context) => AnimatedBuilder(
         animation: widget.rewardedWaterController,
         builder: (context, _) => RewardedWaterSheet(
           remainingClaims: widget.rewardedWaterController.remainingClaimsToday,
           ready: widget.rewardedWaterController.isReady,
           loading: widget.rewardedWaterController.isLoadingAd,
+          dialog: tablet,
         ),
       ),
     );
