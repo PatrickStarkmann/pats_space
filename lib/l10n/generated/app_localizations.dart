@@ -2899,6 +2899,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ends on {date}'**
   String proEndsOn(Object date);
+
+  /// No description provided for @focusStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get focusStart;
 }
 
 class _AppLocalizationsDelegate

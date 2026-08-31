@@ -429,14 +429,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             widget.tutorialFocusDuration == null &&
                             _timerController.phase !=
                                 FocusSessionPhase.stopwatch,
-                        onSkip: () {
-                          _handleSkip();
-                        },
+                        onSkip: _handleSkip,
                         onPlayPause: _handlePlayPause,
-                        onRestart: _timerController.restartCurrentSession,
-                        onFinish: () {
-                          _handleFinishStopwatch();
-                        },
+                        onFinish: _handleFinishStopwatch,
                         onCancel: _confirmCancelFocusRound,
                         tutorial: widget.tutorialFocusDuration != null,
                         highlightStart:
@@ -1674,7 +1669,6 @@ class _FocusControls extends StatelessWidget {
     required this.canSkip,
     required this.onSkip,
     required this.onPlayPause,
-    required this.onRestart,
     required this.onFinish,
     required this.onCancel,
     this.tutorial = false,
@@ -1687,7 +1681,6 @@ class _FocusControls extends StatelessWidget {
   final bool canSkip;
   final VoidCallback onSkip;
   final VoidCallback onPlayPause;
-  final VoidCallback onRestart;
   final VoidCallback onFinish;
   final VoidCallback onCancel;
   final bool tutorial;
@@ -1705,13 +1698,13 @@ class _FocusControls extends StatelessWidget {
     }
 
     if (!active) {
-      final button = AppIconButton(
-        icon: CupertinoIcons.play,
-        semanticLabel: 'Start',
-        haptic: AppIconButtonHaptic.light,
+      final button = _FocusStartButton(
+        label: AppLocalizations.of(context).focusStart,
         onPressed: onPlayPause,
       );
-      return highlightStart ? _TutorialStartPulse(child: button) : button;
+      return highlightStart
+          ? _TutorialStartPulse(width: 172, height: 56, child: button)
+          : button;
     }
 
     return SingleChildScrollView(
@@ -1736,13 +1729,6 @@ class _FocusControls extends StatelessWidget {
             onPressed: onPlayPause,
           ),
           const SizedBox(width: AppSpacing.sm),
-          AppIconButton(
-            icon: CupertinoIcons.restart,
-            semanticLabel: 'Restart',
-            haptic: AppIconButtonHaptic.medium,
-            onPressed: onRestart,
-          ),
-          const SizedBox(width: AppSpacing.sm),
           if (stopwatch) ...[
             AppIconButton(
               icon: CupertinoIcons.checkmark,
@@ -1765,10 +1751,68 @@ class _FocusControls extends StatelessWidget {
   }
 }
 
+class _FocusStartButton extends StatefulWidget {
+  const _FocusStartButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  State<_FocusStartButton> createState() => _FocusStartButtonState();
+}
+
+class _FocusStartButtonState extends State<_FocusStartButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: widget.label,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: () {
+        AppHaptics.lightImpact();
+        widget.onPressed();
+      },
+      child: AnimatedScale(
+        scale: _pressed ? .96 : 1,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.charcoal,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.label,
+                style: AppTextStyles.button.copyWith(color: AppColors.surface),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _TutorialStartPulse extends StatefulWidget {
-  const _TutorialStartPulse({required this.child});
+  const _TutorialStartPulse({
+    required this.child,
+    this.width = 58,
+    this.height = 58,
+  });
 
   final Widget child;
+  final double width;
+  final double height;
 
   @override
   State<_TutorialStartPulse> createState() => _TutorialStartPulseState();
@@ -1790,8 +1834,8 @@ class _TutorialStartPulseState extends State<_TutorialStartPulse>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 58,
-      height: 58,
+      width: widget.width,
+      height: widget.height,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -1808,10 +1852,10 @@ class _TutorialStartPulseState extends State<_TutorialStartPulse>
                       alignment: Alignment.center,
                       scale: 1 + wave * .42,
                       child: Container(
-                        width: 58,
-                        height: 58,
+                        width: widget.width,
+                        height: widget.height,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(999),
                           border: Border.all(
                             color: AppColors.charcoal.withValues(
                               alpha: .28 * opacity,

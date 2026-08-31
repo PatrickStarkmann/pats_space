@@ -552,5 +552,6 @@
   "proRenewsOn": "Renews on {date}",
   "@proRenewsOn": {"placeholders": {"date": {}}},
   "proEndsOn": "Ends on {date}",
-  "@proEndsOn": {"placeholders": {"date": {}}}
+  "@proEndsOn": {"placeholders": {"date": {}}},
+  "focusStart": "Start"
 }

@@ -1540,4 +1540,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String proEndsOn(Object date) {
     return 'Ends on $date';
   }
+
+  @override
+  String get focusStart => 'Start';
 }
