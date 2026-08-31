@@ -29,7 +29,7 @@ class FocusHistoryJsonCodec {
         name: tagJson['name'] as String? ?? 'study',
         accentColor:
             _enumValue(FocusAccentColor.values, tagJson['accentColor']) ??
-            FocusAccentColor.sunshine,
+            FocusAccentColor.sage,
         badgeIcon: _badgeIconValue(tagJson['badgeIcon']),
       ),
       mode: _enumValue(FocusMode.values, json['mode']) ?? FocusMode.pomodoro,

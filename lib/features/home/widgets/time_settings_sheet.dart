@@ -154,11 +154,6 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                         );
                       });
                     },
-                    onThirtySecondFocusSelected: () {
-                      setState(() {
-                        _settings = _settings.copyWith(focusSeconds: 30);
-                      });
-                    },
                     onLabelChanged: (value) {
                       setState(() {
                         _settings = _settings.copyWith(focusLabel: value);
@@ -255,7 +250,6 @@ class _OverviewPage extends StatelessWidget {
     required this.onDeepFocusChanged,
     required this.onAutoContinueChanged,
     required this.onFocusMinutesChanged,
-    required this.onThirtySecondFocusSelected,
     required this.onLabelChanged,
     required this.onAccentColorChanged,
     required this.onBadgeIconChanged,
@@ -276,7 +270,6 @@ class _OverviewPage extends StatelessWidget {
   final Future<void> Function(bool enabled) onDeepFocusChanged;
   final ValueChanged<bool> onAutoContinueChanged;
   final ValueChanged<int> onFocusMinutesChanged;
-  final VoidCallback onThirtySecondFocusSelected;
   final ValueChanged<String> onLabelChanged;
   final ValueChanged<FocusAccentColor> onAccentColorChanged;
   final ValueChanged<FocusBadgeIcon> onBadgeIconChanged;
@@ -315,9 +308,7 @@ class _OverviewPage extends StatelessWidget {
                   PomodoroSettingsCard(
                     compact: compact,
                     focusMinutes: settings.focusMinutes,
-                    focusSeconds: settings.focusSeconds,
                     onChanged: onFocusMinutesChanged,
-                    onThirtySecondFocusSelected: onThirtySecondFocusSelected,
                   ),
                   SizedBox(height: contentGap),
                   BreakSettingsCard(

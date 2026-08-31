@@ -37,7 +37,9 @@ class SharedPreferencesFocusSettingsRepository
     return FocusTimerSettings(
       mode: _enumValue(FocusMode.values, json['mode']) ?? FocusMode.pomodoro,
       focusMinutes: _intValue(json['focusMinutes']) ?? 5,
-      focusSeconds: _intValue(json['focusSeconds']),
+      // `focusSeconds` was only used by the temporary 30-second test mode.
+      // Ignore the legacy value so an old test setting cannot survive updates.
+      focusSeconds: null,
       shortBreakMinutes: _intValue(json['shortBreakMinutes']) ?? 5,
       longBreakMinutes: _intValue(json['longBreakMinutes']) ?? 20,
       longBreakInterval: _intValue(json['longBreakInterval']) ?? 4,
@@ -45,7 +47,7 @@ class SharedPreferencesFocusSettingsRepository
       focusLabel: _focusLabelValue(json['focusLabel']),
       accentColor:
           _enumValue(FocusAccentColor.values, json['accentColor']) ??
-          FocusAccentColor.sunshine,
+          FocusAccentColor.sage,
       badgeIcon: _badgeIconValue(json['badgeIcon']),
       animationPair:
           _enumValue(FocusAnimationPair.values, json['animationPair']) ??

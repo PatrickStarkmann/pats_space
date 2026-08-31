@@ -49,4 +49,24 @@ void main() {
 
     expect(await repository.loadSettings(), isNull);
   });
+
+  test(
+    'drops the retired temporary focus duration from saved settings',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'focus_settings.v2.user':
+            '{"mode":"pomodoro","focusMinutes":25,"focusSeconds":30}',
+      });
+      final preferences = await SharedPreferences.getInstance();
+      final repository = SharedPreferencesFocusSettingsRepository(
+        preferences,
+        userId: 'user',
+      );
+
+      final settings = await repository.loadSettings();
+
+      expect(settings?.focusMinutes, 25);
+      expect(settings?.focusSeconds, isNull);
+    },
+  );
 }
