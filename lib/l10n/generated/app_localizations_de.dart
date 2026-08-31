@@ -1419,4 +1419,147 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gardenTutorialSpaceGrowingBody => 'Dein Space wächst.';
+
+  @override
+  String get patsspacePro => 'Patsspace Pro';
+
+  @override
+  String get unlockPatsspacePro => 'Patsspace Pro freischalten';
+
+  @override
+  String get unlockPro => 'Unlock Pro';
+
+  @override
+  String get proBannerSubtitle => 'Mehr Raum für deinen Fokus.';
+
+  @override
+  String get proExplore => 'Entdecken';
+
+  @override
+  String get proFocusThatGrows => 'Fokus, der mit dir wächst.';
+
+  @override
+  String get proAllPlantsAndPots => 'Alle Pflanzen und Töpfe';
+
+  @override
+  String get proAllFocusAnimationSets => 'Alle Fokusanimationssets';
+
+  @override
+  String get proNewContent => 'Neue Inhalte, sobald sie erscheinen';
+
+  @override
+  String get proYearly => 'Jährlich';
+
+  @override
+  String get proMonthly => 'Monatlich';
+
+  @override
+  String get proLifetime => 'Einmalig';
+
+  @override
+  String get proCancelAnytime => 'Jederzeit kündbar';
+
+  @override
+  String get proUnlockedForever => 'Dauerhaft freigeschaltet';
+
+  @override
+  String get proActiveForAccount =>
+      'Patsspace Pro ist für diesen Account aktiv.';
+
+  @override
+  String get proBeingSetUp => 'Patsspace Pro wird gerade eingerichtet.';
+
+  @override
+  String get proOptionsSoon => 'Die Pro-Optionen sind gleich verfügbar.';
+
+  @override
+  String get proContinue => 'Weiter';
+
+  @override
+  String get proRestorePurchases => 'Restore Purchases';
+
+  @override
+  String get proTerms => 'Terms';
+
+  @override
+  String get proPrivacy => 'Privacy';
+
+  @override
+  String proMonthlyPrice(Object price) {
+    return '$price / Monat';
+  }
+
+  @override
+  String proApproximateMonthlyPrice(Object price, Object currency) {
+    return '≈ $price $currency / Monat';
+  }
+
+  @override
+  String proSavePercent(Object percent) {
+    return 'Spare $percent %';
+  }
+
+  @override
+  String get proPurchasesRestoredTitle => 'Käufe wiederhergestellt';
+
+  @override
+  String get proPurchasesRestoredMessage =>
+      'Patsspace Pro ist für diesen Account wieder aktiv.';
+
+  @override
+  String get proWelcomeTitle => 'Willkommen bei Patsspace Pro';
+
+  @override
+  String get proWelcomeMessage =>
+      'Alles ist freigeschaltet. Schön, dass du dabei bist.';
+
+  @override
+  String get proNotActiveYetTitle => 'Pro noch nicht aktiviert';
+
+  @override
+  String get proNotActiveYetMessage =>
+      'Der Kauf wurde registriert, aber der Zugang ist noch nicht aktiv. Bitte versuche es gleich noch einmal.';
+
+  @override
+  String get proNothingToRestoreTitle => 'Nichts wiederhergestellt';
+
+  @override
+  String get proNothingToRestoreMessage =>
+      'Für diesen Account wurde kein aktiver Pro-Kauf gefunden.';
+
+  @override
+  String get proPurchaseFailedTitle => 'Kauf nicht abgeschlossen';
+
+  @override
+  String get proPurchaseFailedMessage =>
+      'Bitte überprüfe deine Verbindung und versuche es gleich noch einmal.';
+
+  @override
+  String get proRestoreFailedTitle => 'Wiederherstellung nicht möglich';
+
+  @override
+  String get proRestoreFailedMessage =>
+      'Bitte überprüfe deine Verbindung und versuche es gleich noch einmal.';
+
+  @override
+  String get proActiveShort => 'Pro ist aktiv';
+
+  @override
+  String get proExclusiveContent => 'Exklusive Pflanzen, Töpfe und Animationen';
+
+  @override
+  String get proManageSubscription => 'Abo verwalten';
+
+  @override
+  String get proPaymentRetry => 'Zahlung wird gerade erneut versucht';
+
+  @override
+  String proRenewsOn(Object date) {
+    return 'Erneuert sich am $date';
+  }
+
+  @override
+  String proEndsOn(Object date) {
+    return 'Endet am $date';
+  }
 }

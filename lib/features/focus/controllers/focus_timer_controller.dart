@@ -25,8 +25,10 @@ class FocusTimerController extends ChangeNotifier {
     this.onFocusPeriodCompleted,
     this.onBreakPeriodCompleted,
     this.onFocusRoundFinished,
+    bool Function(FocusAnimationPair pair)? isAnimationPairAvailable,
     DateTime Function()? clock,
   }) : _settings = initialSettings,
+       _isAnimationPairAvailable = isAnimationPairAvailable ?? ((_) => true),
        _clock = clock ?? DateTime.now,
        _focusDuration = focusDurationOverride ?? initialSettings.focusDuration,
        _remainingSeconds = initialSettings.mode == FocusMode.stopwatch
@@ -60,6 +62,7 @@ class FocusTimerController extends ChangeNotifier {
   final VoidCallback? onBreakPeriodCompleted;
   final VoidCallback? onFocusRoundFinished;
   final DateTime Function() _clock;
+  final bool Function(FocusAnimationPair pair) _isAnimationPairAvailable;
 
   Timer? _ticker;
   FocusTimerSettings _settings;
@@ -169,8 +172,8 @@ class FocusTimerController extends ChangeNotifier {
 
   void updateSettings(FocusTimerSettings settings) {
     _reportUnfinishedFocusTime();
-    _settings = settings;
-    _focusDuration = settings.focusDuration;
+    _settings = _settingsWithAvailableAnimation(settings);
+    _focusDuration = _settings.focusDuration;
     _resetToIdleWithoutNotify();
     notifyListeners();
   }
@@ -260,8 +263,12 @@ class FocusTimerController extends ChangeNotifier {
     );
     _remainingSeconds = state.remainingSeconds;
     _focusStartedAt = state.focusStartedAt;
-    _activeAnimationPair = state.animationPair != FocusAnimationPair.shuffle
-        ? state.animationPair
+    final savedPair = state.animationPair ?? _settings.animationPair;
+    final restoredPair = _isAnimationPairAvailable(savedPair)
+        ? savedPair
+        : FocusAnimationPair.standard;
+    _activeAnimationPair = restoredPair != FocusAnimationPair.shuffle
+        ? restoredPair
         : (_settings.animationPair == FocusAnimationPair.shuffle
               ? FocusAnimationPair.standard
               : _settings.animationPair);
@@ -581,11 +588,25 @@ class FocusTimerController extends ChangeNotifier {
 
     final candidates = FocusAnimationPair.values
         .where((pair) => pair != FocusAnimationPair.shuffle)
+        .where(_isAnimationPairAvailable)
         .where((pair) => pair != _lastShuffledAnimationPair)
         .toList();
+    if (candidates.isEmpty) {
+      return FocusAnimationPair.standard;
+    }
     final selected = candidates[Random().nextInt(candidates.length)];
     _lastShuffledAnimationPair = selected;
     return selected;
+  }
+
+  FocusTimerSettings _settingsWithAvailableAnimation(
+    FocusTimerSettings settings,
+  ) {
+    if (settings.animationPair == FocusAnimationPair.shuffle ||
+        _isAnimationPairAvailable(settings.animationPair)) {
+      return settings;
+    }
+    return settings.copyWith(animationPair: FocusAnimationPair.standard);
   }
 
   void _prepareShufflePreview() {

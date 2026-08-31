@@ -2647,6 +2647,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your space has begun.'**
   String get gardenTutorialSpaceGrowingBody;
+
+  /// No description provided for @patsspacePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Patsspace Pro'**
+  String get patsspacePro;
+
+  /// No description provided for @unlockPatsspacePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Patsspace Pro'**
+  String get unlockPatsspacePro;
+
+  /// No description provided for @unlockPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Pro'**
+  String get unlockPro;
+
+  /// No description provided for @proBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'More room for your focus.'**
+  String get proBannerSubtitle;
+
+  /// No description provided for @proExplore.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get proExplore;
+
+  /// No description provided for @proFocusThatGrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus that grows with you.'**
+  String get proFocusThatGrows;
+
+  /// No description provided for @proAllPlantsAndPots.
+  ///
+  /// In en, this message translates to:
+  /// **'Every plant and pot'**
+  String get proAllPlantsAndPots;
+
+  /// No description provided for @proAllFocusAnimationSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Every focus animation set'**
+  String get proAllFocusAnimationSets;
+
+  /// No description provided for @proNewContent.
+  ///
+  /// In en, this message translates to:
+  /// **'New content as it is released'**
+  String get proNewContent;
+
+  /// No description provided for @proYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get proYearly;
+
+  /// No description provided for @proMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get proMonthly;
+
+  /// No description provided for @proLifetime.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime'**
+  String get proLifetime;
+
+  /// No description provided for @proCancelAnytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime'**
+  String get proCancelAnytime;
+
+  /// No description provided for @proUnlockedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked forever'**
+  String get proUnlockedForever;
+
+  /// No description provided for @proActiveForAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Patsspace Pro is active for this account.'**
+  String get proActiveForAccount;
+
+  /// No description provided for @proBeingSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Patsspace Pro is being set up.'**
+  String get proBeingSetUp;
+
+  /// No description provided for @proOptionsSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro options will be available soon.'**
+  String get proOptionsSoon;
+
+  /// No description provided for @proContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get proContinue;
+
+  /// No description provided for @proRestorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Purchases'**
+  String get proRestorePurchases;
+
+  /// No description provided for @proTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms'**
+  String get proTerms;
+
+  /// No description provided for @proPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get proPrivacy;
+
+  /// No description provided for @proMonthlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / month'**
+  String proMonthlyPrice(Object price);
+
+  /// No description provided for @proApproximateMonthlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {price} {currency} / month'**
+  String proApproximateMonthlyPrice(Object price, Object currency);
+
+  /// No description provided for @proSavePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {percent}%'**
+  String proSavePercent(Object percent);
+
+  /// No description provided for @proPurchasesRestoredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored'**
+  String get proPurchasesRestoredTitle;
+
+  /// No description provided for @proPurchasesRestoredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Patsspace Pro is active for this account again.'**
+  String get proPurchasesRestoredMessage;
+
+  /// No description provided for @proWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Patsspace Pro'**
+  String get proWelcomeTitle;
+
+  /// No description provided for @proWelcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is unlocked. Glad to have you with us.'**
+  String get proWelcomeMessage;
+
+  /// No description provided for @proNotActiveYetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro is not active yet'**
+  String get proNotActiveYetTitle;
+
+  /// No description provided for @proNotActiveYetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase was registered, but access is not active yet. Please try again in a moment.'**
+  String get proNotActiveYetMessage;
+
+  /// No description provided for @proNothingToRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to restore'**
+  String get proNothingToRestoreTitle;
+
+  /// No description provided for @proNothingToRestoreMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No active Pro purchase was found for this account.'**
+  String get proNothingToRestoreMessage;
+
+  /// No description provided for @proPurchaseFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase not completed'**
+  String get proPurchaseFailedTitle;
+
+  /// No description provided for @proPurchaseFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your connection and try again in a moment.'**
+  String get proPurchaseFailedMessage;
+
+  /// No description provided for @proRestoreFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore purchases'**
+  String get proRestoreFailedTitle;
+
+  /// No description provided for @proRestoreFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your connection and try again in a moment.'**
+  String get proRestoreFailedMessage;
+
+  /// No description provided for @proActiveShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro is active'**
+  String get proActiveShort;
+
+  /// No description provided for @proExclusiveContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclusive plants, pots and animations'**
+  String get proExclusiveContent;
+
+  /// No description provided for @proManageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage subscription'**
+  String get proManageSubscription;
+
+  /// No description provided for @proPaymentRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is being retried'**
+  String get proPaymentRetry;
+
+  /// No description provided for @proRenewsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews on {date}'**
+  String proRenewsOn(Object date);
+
+  /// No description provided for @proEndsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends on {date}'**
+  String proEndsOn(Object date);
 }
 
 class _AppLocalizationsDelegate

@@ -18,4 +18,11 @@ enum FocusAnimationPair {
       FocusAnimationPair.pair06 => 'Set 6',
     };
   }
+
+  bool get isPro => switch (this) {
+    FocusAnimationPair.pair04 ||
+    FocusAnimationPair.pair05 ||
+    FocusAnimationPair.pair06 => true,
+    _ => false,
+  };
 }

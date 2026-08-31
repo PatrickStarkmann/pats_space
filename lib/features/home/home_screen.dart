@@ -35,6 +35,8 @@ import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_co
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
 import 'package:pats_space/features/notifications/models/timer_notification_kind.dart';
 import 'package:pats_space/features/notifications/models/timer_notification_request.dart';
+import 'package:pats_space/features/pro/pro_access.dart';
+import 'package:pats_space/features/pro/widgets/pro_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
@@ -148,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onFocusPeriodCompleted: _playFocusOrBreakEndSound,
       onBreakPeriodCompleted: _playFocusOrBreakEndSound,
       onFocusRoundFinished: _playRoundEndSound,
+      isAnimationPairAvailable: (pair) => !pair.isPro || proController.isPro,
     );
     final initialTimerState = widget.initialActiveTimerState;
     if (!isTutorial && initialTimerState != null) {
@@ -738,6 +741,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       settings: _timerController.settings,
       focusBlockingController: widget.focusBlockingController,
       showAnimationSettings: _focusViewMode == _FocusViewMode.solo,
+      hasPro: proController.isPro,
+      onProRequested: () => openProScreen(context, controller: proController),
     );
 
     if (updated == null) {

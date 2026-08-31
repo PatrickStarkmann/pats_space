@@ -13,6 +13,8 @@ import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
 import 'package:pats_space/features/ads/services/ads_config.dart';
 import 'package:pats_space/features/ads/widgets/rewarded_water_sheet.dart';
+import 'package:pats_space/features/pro/pro_access.dart';
+import 'package:pats_space/features/pro/widgets/pro_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_area.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
@@ -563,6 +565,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                           showShopSheet(
                             context: context,
                             gardenController: widget.gardenController,
+                            proController: proController,
                             onEnsureShopActionOnline:
                                 widget.onEnsureGardenActionOnline,
                           );
@@ -664,46 +667,59 @@ class _SpaceScreenState extends State<SpaceScreen> {
                 bottom:
                     MediaQuery.paddingOf(context).bottom +
                     _bottomNavigationClearance,
-                child: GardenPlantCard(
-                  pot: selectedPot,
-                  isHangingPot: garden.activeArea.isHangingPotSlot(
-                    garden.selectedPotIndex ?? -1,
+                child: AnimatedBuilder(
+                  animation: proController,
+                  builder: (context, _) => GardenPlantCard(
+                    pot: selectedPot,
+                    isHangingPot: garden.activeArea.isHangingPotSlot(
+                      garden.selectedPotIndex ?? -1,
+                    ),
+                    water: garden.water,
+                    unlockedPlantTypes: garden.unlockedPlantTypes,
+                    ownedPotStyles: garden.ownedPotStyles,
+                    hasPro: proController.isPro,
+                    onPrimaryAction: () {
+                      _runGardenAction(
+                        widget.gardenController.performSelectedPotAction,
+                      );
+                    },
+                    onWaterEmpty: widget.tutorialActive
+                        ? () {}
+                        : _showRewardedWaterSheet,
+                    onPlantSelected: (plantType) {
+                      _runGardenAction(() {
+                        final canPlant =
+                            !plantType.isPro || proController.isPro;
+                        final shouldCloseAfterPlanting =
+                            widget.tutorialActive &&
+                            selectedPot.isEmpty &&
+                            garden.water >= plantType.plantCost &&
+                            canPlant &&
+                            (plantType.isPro ||
+                                garden.unlockedPlantTypes.contains(plantType));
+                        widget.gardenController.plantSelectedPot(
+                          plantType,
+                          allowProPlant: proController.isPro,
+                        );
+                        if (shouldCloseAfterPlanting) {
+                          widget.gardenController.closeSelectedPot();
+                        }
+                      });
+                    },
+                    onPotStyleSelected: (style) {
+                      _runGardenAction(
+                        () => widget.gardenController.styleSelectedPot(style),
+                      );
+                    },
+                    onRemovePlant: () {
+                      _runGardenAction(
+                        widget.gardenController.removeSelectedPlant,
+                      );
+                    },
+                    onClose: widget.gardenController.closeSelectedPot,
+                    onProRequested: () =>
+                        openProScreen(context, controller: proController),
                   ),
-                  water: garden.water,
-                  unlockedPlantTypes: garden.unlockedPlantTypes,
-                  ownedPotStyles: garden.ownedPotStyles,
-                  onPrimaryAction: () {
-                    _runGardenAction(
-                      widget.gardenController.performSelectedPotAction,
-                    );
-                  },
-                  onWaterEmpty: widget.tutorialActive
-                      ? () {}
-                      : _showRewardedWaterSheet,
-                  onPlantSelected: (plantType) {
-                    _runGardenAction(() {
-                      final shouldCloseAfterPlanting =
-                          widget.tutorialActive &&
-                          selectedPot.isEmpty &&
-                          garden.water >= plantType.plantCost &&
-                          garden.unlockedPlantTypes.contains(plantType);
-                      widget.gardenController.plantSelectedPot(plantType);
-                      if (shouldCloseAfterPlanting) {
-                        widget.gardenController.closeSelectedPot();
-                      }
-                    });
-                  },
-                  onPotStyleSelected: (style) {
-                    _runGardenAction(
-                      () => widget.gardenController.styleSelectedPot(style),
-                    );
-                  },
-                  onRemovePlant: () {
-                    _runGardenAction(
-                      widget.gardenController.removeSelectedPlant,
-                    );
-                  },
-                  onClose: widget.gardenController.closeSelectedPot,
                 ),
               ),
             Positioned(

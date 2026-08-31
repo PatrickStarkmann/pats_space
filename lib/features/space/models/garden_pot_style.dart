@@ -44,6 +44,12 @@ enum GardenPotStyle {
     GardenPotStyle.cloud => 250,
   };
 
+  /// Premium pot styles still cost coins once Pro is active.
+  bool get isPro => switch (this) {
+    GardenPotStyle.frog || GardenPotStyle.cloud => true,
+    _ => false,
+  };
+
   String get assetPath => switch (this) {
     GardenPotStyle.classic => AppAssets.gardenPotDefault,
     GardenPotStyle.blue => AppAssets.gardenPotBlue,

@@ -95,12 +95,14 @@ class GardenPlantCard extends StatefulWidget {
     required this.water,
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
+    required this.hasPro,
     required this.onPrimaryAction,
     required this.onWaterEmpty,
     required this.onPlantSelected,
     required this.onPotStyleSelected,
     required this.onRemovePlant,
     required this.onClose,
+    required this.onProRequested,
   });
 
   final GardenPot pot;
@@ -108,12 +110,14 @@ class GardenPlantCard extends StatefulWidget {
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
+  final bool hasPro;
   final VoidCallback onPrimaryAction;
   final VoidCallback onWaterEmpty;
   final ValueChanged<GardenPlantType> onPlantSelected;
   final ValueChanged<GardenPotStyle> onPotStyleSelected;
   final VoidCallback onRemovePlant;
   final VoidCallback onClose;
+  final VoidCallback onProRequested;
 
   @override
   State<GardenPlantCard> createState() => _GardenPlantCardState();
@@ -219,9 +223,11 @@ class _GardenPlantCardState extends State<GardenPlantCard> {
                     water: widget.water,
                     unlockedPlantTypes: widget.unlockedPlantTypes,
                     ownedPotStyles: widget.ownedPotStyles,
+                    hasPro: widget.hasPro,
                     onPlantSelected: widget.onPlantSelected,
                     onWaterEmpty: widget.onWaterEmpty,
                     onPotStyleSelected: widget.onPotStyleSelected,
+                    onProRequested: widget.onProRequested,
                   )
                 else
                   _PlantInfoContent(
@@ -248,9 +254,11 @@ class _PlantSelectionContent extends StatefulWidget {
     required this.water,
     required this.unlockedPlantTypes,
     required this.ownedPotStyles,
+    required this.hasPro,
     required this.onPlantSelected,
     required this.onWaterEmpty,
     required this.onPotStyleSelected,
+    required this.onProRequested,
   });
 
   final GardenPot pot;
@@ -258,9 +266,11 @@ class _PlantSelectionContent extends StatefulWidget {
   final int water;
   final Set<GardenPlantType> unlockedPlantTypes;
   final Set<GardenPotStyle> ownedPotStyles;
+  final bool hasPro;
   final ValueChanged<GardenPlantType> onPlantSelected;
   final VoidCallback onWaterEmpty;
   final ValueChanged<GardenPotStyle> onPotStyleSelected;
+  final VoidCallback onProRequested;
 
   @override
   State<_PlantSelectionContent> createState() => _PlantSelectionContentState();
@@ -332,7 +342,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
             },
             itemBuilder: (context, index) {
               final plantType = plantTypes[index];
-              final unlocked = widget.unlockedPlantTypes.contains(plantType);
+              final unlocked = _isPlantAvailable(plantType);
 
               return _PlantCarouselCard(
                 controller: _pageController,
@@ -340,6 +350,7 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
                 plantType: plantType,
                 selected: plantType == _selectedPlantType,
                 unlocked: unlocked,
+                isProLocked: _isProLocked(plantType),
                 onTap: () {
                   if (index != _lastHapticIndex) {
                     _lastHapticIndex = index;
@@ -358,7 +369,8 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
         const SizedBox(height: AppSpacing.md),
         _PlantPickerStats(
           plantType: _selectedPlantType,
-          unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
+          unlocked: _isPlantAvailable(_selectedPlantType),
+          isProLocked: _isProLocked(_selectedPlantType),
         ),
         if (!widget.isHangingPot) ...[
           const SizedBox(height: AppSpacing.md),
@@ -371,21 +383,37 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
         const SizedBox(height: AppSpacing.md),
         _PlantPickerPrimaryButton(
           plantType: _selectedPlantType,
-          unlocked: widget.unlockedPlantTypes.contains(_selectedPlantType),
+          unlocked: _isPlantAvailable(_selectedPlantType),
           enabled:
-              widget.unlockedPlantTypes.contains(_selectedPlantType) &&
-              widget.water >= _selectedPlantType.plantCost,
+              _isProLocked(_selectedPlantType) ||
+              (_isPlantAvailable(_selectedPlantType) &&
+                  widget.water >= _selectedPlantType.plantCost),
           onTap: () {
             AppHaptics.lightImpact();
+            if (_isProLocked(_selectedPlantType)) {
+              widget.onProRequested();
+              return;
+            }
             widget.onPlantSelected(_selectedPlantType);
           },
-          onWaterEmpty: widget.unlockedPlantTypes.contains(_selectedPlantType)
+          onWaterEmpty: _isPlantAvailable(_selectedPlantType)
               ? widget.onWaterEmpty
               : null,
+          isProLocked: _isProLocked(_selectedPlantType),
         ),
       ],
     );
   }
+
+  bool _isPlantAvailable(GardenPlantType plantType) =>
+      !plantType.isPro ||
+      widget.hasPro ||
+      widget.unlockedPlantTypes.contains(plantType);
+
+  bool _isProLocked(GardenPlantType plantType) =>
+      plantType.isPro &&
+      !widget.hasPro &&
+      !widget.unlockedPlantTypes.contains(plantType);
 }
 
 class _PlantCarouselCard extends StatelessWidget {
@@ -395,6 +423,7 @@ class _PlantCarouselCard extends StatelessWidget {
     required this.plantType,
     required this.selected,
     required this.unlocked,
+    this.isProLocked = false,
     required this.onTap,
   });
 
@@ -403,6 +432,7 @@ class _PlantCarouselCard extends StatelessWidget {
   final GardenPlantType plantType;
   final bool selected;
   final bool unlocked;
+  final bool isProLocked;
   final VoidCallback onTap;
 
   @override
@@ -479,7 +509,9 @@ class _PlantCarouselCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 160),
                     opacity: selected || !unlocked ? 1 : 0,
                     child: Icon(
-                      unlocked
+                      isProLocked
+                          ? CupertinoIcons.lock_fill
+                          : unlocked
                           ? CupertinoIcons.checkmark_alt_circle_fill
                           : CupertinoIcons.lock_fill,
                       color: unlocked ? AppColors.sage : AppColors.grayWarm,
@@ -573,10 +605,15 @@ class _MysteryPlantMark extends StatelessWidget {
 }
 
 class _PlantPickerStats extends StatelessWidget {
-  const _PlantPickerStats({required this.plantType, required this.unlocked});
+  const _PlantPickerStats({
+    required this.plantType,
+    required this.unlocked,
+    this.isProLocked = false,
+  });
 
   final GardenPlantType plantType;
   final bool unlocked;
+  final bool isProLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -611,7 +648,18 @@ class _PlantPickerStats extends StatelessWidget {
                 label: _plantSpecialLabel(l10n, plantType),
               ),
             ),
-          ] else
+          ] else if (isProLocked)
+            const Expanded(
+              child: _UnlockHint(
+                leading: Icon(
+                  CupertinoIcons.lock_fill,
+                  size: 18,
+                  color: AppColors.grayWarm,
+                ),
+                label: 'Pats Space Pro',
+              ),
+            )
+          else
             Expanded(
               child: _UnlockHint(
                 leading: const Icon(
@@ -734,6 +782,7 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
     required this.unlocked,
     required this.enabled,
     required this.onTap,
+    this.isProLocked = false,
     this.onWaterEmpty,
   });
 
@@ -741,15 +790,21 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
   final bool unlocked;
   final bool enabled;
   final VoidCallback onTap;
+  final bool isProLocked;
   final VoidCallback? onWaterEmpty;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final proLabel = Localizations.localeOf(context).languageCode == 'de'
+        ? 'Pats Space Pro freischalten'
+        : 'Unlock Pats Space Pro';
     return Semantics(
       button: true,
       enabled: enabled,
-      label: l10n.plantAction(_plantName(l10n, plantType)),
+      label: isProLocked
+          ? proLabel
+          : l10n.plantAction(_plantName(l10n, plantType)),
       child: _PressableScale(
         onTap: enabled
             ? onTap
@@ -782,7 +837,9 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                unlocked
+                isProLocked
+                    ? CupertinoIcons.lock_fill
+                    : unlocked
                     ? enabled
                           ? CupertinoIcons.drop_fill
                           : CupertinoIcons.drop
@@ -793,7 +850,9 @@ class _PlantPickerPrimaryButton extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
-                  unlocked
+                  isProLocked
+                      ? proLabel
+                      : unlocked
                       ? enabled
                             ? l10n.plantActionWithCost(plantType.plantCost)
                             : l10n.plantNeedWater(plantType.plantCost)

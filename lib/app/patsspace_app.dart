@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,7 @@ import 'package:pats_space/core/widgets/app_loading_screen.dart';
 import 'package:pats_space/features/settings/models/app_language.dart';
 import 'package:pats_space/features/settings/repositories/shared_preferences_app_language_repository.dart';
 import 'package:pats_space/features/social_focus/repositories/firebase_presence_repository.dart';
+import 'package:pats_space/features/pro/pro_access.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,6 +40,7 @@ class _PatsspaceAppState extends State<PatsspaceApp> {
       auth: FirebaseAuth.instance,
       firestore: FirebaseFirestore.instance,
     )..start();
+    unawaited(proController.initialize());
     _preferencesFuture = _loadPreferences();
     Future<void>.delayed(_minimumIntroDuration, () {
       if (!mounted) {

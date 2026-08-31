@@ -12,6 +12,12 @@ class AnalyticsEventNames {
   static const gardenItemUnlocked = 'garden_item_unlocked';
   static const acquisitionSourceSelected = 'acquisition_source_selected';
   static const rewardedWaterEarned = 'rewarded_water_earned';
+  static const paywallOpened = 'paywall_opened';
+  static const purchaseStarted = 'pro_purchase_started';
+  static const purchaseCompleted = 'pro_purchase_completed';
+  static const purchaseCancelled = 'pro_purchase_cancelled';
+  static const purchaseFailed = 'pro_purchase_failed';
+  static const purchasesRestored = 'pro_purchases_restored';
 }
 
 class AppAnalytics {
@@ -112,6 +118,40 @@ class AppAnalytics {
   Future<void> logRewardedWaterEarned({required int amount}) {
     return _logEvent(AnalyticsEventNames.rewardedWaterEarned, {
       'amount': amount,
+    });
+  }
+
+  Future<void> logPaywallOpened({required String source}) {
+    return _logEvent(AnalyticsEventNames.paywallOpened, {'source': source});
+  }
+
+  Future<void> logProPurchaseStarted({required String packageType}) {
+    return _logEvent(AnalyticsEventNames.purchaseStarted, {
+      'package_type': packageType,
+    });
+  }
+
+  Future<void> logProPurchaseCompleted({required String packageType}) {
+    return _logEvent(AnalyticsEventNames.purchaseCompleted, {
+      'package_type': packageType,
+    });
+  }
+
+  Future<void> logProPurchaseCancelled({required String packageType}) {
+    return _logEvent(AnalyticsEventNames.purchaseCancelled, {
+      'package_type': packageType,
+    });
+  }
+
+  Future<void> logProPurchaseFailed({required String packageType}) {
+    return _logEvent(AnalyticsEventNames.purchaseFailed, {
+      'package_type': packageType,
+    });
+  }
+
+  Future<void> logProPurchasesRestored({required bool proActive}) {
+    return _logEvent(AnalyticsEventNames.purchasesRestored, {
+      'pro_active': proActive.toString(),
     });
   }
 

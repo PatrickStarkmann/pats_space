@@ -24,6 +24,8 @@ Future<FocusTimerSettings?> showTimeSettingsSheet({
   required FocusTimerSettings settings,
   required FocusBlockingController focusBlockingController,
   bool showAnimationSettings = true,
+  bool hasPro = false,
+  VoidCallback? onProRequested,
 }) {
   final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
   if (isTablet) {
@@ -40,6 +42,8 @@ Future<FocusTimerSettings?> showTimeSettingsSheet({
             initialSettings: settings,
             focusBlockingController: focusBlockingController,
             showAnimationSettings: showAnimationSettings,
+            hasPro: hasPro,
+            onProRequested: onProRequested,
             dialog: true,
           ),
         ),
@@ -55,6 +59,8 @@ Future<FocusTimerSettings?> showTimeSettingsSheet({
       initialSettings: settings,
       focusBlockingController: focusBlockingController,
       showAnimationSettings: showAnimationSettings,
+      hasPro: hasPro,
+      onProRequested: onProRequested,
     ),
   );
 }
@@ -65,12 +71,16 @@ class TimeSettingsSheet extends StatefulWidget {
     required this.initialSettings,
     required this.showAnimationSettings,
     required this.focusBlockingController,
+    this.hasPro = false,
+    this.onProRequested,
     this.dialog = false,
   });
 
   final FocusTimerSettings initialSettings;
   final bool showAnimationSettings;
   final FocusBlockingController focusBlockingController;
+  final bool hasPro;
+  final VoidCallback? onProRequested;
   final bool dialog;
 
   @override
@@ -121,6 +131,8 @@ class _TimeSettingsSheetState extends State<TimeSettingsSheet> {
                     settings: _settings,
                     focusBlockingController: widget.focusBlockingController,
                     showAnimationSettings: widget.showAnimationSettings,
+                    hasPro: widget.hasPro,
+                    onProRequested: widget.onProRequested,
                     onDone: () => Navigator.of(context).pop(_settings),
                     onCancel: () => Navigator.of(context).pop(),
                     onModeChanged: (mode) {
@@ -235,6 +247,8 @@ class _OverviewPage extends StatelessWidget {
     required this.settings,
     required this.focusBlockingController,
     required this.showAnimationSettings,
+    required this.hasPro,
+    this.onProRequested,
     required this.onDone,
     required this.onCancel,
     required this.onModeChanged,
@@ -254,6 +268,8 @@ class _OverviewPage extends StatelessWidget {
   final FocusTimerSettings settings;
   final FocusBlockingController focusBlockingController;
   final bool showAnimationSettings;
+  final bool hasPro;
+  final VoidCallback? onProRequested;
   final VoidCallback onDone;
   final VoidCallback onCancel;
   final ValueChanged<FocusMode> onModeChanged;
@@ -334,6 +350,8 @@ class _OverviewPage extends StatelessWidget {
                   AnimationPairSettingsCard(
                     selectedPair: settings.animationPair,
                     onChanged: onAnimationPairChanged,
+                    hasPro: hasPro,
+                    onProRequested: onProRequested,
                   ),
                 ],
               ],

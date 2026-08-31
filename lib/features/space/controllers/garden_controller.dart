@@ -97,8 +97,12 @@ class GardenController extends ChangeNotifier {
     return false;
   }
 
-  bool buyPotStyle(GardenPotStyle style) {
+  bool buyPotStyle(GardenPotStyle style, {bool allowProStyle = false}) {
     if (!GardenPotStyle.shopStyles.contains(style)) {
+      return false;
+    }
+
+    if (style.isPro && !allowProStyle) {
       return false;
     }
 
@@ -346,7 +350,10 @@ class GardenController extends ChangeNotifier {
     );
   }
 
-  void plantSelectedPot(GardenPlantType plantType) {
+  void plantSelectedPot(
+    GardenPlantType plantType, {
+    bool allowProPlant = false,
+  }) {
     if (!_state.isAreaUnlocked(_state.activeArea)) {
       return;
     }
@@ -369,7 +376,11 @@ class GardenController extends ChangeNotifier {
       return;
     }
 
-    if (!_state.unlockedPlantTypes.contains(plantType)) {
+    if (plantType.isPro && !allowProPlant) {
+      return;
+    }
+
+    if (!plantType.isPro && !_state.unlockedPlantTypes.contains(plantType)) {
       return;
     }
 

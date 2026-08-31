@@ -23,6 +23,9 @@ import 'package:pats_space/features/settings/models/week_start_day.dart';
 import 'package:pats_space/features/settings/repositories/firebase_user_profile_repository.dart';
 import 'package:pats_space/features/settings/repositories/user_profile_repository.dart';
 import 'package:pats_space/features/notifications/controllers/notification_controller.dart';
+import 'package:pats_space/features/pro/controllers/pro_controller.dart';
+import 'package:pats_space/features/pro/pro_access.dart';
+import 'package:pats_space/features/pro/widgets/pro_screen.dart';
 import 'package:pats_space/features/sounds/controllers/sound_controller.dart';
 import 'package:pats_space/features/sounds/widgets/ambient_sound_sheet.dart';
 import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_controller.dart';
@@ -338,6 +341,23 @@ class _MainSettingsPage extends StatelessWidget {
           onEnsureOnlineAction: onEnsureOnlineAction,
         ),
         const SizedBox(height: AppSpacing.lg),
+        AnimatedBuilder(
+          animation: proController,
+          builder: (context, _) {
+            if (proController.isPro) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              children: [
+                _ProUnlockBanner(
+                  onTap: () =>
+                      openProScreen(context, controller: proController),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+            );
+          },
+        ),
         _SettingsGroup(
           children: [
             _SettingsRow(
@@ -447,6 +467,172 @@ class _MainSettingsPage extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ProUnlockBanner extends StatelessWidget {
+  const _ProUnlockBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      label: l10n.unlockPatsspacePro,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          AppHaptics.lightImpact();
+          onTap();
+        },
+        child: Container(
+          height: 94,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(23),
+          ),
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: IgnorePointer(child: _BannerShine()),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.patsspacePro,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.headline.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            l10n.proBannerSubtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.charcoal,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: 11,
+                        ),
+                        child: Text(
+                          l10n.proExplore,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.surface,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BannerShine extends StatefulWidget {
+  const _BannerShine();
+
+  @override
+  State<_BannerShine> createState() => _BannerShineState();
+}
+
+class _BannerShineState extends State<_BannerShine>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  Timer? _repeatTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1300),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 550), _play);
+    _repeatTimer = Timer.periodic(const Duration(seconds: 7), (_) => _play());
+  }
+
+  @override
+  void dispose() {
+    _repeatTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _play() {
+    if (mounted) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final bandWidth = constraints.maxWidth * .34;
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = Curves.easeInOutCubic.transform(_controller.value);
+          final left =
+              -bandWidth + (constraints.maxWidth + (bandWidth * 2)) * progress;
+          return Stack(
+            children: [
+              Positioned(
+                left: left,
+                top: -42,
+                bottom: -42,
+                child: Transform.rotate(
+                  angle: -.18,
+                  child: Container(
+                    width: bandWidth,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.surface.withValues(alpha: 0),
+                          AppColors.surface.withValues(alpha: .62),
+                          AppColors.surface.withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 
 class _ProfileCard extends StatefulWidget {
@@ -1837,10 +2023,59 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
               onTap: secured || _linking ? null : _showSignInOptions,
             ),
             const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.arrowCounterClockwise,
-              title: l10n.restorePurchases,
-              trailing: const _Chevron(),
+            AnimatedBuilder(
+              animation: proController,
+              builder: (context, _) {
+                final l10n = AppLocalizations.of(context);
+                return _SettingsRow(
+                  icon: PhosphorIconsRegular.sparkle,
+                  title: l10n.patsspacePro,
+                  subtitle: proController.isPro
+                      ? l10n.proActiveShort
+                      : l10n.proExclusiveContent,
+                  trailing: const _Chevron(),
+                  onTap: () =>
+                      openProScreen(context, controller: proController),
+                );
+              },
+            ),
+            AnimatedBuilder(
+              animation: proController,
+              builder: (context, _) {
+                if (!proController.isPro) {
+                  return const SizedBox.shrink();
+                }
+                final l10n = AppLocalizations.of(context);
+                return Column(
+                  children: [
+                    const _SettingsDivider(),
+                    _SettingsRow(
+                      icon: PhosphorIconsRegular.creditCard,
+                      title: l10n.proManageSubscription,
+                      subtitle: _proSubscriptionSubtitle(
+                        context,
+                        controller: proController,
+                        l10n: l10n,
+                      ),
+                      trailing: const _Chevron(),
+                      onTap: () =>
+                          unawaited(proController.openSubscriptionManagement()),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const _SettingsDivider(),
+            AnimatedBuilder(
+              animation: proController,
+              builder: (context, _) => _SettingsRow(
+                icon: PhosphorIconsRegular.arrowCounterClockwise,
+                title: l10n.restorePurchases,
+                trailing: proController.isBusy
+                    ? const CupertinoActivityIndicator()
+                    : const _Chevron(),
+                onTap: proController.isBusy ? null : _restorePurchases,
+              ),
             ),
             if (secured) ...[
               const _SettingsDivider(),
@@ -1862,6 +2097,59 @@ class _AccountSettingsPageState extends State<_AccountSettingsPage> {
           ],
         ),
       ],
+    );
+  }
+
+  String? _proSubscriptionSubtitle(
+    BuildContext context, {
+    required ProController controller,
+    required AppLocalizations l10n,
+  }) {
+    if (controller.isInBillingRetry) {
+      return l10n.proPaymentRetry;
+    }
+    final expiresAt = controller.expiresAt;
+    if (expiresAt == null) {
+      return null;
+    }
+    final date = MaterialLocalizations.of(
+      context,
+    ).formatMediumDate(expiresAt.toLocal());
+    return controller.willRenew ? l10n.proRenewsOn(date) : l10n.proEndsOn(date);
+  }
+
+  Future<void> _restorePurchases() async {
+    final l10n = AppLocalizations.of(context);
+    final restored = await proController.restorePurchases();
+    if (!mounted) {
+      return;
+    }
+
+    final (title, message) = switch ((restored, proController.error)) {
+      (true, _) => (
+        l10n.proPurchasesRestoredTitle,
+        l10n.proPurchasesRestoredMessage,
+      ),
+      (_, 'no_restorable_pro_purchase') => (
+        l10n.proNothingToRestoreTitle,
+        l10n.proNothingToRestoreMessage,
+      ),
+      _ => (l10n.proRestoreFailedTitle, l10n.proRestoreFailedMessage),
+    };
+
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.done),
+          ),
+        ],
+      ),
     );
   }
 

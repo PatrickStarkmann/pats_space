@@ -7,6 +7,8 @@ import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/features/pro/controllers/pro_controller.dart';
+import 'package:pats_space/features/pro/widgets/pro_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/space/models/garden_decoration.dart';
 import 'package:pats_space/features/space/models/garden_pot_style.dart';
@@ -16,6 +18,7 @@ import 'package:pats_space/l10n/generated/app_localizations.dart';
 Future<void> showShopSheet({
   required BuildContext context,
   required GardenController gardenController,
+  required ProController proController,
   required Future<bool> Function() onEnsureShopActionOnline,
 }) {
   final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
@@ -36,6 +39,7 @@ Future<void> showShopSheet({
             height: size.height * .82,
             child: ShopScreen(
               gardenController: gardenController,
+              proController: proController,
               onEnsureShopActionOnline: onEnsureShopActionOnline,
               onClose: () => Navigator.of(context).pop(),
               onOpenSpace: () => Navigator.of(context).pop(),
@@ -57,6 +61,7 @@ Future<void> showShopSheet({
           borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
           child: ShopScreen(
             gardenController: gardenController,
+            proController: proController,
             onEnsureShopActionOnline: onEnsureShopActionOnline,
             onClose: () => Navigator.of(context).pop(),
             onOpenSpace: () => Navigator.of(context).pop(),
@@ -71,12 +76,14 @@ class ShopScreen extends StatelessWidget {
   const ShopScreen({
     super.key,
     required this.gardenController,
+    required this.proController,
     required this.onEnsureShopActionOnline,
     this.onClose,
     this.onOpenSpace,
   });
 
   final GardenController gardenController;
+  final ProController proController;
   final Future<bool> Function() onEnsureShopActionOnline;
   final VoidCallback? onClose;
   final VoidCallback? onOpenSpace;
@@ -84,10 +91,11 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: gardenController,
+      animation: Listenable.merge([gardenController, proController]),
       builder: (context, _) {
         final l10n = AppLocalizations.of(context);
         final garden = gardenController.state;
+        final hasPro = proController.isPro;
 
         return ColoredBox(
           color: AppColors.background,
@@ -114,6 +122,16 @@ class ShopScreen extends StatelessWidget {
                     items: GardenPotStyle.shopStyles,
                     isOwned: garden.ownedPotStyles.contains,
                     isEquipped: (_) => false,
+                    isAvailable: (style) =>
+                        !style.isPro ||
+                        hasPro ||
+                        garden.ownedPotStyles.contains(style),
+                    isProLocked: (style) =>
+                        style.isPro &&
+                        !hasPro &&
+                        !garden.ownedPotStyles.contains(style),
+                    unavailableLabel: (style) =>
+                        style.isPro ? l10n.unlockPro : null,
                     nameOf: (style) => _potStyleName(style, l10n),
                     costOf: (style) => style.cost,
                     assetOf: (style) => style.assetPath,
@@ -125,6 +143,12 @@ class ShopScreen extends StatelessWidget {
                     },
                     coins: garden.coins,
                     onPrimaryAction: (style) {
+                      if (style.isPro &&
+                          !hasPro &&
+                          !garden.ownedPotStyles.contains(style)) {
+                        openProScreen(context, controller: proController);
+                        return;
+                      }
                       _runShopAction(() {
                         final owned = garden.ownedPotStyles.contains(style);
                         if (owned) {
@@ -132,7 +156,10 @@ class ShopScreen extends StatelessWidget {
                           return;
                         }
 
-                        final success = gardenController.buyPotStyle(style);
+                        final success = gardenController.buyPotStyle(
+                          style,
+                          allowProStyle: hasPro,
+                        );
                         if (success) {
                           AppHaptics.purchase();
                         } else {
@@ -351,6 +378,7 @@ class _ShopItemSection<T> extends StatelessWidget {
     required this.isOwned,
     required this.isEquipped,
     this.isAvailable,
+    this.isProLocked,
     this.unavailableLabel,
     required this.nameOf,
     required this.costOf,
@@ -365,6 +393,7 @@ class _ShopItemSection<T> extends StatelessWidget {
   final bool Function(T item) isOwned;
   final bool Function(T item) isEquipped;
   final bool Function(T item)? isAvailable;
+  final bool Function(T item)? isProLocked;
   final String? Function(T item)? unavailableLabel;
   final String Function(T item) nameOf;
   final int Function(T item) costOf;
@@ -402,6 +431,7 @@ class _ShopItemSection<T> extends StatelessWidget {
               final equipped = isEquipped(item);
               final cost = costOf(item);
               final available = isAvailable?.call(item) ?? true;
+              final proLocked = isProLocked?.call(item) ?? false;
               final canBuy = available && coins >= cost;
 
               return _ShopProductCard(
@@ -411,6 +441,7 @@ class _ShopItemSection<T> extends StatelessWidget {
                 owned: owned,
                 equipped: equipped,
                 available: available,
+                proLocked: proLocked,
                 unavailableLabel: unavailableLabel?.call(item),
                 canBuy: canBuy,
                 actionLabel: actionLabel?.call(item),
@@ -432,6 +463,7 @@ class _ShopProductCard extends StatelessWidget {
     required this.owned,
     required this.equipped,
     required this.available,
+    required this.proLocked,
     required this.unavailableLabel,
     required this.canBuy,
     required this.actionLabel,
@@ -444,6 +476,7 @@ class _ShopProductCard extends StatelessWidget {
   final bool owned;
   final bool equipped;
   final bool available;
+  final bool proLocked;
   final String? unavailableLabel;
   final bool canBuy;
   final String? actionLabel;
@@ -452,20 +485,23 @@ class _ShopProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final resolvedActionLabel =
-        actionLabel ??
-        (equipped
-            ? l10n.equipped
-            : owned
-            ? l10n.use
-            : !available
-            ? unavailableLabel ?? l10n.locked
-            : '$cost');
+    final resolvedActionLabel = proLocked
+        ? l10n.unlockPro
+        : actionLabel ??
+              (equipped
+                  ? l10n.equipped
+                  : owned
+                  ? l10n.use
+                  : !available
+                  ? unavailableLabel ?? l10n.locked
+                  : '$cost');
 
     final buttonColor = equipped
         ? AppColors.sageSoft
         : owned
         ? AppColors.surfaceMuted.withValues(alpha: .75)
+        : proLocked
+        ? AppColors.charcoal
         : !available
         ? AppColors.surfaceMuted.withValues(alpha: .64)
         : canBuy
@@ -475,6 +511,8 @@ class _ShopProductCard extends StatelessWidget {
         ? AppColors.sagePressed
         : owned
         ? AppColors.charcoal
+        : proLocked
+        ? AppColors.surface
         : !available
         ? AppColors.grayWarm
         : canBuy
@@ -515,15 +553,25 @@ class _ShopProductCard extends StatelessWidget {
                           : AppColors.surfaceMuted.withValues(alpha: .42),
                       borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        child: Image.asset(
-                          assetPath,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            child: Image.asset(
+                              assetPath,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (proLocked)
+                          const Positioned(
+                            top: 8,
+                            right: 8,
+                            child: _ProLockBadge(),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -588,4 +636,21 @@ class _ShopProductCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProLockBadge extends StatelessWidget {
+  const _ProLockBadge();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: AppColors.charcoal,
+      shape: BoxShape.circle,
+    ),
+    child: const SizedBox(
+      width: 28,
+      height: 28,
+      child: Icon(CupertinoIcons.lock_fill, size: 14, color: AppColors.surface),
+    ),
+  );
 }

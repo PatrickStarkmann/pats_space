@@ -14,10 +14,14 @@ class AnimationPairSettingsCard extends StatelessWidget {
     super.key,
     required this.selectedPair,
     required this.onChanged,
+    this.hasPro = false,
+    this.onProRequested,
   });
 
   final FocusAnimationPair selectedPair;
   final ValueChanged<FocusAnimationPair> onChanged;
+  final bool hasPro;
+  final VoidCallback? onProRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +79,13 @@ class AnimationPairSettingsCard extends StatelessWidget {
     final picked = await showCupertinoDialog<FocusAnimationPair>(
       context: context,
       builder: (context) {
-        return _AnimationPairPickerDialog(initialPair: selectedPair);
+        return _AnimationPairPickerDialog(
+          initialPair: selectedPair.isPro && !hasPro
+              ? FocusAnimationPair.standard
+              : selectedPair,
+          hasPro: hasPro,
+          onProRequested: onProRequested,
+        );
       },
     );
 
@@ -143,9 +153,15 @@ class _SmallActionButton extends StatelessWidget {
 }
 
 class _AnimationPairPickerDialog extends StatefulWidget {
-  const _AnimationPairPickerDialog({required this.initialPair});
+  const _AnimationPairPickerDialog({
+    required this.initialPair,
+    required this.hasPro,
+    this.onProRequested,
+  });
 
   final FocusAnimationPair initialPair;
+  final bool hasPro;
+  final VoidCallback? onProRequested;
 
   @override
   State<_AnimationPairPickerDialog> createState() =>
@@ -188,6 +204,10 @@ class _AnimationPairPickerDialogState
     final l10n = AppLocalizations.of(context);
     final showingBreak = (_tick ~/ 4).isOdd;
     final previewPair = _shuffle ? FocusAnimationPair.standard : _pair;
+    final proLocked = _pair.isPro && !widget.hasPro;
+    final pairDescription = _shuffle
+        ? 'Shuffle'
+        : '${_pair.label} · ${showingBreak ? l10n.breakLabel : l10n.focus}';
     final spec = showingBreak
         ? FocusAnimationCatalog.breakSpec(previewPair)
         : FocusAnimationCatalog.focusSpec(previewPair);
@@ -216,11 +236,25 @@ class _AnimationPairPickerDialogState
                   style: _noDecoration(AppTextStyles.title),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _shuffle
-                      ? 'Shuffle'
-                      : '${_pair.label} · ${showingBreak ? l10n.breakLabel : l10n.focus}',
-                  style: _noDecoration(AppTextStyles.bodyMuted),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        pairDescription,
+                        overflow: TextOverflow.ellipsis,
+                        style: _noDecoration(AppTextStyles.bodyMuted),
+                      ),
+                    ),
+                    if (proLocked) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      const Icon(
+                        CupertinoIcons.lock_fill,
+                        size: 16,
+                        color: AppColors.grayWarm,
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 Row(
@@ -253,9 +287,16 @@ class _AnimationPairPickerDialogState
                     Expanded(
                       child: _DialogButton(
                         label: l10n.select,
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pop(_shuffle ? FocusAnimationPair.shuffle : _pair),
+                        onPressed: () {
+                          if (proLocked) {
+                            Navigator.of(context).pop();
+                            widget.onProRequested?.call();
+                            return;
+                          }
+                          Navigator.of(
+                            context,
+                          ).pop(_shuffle ? FocusAnimationPair.shuffle : _pair);
+                        },
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),

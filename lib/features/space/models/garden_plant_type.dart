@@ -42,10 +42,18 @@ enum GardenPlantType {
     GardenPlantType.daisy => GardenPlantType.tulip,
     GardenPlantType.tulip => GardenPlantType.clover,
     GardenPlantType.clover => GardenPlantType.sunflower,
-    GardenPlantType.sunflower => GardenPlantType.cherryBlossom,
+    GardenPlantType.sunflower => null,
     GardenPlantType.hangingFlower => null,
-    GardenPlantType.cherryBlossom => GardenPlantType.strawberry,
+    // Pro plants are entitlement-gated, not part of the free unlock chain.
+    // Otherwise growing Cherry Blossom once would persist Strawberry as an
+    // ordinary unlock after the subscription ends.
+    GardenPlantType.cherryBlossom => null,
     GardenPlantType.strawberry => null,
+  };
+
+  bool get isPro => switch (this) {
+    GardenPlantType.cherryBlossom || GardenPlantType.strawberry => true,
+    _ => false,
   };
 
   GardenPlantType? get unlockRequirement => switch (this) {

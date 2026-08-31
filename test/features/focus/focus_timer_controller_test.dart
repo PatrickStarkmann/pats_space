@@ -213,6 +213,42 @@ void main() {
       },
     );
 
+    test(
+      'falls back to Standard when a selected Pro animation is unavailable',
+      () {
+        final controller = FocusTimerController(
+          isAnimationPairAvailable: (pair) => !pair.isPro,
+        );
+        addTearDown(controller.dispose);
+
+        controller.updateSettings(
+          FocusTimerController.defaultSettings.copyWith(
+            animationPair: FocusAnimationPair.pair04,
+          ),
+        );
+
+        expect(controller.settings.animationPair, FocusAnimationPair.standard);
+        expect(controller.activeAnimationPair, FocusAnimationPair.standard);
+      },
+    );
+
+    test('shuffle never selects Pro animations without Pro access', () {
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          animationPair: FocusAnimationPair.shuffle,
+        ),
+        isAnimationPairAvailable: (pair) => !pair.isPro,
+      );
+      addTearDown(controller.dispose);
+
+      for (var index = 0; index < 12; index++) {
+        expect(controller.activeAnimationPair.isPro, isFalse);
+        controller.toggle();
+        expect(controller.activeAnimationPair.isPro, isFalse);
+        controller.cancelFocusRound();
+      }
+    });
+
     test('restores the shuffled set currently used by an active timer', () {
       final controller = FocusTimerController(
         initialSettings: FocusTimerController.defaultSettings.copyWith(

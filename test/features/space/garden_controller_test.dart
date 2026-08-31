@@ -224,7 +224,10 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.selectPot(0);
-      controller.plantSelectedPot(GardenPlantType.cherryBlossom);
+      controller.plantSelectedPot(
+        GardenPlantType.cherryBlossom,
+        allowProPlant: true,
+      );
       _performActions(
         controller,
         GardenPlantType.cherryBlossom.balance.seedWater,
@@ -330,23 +333,15 @@ void main() {
       );
     });
 
-    test('cherry blossom and strawberry follow the regular unlock path', () {
-      expect(
-        GardenPlantType.sunflower.nextUnlock,
-        GardenPlantType.cherryBlossom,
-      );
+    test('cherry blossom and strawberry are Pro plants', () {
+      expect(GardenPlantType.sunflower.nextUnlock, isNull);
+      expect(GardenPlantType.cherryBlossom.isPro, isTrue);
+      expect(GardenPlantType.strawberry.isPro, isTrue);
       expect(
         GardenPlantType.cherryBlossom.unlockRequirement,
         GardenPlantType.sunflower,
       );
-      expect(
-        GardenPlantType.cherryBlossom.nextUnlock,
-        GardenPlantType.strawberry,
-      );
-      expect(
-        GardenPlantType.strawberry.unlockRequirement,
-        GardenPlantType.cherryBlossom,
-      );
+      expect(GardenPlantType.cherryBlossom.nextUnlock, isNull);
     });
 
     test('locked plants cannot be planted', () {
@@ -360,6 +355,23 @@ void main() {
 
       expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
       expect(controller.state.water, 40);
+    });
+
+    test('Pro plants require Pro access', () {
+      final controller = GardenController(
+        initialState: GardenState.initial().copyWith(water: 40),
+      );
+      addTearDown(controller.dispose);
+
+      controller.selectPot(0);
+      controller.plantSelectedPot(GardenPlantType.cherryBlossom);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.empty);
+
+      controller.plantSelectedPot(
+        GardenPlantType.cherryBlossom,
+        allowProPlant: true,
+      );
+      expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
     });
 
     test('bloom charges refill every eight hours without stacking', () {
@@ -585,14 +597,21 @@ void main() {
       expect(controller.state.pots[1].potStyle, GardenPotStyle.blue);
     });
 
-    test('new frog and cloud pot styles can be bought', () {
+    test('frog and cloud pot styles require Pro and can then be bought', () {
       final controller = GardenController(
         initialState: GardenState.initial().copyWith(coins: 600),
       );
       addTearDown(controller.dispose);
 
-      expect(controller.buyPotStyle(GardenPotStyle.frog), isTrue);
-      expect(controller.buyPotStyle(GardenPotStyle.cloud), isTrue);
+      expect(controller.buyPotStyle(GardenPotStyle.frog), isFalse);
+      expect(
+        controller.buyPotStyle(GardenPotStyle.frog, allowProStyle: true),
+        isTrue,
+      );
+      expect(
+        controller.buyPotStyle(GardenPotStyle.cloud, allowProStyle: true),
+        isTrue,
+      );
       expect(controller.state.ownedPotStyles, contains(GardenPotStyle.frog));
       expect(controller.state.ownedPotStyles, contains(GardenPotStyle.cloud));
     });
