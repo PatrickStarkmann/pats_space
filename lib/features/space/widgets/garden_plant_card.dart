@@ -405,15 +405,12 @@ class _PlantSelectionContentState extends State<_PlantSelectionContent> {
     );
   }
 
-  bool _isPlantAvailable(GardenPlantType plantType) =>
-      !plantType.isPro ||
-      widget.hasPro ||
-      widget.unlockedPlantTypes.contains(plantType);
+  bool _isPlantAvailable(GardenPlantType plantType) => plantType.isPro
+      ? widget.hasPro
+      : widget.unlockedPlantTypes.contains(plantType);
 
   bool _isProLocked(GardenPlantType plantType) =>
-      plantType.isPro &&
-      !widget.hasPro &&
-      !widget.unlockedPlantTypes.contains(plantType);
+      plantType.isPro && !widget.hasPro;
 }
 
 class _PlantCarouselCard extends StatelessWidget {

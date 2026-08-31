@@ -1703,7 +1703,11 @@ class _FocusControls extends StatelessWidget {
         onPressed: onPlayPause,
       );
       return highlightStart
-          ? _TutorialStartPulse(width: 172, height: 56, child: button)
+          ? _TutorialStartPulse(
+              width: _FocusStartButton.width,
+              height: _FocusStartButton.height,
+              child: button,
+            )
           : button;
     }
 
@@ -1754,6 +1758,9 @@ class _FocusControls extends StatelessWidget {
 class _FocusStartButton extends StatefulWidget {
   const _FocusStartButton({required this.label, required this.onPressed});
 
+  static const width = 112.0;
+  static const height = 56.0;
+
   final String label;
   final VoidCallback onPressed;
 
@@ -1782,8 +1789,9 @@ class _FocusStartButtonState extends State<_FocusStartButton> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          height: _FocusStartButton.height,
+          width: _FocusStartButton.width,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: AppColors.charcoal,
             borderRadius: BorderRadius.circular(999),

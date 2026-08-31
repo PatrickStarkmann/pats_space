@@ -85,6 +85,22 @@ void main() {
       },
     );
 
+    test('clearing a deleted garden also removes the legacy cache', () async {
+      const codec = GardenStateJsonCodec();
+      SharedPreferences.setMockInitialValues({
+        'garden_state_v1': jsonEncode(codec.stateToJson(GardenState.initial())),
+      });
+      final preferences = await SharedPreferences.getInstance();
+
+      await SharedPreferencesGardenRepository.clearLegacyState(preferences);
+
+      final newUserRepository = SharedPreferencesGardenRepository(
+        preferences,
+        userId: 'new-user',
+      );
+      expect(await newUserRepository.loadState(), isNull);
+    });
+
     test('pending rewards migrate legacy data to scoped storage', () async {
       const codec = GardenStateJsonCodec();
       SharedPreferences.setMockInitialValues({

@@ -1003,6 +1003,7 @@ class _AppShellState extends State<AppShell> {
       preferences,
       userId: deletedUserId,
     );
+    await SharedPreferencesGardenRepository.clearLegacyState(preferences);
     await PendingFocusRewardRepository.clearRewardsForUser(
       preferences,
       userId: deletedUserId,

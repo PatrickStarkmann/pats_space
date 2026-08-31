@@ -71,4 +71,12 @@ class SharedPreferencesGardenRepository implements GardenRepository {
   }) {
     return preferences.remove('$_stateKey:$userId');
   }
+
+  /// Removes the pre-account cache format as part of a full account wipe.
+  ///
+  /// Legacy data had no user id in its key. Leaving it behind could otherwise
+  /// be migrated into the next anonymous account created on this device.
+  static Future<void> clearLegacyState(SharedPreferences preferences) {
+    return preferences.remove(_stateKey);
+  }
 }
