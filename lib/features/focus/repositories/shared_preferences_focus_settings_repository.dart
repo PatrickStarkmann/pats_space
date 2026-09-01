@@ -36,7 +36,7 @@ class SharedPreferencesFocusSettingsRepository
 
     return FocusTimerSettings(
       mode: _enumValue(FocusMode.values, json['mode']) ?? FocusMode.pomodoro,
-      focusMinutes: _intValue(json['focusMinutes']) ?? 5,
+      focusMinutes: _intValue(json['focusMinutes']) ?? 25,
       // `focusSeconds` was only used by the temporary 30-second test mode.
       // Ignore the legacy value so an old test setting cannot survive updates.
       focusSeconds: null,

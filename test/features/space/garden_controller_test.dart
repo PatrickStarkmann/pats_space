@@ -12,7 +12,7 @@ import 'package:pats_space/features/space/models/garden_state.dart';
 void main() {
   group('GardenController', () {
     test('plant balance scales from starter to late-game plants', () {
-      expect(GardenPlantType.daisy.balance.totalWaterToFirstBloom, 17);
+      expect(GardenPlantType.daisy.balance.totalWaterToFirstBloom, 10);
       expect(GardenPlantType.clover.balance.totalWaterToFirstBloom, 20);
       expect(GardenPlantType.tulip.balance.totalWaterToFirstBloom, 28);
       expect(GardenPlantType.sunflower.balance.totalWaterToFirstBloom, 40);
@@ -29,23 +29,23 @@ void main() {
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
       expect(controller.state.water, 99);
 
-      _performActions(controller, 2);
+      _performActions(controller, 1);
       expect(controller.state.pots[0].stage, GardenGrowthStage.seed);
+      expect(controller.state.pots[0].waterProgress, 1);
+
+      _performActions(controller, 1);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
+
+      _performActions(controller, 2);
+      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
       expect(controller.state.pots[0].waterProgress, 2);
 
       _performActions(controller, 1);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
-
-      _performActions(controller, 4);
-      expect(controller.state.pots[0].stage, GardenGrowthStage.sprout);
-      expect(controller.state.pots[0].waterProgress, 4);
-
-      _performActions(controller, 1);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
 
-      _performActions(controller, 7);
+      _performActions(controller, 3);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bud);
-      expect(controller.state.pots[0].waterProgress, 7);
+      expect(controller.state.pots[0].waterProgress, 3);
 
       _performActions(controller, 1);
       expect(controller.state.pots[0].stage, GardenGrowthStage.bloom);

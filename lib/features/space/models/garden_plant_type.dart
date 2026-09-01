@@ -80,9 +80,9 @@ enum GardenPlantType {
       coinReward: 5,
       coinDropInterval: Duration(hours: 8),
       plantCost: 1,
-      seedWater: 3,
-      sproutWater: 5,
-      budWater: 8,
+      seedWater: 2,
+      sproutWater: 3,
+      budWater: 4,
       dryWater: 4,
     ),
     GardenPlantType.tulip => const GardenPlantBalance(

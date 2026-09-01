@@ -40,7 +40,7 @@ class FocusTimerController extends ChangeNotifier {
 
   static const defaultSettings = FocusTimerSettings(
     mode: FocusMode.pomodoro,
-    focusMinutes: 5,
+    focusMinutes: 25,
     shortBreakMinutes: 5,
     longBreakMinutes: 20,
     longBreakInterval: 4,
