@@ -12,7 +12,13 @@ class ProConfig {
   static const entitlementId = 'patsspace_pro';
   static const defaultOfferingId = 'default';
 
-  static const _iosApiKey = String.fromEnvironment('REVENUECAT_IOS_API_KEY');
+  // RevenueCat public SDK keys are safe to ship in the client. Keep the
+  // dart-define override for CI/release configuration, while allowing a
+  // normal IDE run to use the connected App Store configuration.
+  static const _iosApiKey = String.fromEnvironment(
+    'REVENUECAT_IOS_API_KEY',
+    defaultValue: 'appl_iwmHXBDhZgtxKRasJYxIORLtJhz',
+  );
   static const _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_API_KEY',
   );
