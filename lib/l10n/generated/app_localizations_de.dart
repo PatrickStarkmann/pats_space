@@ -396,7 +396,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appVersion => 'Pat\'s Space 0.1.0';
 
   @override
-  String get timeSettings => 'Zeit-Einstellungen';
+  String get timeSettings => 'Einstellungen';
 
   @override
   String get cancel => 'Abbrechen';

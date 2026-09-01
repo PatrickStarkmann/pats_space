@@ -803,7 +803,7 @@ abstract class AppLocalizations {
   /// No description provided for @timeSettings.
   ///
   /// In en, this message translates to:
-  /// **'Time Settings'**
+  /// **'Settings'**
   String get timeSettings;
 
   /// No description provided for @cancel.

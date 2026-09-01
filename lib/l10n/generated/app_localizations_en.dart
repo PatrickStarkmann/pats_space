@@ -386,7 +386,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appVersion => 'Pat\'s Space 0.1.0';
 
   @override
-  String get timeSettings => 'Time Settings';
+  String get timeSettings => 'Settings';
 
   @override
   String get cancel => 'Cancel';
