@@ -6,9 +6,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pats_space/core/auth/account_auth_service.dart';
 import 'package:pats_space/core/auth/firebase_account_auth_service.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
+import 'package:pats_space/core/app_links.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
@@ -32,6 +34,7 @@ import 'package:pats_space/features/focus_blocking/controllers/focus_blocking_co
 import 'package:pats_space/features/focus_blocking/models/focus_blocking_status.dart';
 import 'package:pats_space/l10n/generated/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _settingsBackgroundColor = Color(0xFFF5F4FA);
 
@@ -218,14 +221,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-            onFeedbackLabPressed: () {
-              Navigator.of(routeContext).push(
-                _settingsRoute(
-                  (feedbackContext) => _FeedbackLabPage(
-                    onBack: () => Navigator.of(feedbackContext).maybePop(),
-                  ),
-                ),
-              );
+            onContactPressed: () {
+              unawaited(launchUrl(AppLinks.supportEmail));
             },
             onAccountPressed: () {
               Navigator.of(routeContext).push(
@@ -300,7 +297,7 @@ class _MainSettingsPage extends StatelessWidget {
     required this.onSoundsPressed,
     required this.onNotificationsPressed,
     required this.onWeekStartDayPressed,
-    required this.onFeedbackLabPressed,
+    required this.onContactPressed,
     required this.onAccountPressed,
     required this.onFriendsPressed,
     required this.onOthersPressed,
@@ -321,7 +318,7 @@ class _MainSettingsPage extends StatelessWidget {
   final VoidCallback onSoundsPressed;
   final VoidCallback onNotificationsPressed;
   final VoidCallback onWeekStartDayPressed;
-  final VoidCallback onFeedbackLabPressed;
+  final VoidCallback onContactPressed;
   final VoidCallback onAccountPressed;
   final VoidCallback onFriendsPressed;
   final VoidCallback onOthersPressed;
@@ -446,14 +443,7 @@ class _MainSettingsPage extends StatelessWidget {
               icon: PhosphorIconsRegular.envelope,
               title: l10n.contactUs,
               trailing: const _Chevron(),
-            ),
-            const _SettingsDivider(),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.lightning,
-              title: l10n.feedbackLab,
-              subtitle: l10n.feedbackLabSubtitle,
-              trailing: const _Chevron(),
-              onTap: onFeedbackLabPressed,
+              onTap: onContactPressed,
             ),
             const _SettingsDivider(),
             _SettingsRow(
@@ -1705,6 +1695,8 @@ class _NotificationsSettingsPage extends StatelessWidget {
   }
 }
 
+// Kept as an internal developer utility; it is no longer reachable from Settings.
+// ignore: unused_element
 class _FeedbackLabPage extends StatelessWidget {
   const _FeedbackLabPage({required this.onBack});
 
@@ -2554,7 +2546,7 @@ class _ProviderActionLabel extends StatelessWidget {
   }
 }
 
-class _OthersSettingsPage extends StatelessWidget {
+class _OthersSettingsPage extends StatefulWidget {
   const _OthersSettingsPage({
     required this.onBack,
     required this.rewardedWaterController,
@@ -2564,12 +2556,19 @@ class _OthersSettingsPage extends StatelessWidget {
   final RewardedWaterController rewardedWaterController;
 
   @override
+  State<_OthersSettingsPage> createState() => _OthersSettingsPageState();
+}
+
+class _OthersSettingsPageState extends State<_OthersSettingsPage> {
+  late final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
     return _SettingsScrollView(
       title: l10n.others,
-      leading: _BackButton(onPressed: onBack),
+      leading: _BackButton(onPressed: widget.onBack),
       children: [
         _SettingsGroup(
           children: [
@@ -2577,25 +2576,37 @@ class _OthersSettingsPage extends StatelessWidget {
               icon: PhosphorIconsRegular.lockKey,
               title: l10n.privacyPolicy,
               trailing: const _Chevron(),
+              onTap: () => unawaited(
+                launchUrl(
+                  AppLinks.privacyPolicy,
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
             ),
             const _SettingsDivider(),
             _SettingsRow(
               icon: PhosphorIconsRegular.scroll,
               title: l10n.termsOfUse,
               trailing: const _Chevron(),
+              onTap: () => unawaited(
+                launchUrl(
+                  AppLinks.termsOfUse,
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
             ),
             AnimatedBuilder(
-              animation: rewardedWaterController,
+              animation: widget.rewardedWaterController,
               builder: (context, _) {
-                return rewardedWaterController.isPrivacyOptionsRequired
+                return widget.rewardedWaterController.isPrivacyOptionsRequired
                     ? const _SettingsDivider()
                     : const SizedBox.shrink();
               },
             ),
             AnimatedBuilder(
-              animation: rewardedWaterController,
+              animation: widget.rewardedWaterController,
               builder: (context, _) {
-                if (!rewardedWaterController.isPrivacyOptionsRequired) {
+                if (!widget.rewardedWaterController.isPrivacyOptionsRequired) {
                   return const SizedBox.shrink();
                 }
                 return _SettingsRow(
@@ -2603,23 +2614,30 @@ class _OthersSettingsPage extends StatelessWidget {
                   title: l10n.adPrivacy,
                   trailing: const _Chevron(),
                   onTap: () {
-                    unawaited(rewardedWaterController.showPrivacyOptions());
+                    unawaited(
+                      widget.rewardedWaterController.showPrivacyOptions(),
+                    );
                   },
                 );
               },
             ),
             AnimatedBuilder(
-              animation: rewardedWaterController,
+              animation: widget.rewardedWaterController,
               builder: (context, _) {
-                return rewardedWaterController.isPrivacyOptionsRequired
+                return widget.rewardedWaterController.isPrivacyOptionsRequired
                     ? const _SettingsDivider()
                     : const SizedBox.shrink();
               },
             ),
-            _SettingsRow(
-              icon: PhosphorIconsRegular.info,
-              title: l10n.version,
-              subtitle: l10n.appVersion,
+            FutureBuilder<PackageInfo>(
+              future: _packageInfo,
+              builder: (context, snapshot) => _SettingsRow(
+                icon: PhosphorIconsRegular.info,
+                title: l10n.version,
+                subtitle: snapshot.hasData
+                    ? '${snapshot.data!.version}+${snapshot.data!.buildNumber}'
+                    : l10n.appVersion,
+              ),
             ),
           ],
         ),

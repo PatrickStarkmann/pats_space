@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pats_space/core/analytics/app_analytics.dart';
+import 'package:pats_space/core/app_links.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
@@ -18,13 +19,6 @@ import 'package:url_launcher/url_launcher.dart';
 final _footerLinkStyle = AppTextStyles.caption.copyWith(
   color: AppColors.grayWarm,
   fontWeight: FontWeight.w700,
-);
-
-final _termsUri = Uri.parse(
-  'https://anpalabs.com/apps/patsspace/terms-of-use/',
-);
-final _privacyUri = Uri.parse(
-  'https://anpalabs.com/apps/patsspace/privacy-policy/',
 );
 
 Future<void> _openLegalPage(Uri uri) async {
@@ -357,13 +351,13 @@ class _PurchaseAreaState extends State<_PurchaseArea> {
             Expanded(
               child: _FooterLink(
                 label: l10n.proTerms,
-                onTap: () => unawaited(_openLegalPage(_termsUri)),
+                onTap: () => unawaited(_openLegalPage(AppLinks.termsOfUse)),
               ),
             ),
             Expanded(
               child: _FooterLink(
                 label: l10n.proPrivacy,
-                onTap: () => unawaited(_openLegalPage(_privacyUri)),
+                onTap: () => unawaited(_openLegalPage(AppLinks.privacyPolicy)),
               ),
             ),
           ],
