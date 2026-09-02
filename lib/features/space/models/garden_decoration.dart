@@ -28,13 +28,13 @@ enum GardenDecoration {
   };
 
   int get cost => switch (this) {
-    GardenDecoration.bench => 180,
-    GardenDecoration.fountain => 260,
-    GardenDecoration.hangingPlantFrame => 240,
-    GardenDecoration.hangingPot => 220,
-    GardenDecoration.lantern => 140,
-    GardenDecoration.stonePath => 90,
-    GardenDecoration.wateringCan => 120,
+    GardenDecoration.bench => 95,
+    GardenDecoration.fountain => 160,
+    GardenDecoration.hangingPlantFrame => 130,
+    GardenDecoration.hangingPot => 120,
+    GardenDecoration.lantern => 40,
+    GardenDecoration.stonePath => 25,
+    GardenDecoration.wateringCan => 60,
   };
 
   String get assetPath => switch (this) {

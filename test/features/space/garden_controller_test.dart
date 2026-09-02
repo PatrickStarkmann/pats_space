@@ -572,7 +572,7 @@ void main() {
       final bought = controller.buyPotStyle(GardenPotStyle.blue);
 
       expect(bought, isTrue);
-      expect(controller.state.coins, 80);
+      expect(controller.state.coins, 165);
       expect(controller.state.ownedPotStyles, contains(GardenPotStyle.blue));
     });
 
@@ -627,7 +627,7 @@ void main() {
 
       expect(bought, isTrue);
       expect(boughtAgain, isFalse);
-      expect(controller.state.coins, 60);
+      expect(controller.state.coins, 160);
       expect(
         controller.state.ownedDecorations,
         contains(GardenDecoration.lantern),

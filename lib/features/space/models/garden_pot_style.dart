@@ -35,13 +35,13 @@ enum GardenPotStyle {
 
   int get cost => switch (this) {
     GardenPotStyle.classic => 0,
-    GardenPotStyle.blue => 120,
-    GardenPotStyle.colorful => 180,
-    GardenPotStyle.hanging => 220,
-    GardenPotStyle.round => 150,
-    GardenPotStyle.white => 160,
-    GardenPotStyle.frog => 240,
-    GardenPotStyle.cloud => 250,
+    GardenPotStyle.blue => 35,
+    GardenPotStyle.colorful => 90,
+    GardenPotStyle.hanging => 100,
+    GardenPotStyle.round => 70,
+    GardenPotStyle.white => 85,
+    GardenPotStyle.frog => 180,
+    GardenPotStyle.cloud => 200,
   };
 
   /// Premium pot styles still cost coins once Pro is active.
