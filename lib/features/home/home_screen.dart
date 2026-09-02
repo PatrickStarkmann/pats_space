@@ -1702,13 +1702,19 @@ class _FocusControls extends StatelessWidget {
         label: AppLocalizations.of(context).focusStart,
         onPressed: onPlayPause,
       );
-      return highlightStart
-          ? _TutorialStartPulse(
-              width: _FocusStartButton.width,
-              height: _FocusStartButton.height,
-              child: button,
-            )
-          : button;
+      // Keep the idle call-to-action visually separated from Pat's scene.
+      // The tutorial and Social Focus share these controls, so this also keeps
+      // their start affordance at the same, slightly lower position.
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: highlightStart
+            ? _TutorialStartPulse(
+                width: _FocusStartButton.width,
+                height: _FocusStartButton.height,
+                child: button,
+              )
+            : button,
+      );
     }
 
     return SingleChildScrollView(
