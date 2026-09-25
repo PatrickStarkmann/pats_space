@@ -490,6 +490,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sessions => 'Sessions';
 
   @override
+  String sessionProgress(int current, int total) {
+    return 'Session $current von $total';
+  }
+
+  @override
   String get longBreakInterval => 'Lange-Pause-Intervall';
 
   @override

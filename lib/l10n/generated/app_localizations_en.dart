@@ -480,6 +480,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessions => 'Sessions';
 
   @override
+  String sessionProgress(int current, int total) {
+    return 'Session $current of $total';
+  }
+
+  @override
   String get longBreakInterval => 'Long Break Interval';
 
   @override

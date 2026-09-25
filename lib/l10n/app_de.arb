@@ -167,6 +167,13 @@
   "pomodoro": "Pomodoro",
   "stopwatch": "Stoppuhr",
   "sessions": "Sessions",
+  "sessionProgress": "Session {current} von {total}",
+  "@sessionProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
   "longBreakInterval": "Lange-Pause-Intervall",
   "shortBreak": "Kurze Pause",
   "longBreak": "Lange Pause",

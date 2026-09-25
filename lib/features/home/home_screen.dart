@@ -40,7 +40,7 @@ import 'package:pats_space/features/pro/widgets/pro_screen.dart';
 import 'package:pats_space/features/space/controllers/garden_controller.dart';
 import 'package:pats_space/features/home/widgets/focus_completion_sheet.dart';
 import 'package:pats_space/features/home/widgets/focus_mode_label.dart';
-import 'package:pats_space/features/home/widgets/focus_session_dots.dart';
+import 'package:pats_space/features/home/widgets/focus_session_phase_label.dart';
 import 'package:pats_space/features/home/widgets/focus_timer_preview.dart';
 import 'package:pats_space/features/home/widgets/group_focus_lobby_sheet.dart';
 import 'package:pats_space/features/home/widgets/group_focus_room_sheet.dart';
@@ -254,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         widget.soundController,
       ]),
       builder: (context, child) {
+        final l10n = AppLocalizations.of(context);
         return LayoutBuilder(
           builder: (context, constraints) {
             final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -358,10 +359,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         onPressed: _settingsAction,
                       ),
                       SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-                      if (!_timerController.isStopwatch)
-                        FocusSessionDots(
-                          states: _timerController.sessionStatuses,
-                        ),
+                      if (_sessionPhaseLabel(l10n) case final label?)
+                        FocusSessionPhaseLabel(label: label),
                       if (groupMode &&
                           _socialFocusController.activeRoom != null) ...[
                         const SizedBox(height: AppSpacing.sm),
@@ -1003,6 +1002,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _backgroundNotificationTimeline(l10n),
       ),
     );
+  }
+
+  String? _sessionPhaseLabel(AppLocalizations l10n) {
+    if (_timerController.isStopwatch) return null;
+
+    switch (_timerController.phase) {
+      case FocusSessionPhase.stopwatch:
+        return null;
+      case FocusSessionPhase.breakTime:
+        return l10n.breakLabel;
+      case FocusSessionPhase.focus:
+      case FocusSessionPhase.idle:
+        final total = _timerController.settings.sessionsPerRound;
+        final current = _timerController.completedSessions >= total
+            ? 1
+            : _timerController.completedSessions + 1;
+        return l10n.sessionProgress(current, total);
+    }
   }
 
   List<TimerNotificationRequest> _backgroundNotificationTimeline(

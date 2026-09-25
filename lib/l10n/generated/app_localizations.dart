@@ -974,6 +974,12 @@ abstract class AppLocalizations {
   /// **'Sessions'**
   String get sessions;
 
+  /// No description provided for @sessionProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Session {current} of {total}'**
+  String sessionProgress(int current, int total);
+
   /// No description provided for @longBreakInterval.
   ///
   /// In en, this message translates to:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pats_space/core/haptics/app_haptics.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 
 class FocusTimerPreview extends StatelessWidget {
@@ -11,10 +12,15 @@ class FocusTimerPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onPressed,
+      onTap: onPressed == null
+          ? null
+          : () {
+              AppHaptics.selection();
+              onPressed!();
+            },
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Text(timeLabel, maxLines: 1, style: AppTextStyles.timer),
+        child: Text(timeLabel, maxLines: 1, style: AppTextStyles.focusTimer),
       ),
     );
   }

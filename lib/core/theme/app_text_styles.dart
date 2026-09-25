@@ -14,6 +14,14 @@ class AppTextStyles {
     letterSpacing: 0,
   );
 
+  static const focusTimer = TextStyle(
+    color: AppColors.charcoal,
+    fontSize: 82,
+    fontWeight: FontWeight.w300,
+    height: 1,
+    letterSpacing: -1.5,
+  );
+
   static const title = TextStyle(
     color: AppColors.charcoal,
     fontSize: 28,
