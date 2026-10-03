@@ -1570,4 +1570,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get focusStart => 'Start';
+
+  @override
+  String get appReviewTitle => 'Gefällt dir Patsspace?';
+
+  @override
+  String get appReviewMessage =>
+      'Eine kurze Bewertung im App Store hilft Patsspace zu wachsen.';
+
+  @override
+  String get appReviewRate => 'Jetzt bewerten';
+
+  @override
+  String get appReviewLater => 'Vielleicht später';
 }

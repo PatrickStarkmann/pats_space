@@ -66,6 +66,7 @@ class AppAssets {
   static const onboardingPatTalking02 =
       'assets/images/onboarding/pat_talking/talking_2.png';
   static const googleLogo = 'assets/images/ui/google.png';
+  static const appIcon = 'assets/images/app_icon/app_icon.png';
   static const introCharacterPeek01 =
       'assets/images/ui/intro_character_peek_1.png';
   static const introCharacterPeek02 =

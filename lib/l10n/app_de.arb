@@ -560,5 +560,9 @@
   "@proRenewsOn": {"placeholders": {"date": {}}},
   "proEndsOn": "Endet am {date}",
   "@proEndsOn": {"placeholders": {"date": {}}},
-  "focusStart": "Start"
+  "focusStart": "Start",
+  "appReviewTitle": "Gefällt dir Patsspace?",
+  "appReviewMessage": "Eine kurze Bewertung im App Store hilft Patsspace zu wachsen.",
+  "appReviewRate": "Jetzt bewerten",
+  "appReviewLater": "Vielleicht später"
 }

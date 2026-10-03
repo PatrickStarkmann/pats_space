@@ -8,10 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/assets/app_assets.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
+import 'package:pats_space/core/services/app_rating_service.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
 import 'package:pats_space/core/widgets/app_icon_button.dart';
+import 'package:pats_space/core/widgets/app_review_prompt_dialog.dart';
 import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
 import 'package:pats_space/features/ads/services/ads_config.dart';
 import 'package:pats_space/features/ads/widgets/rewarded_water_sheet.dart';
@@ -103,6 +105,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  final _appRatingService = AppRatingService();
   static const _focusLifecycleChannel = MethodChannel(
     'pats_space/focus_lifecycle',
   );
@@ -1235,6 +1238,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       widget.historyController.addRecord(
         record.copyWith(waterReward: waterReward),
       );
+      unawaited(_maybePromptForFocusReview());
       if (!widget.gardenOnline) {
         unawaited(
           widget.pendingRewardRepository.addSessionReward(
@@ -1259,6 +1263,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     _pendingRewardDuration += record.focusDuration;
     _pendingWaterReward += waterReward;
+  }
+
+  Future<void> _maybePromptForFocusReview() async {
+    final showCustomPrompt = await _appRatingService
+        .shouldShowCustomPromptAfterFocusSession();
+    if (!mounted) {
+      return;
+    }
+
+    await _appRatingService.maybeRequestNativeReviewAfterFocusSession(
+      suppressPrompt: showCustomPrompt,
+    );
+    if (!mounted || !showCustomPrompt) {
+      return;
+    }
+
+    await showPatsspaceReviewPrompt(context, ratingService: _appRatingService);
   }
 
   Future<void> _handleAmbientSoundTap() async {

@@ -28,6 +28,7 @@ dependencies:
   purchases_flutter: ^9.15.1
   url_launcher: ^6.3.2
   package_info_plus: ^9.0.0
+  in_app_review: ^2.0.12
   timezone: ^0.11.1
 
 dev_dependencies:
@@ -70,6 +71,7 @@ flutter:
     - assets/audio/ambience/
     - assets/audio/alerts/
     - assets/images/
+    - assets/images/app_icon/app_icon.png
     - assets/images/focus_pairs/pair_01/
     - assets/images/focus_pairs/pair_02/
     - assets/images/focus_pairs/pair_03/

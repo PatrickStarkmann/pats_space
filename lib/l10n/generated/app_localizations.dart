@@ -2911,6 +2911,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start'**
   String get focusStart;
+
+  /// No description provided for @appReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enjoying Patsspace?'**
+  String get appReviewTitle;
+
+  /// No description provided for @appReviewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A short App Store review helps Patsspace grow.'**
+  String get appReviewMessage;
+
+  /// No description provided for @appReviewRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate now'**
+  String get appReviewRate;
+
+  /// No description provided for @appReviewLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get appReviewLater;
 }
 
 class _AppLocalizationsDelegate

@@ -5,10 +5,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pats_space/core/analytics/app_analytics.dart';
 import 'package:pats_space/core/haptics/app_haptics.dart';
+import 'package:pats_space/core/services/app_rating_service.dart';
 import 'package:pats_space/core/theme/app_colors.dart';
 import 'package:pats_space/core/theme/app_radii.dart';
 import 'package:pats_space/core/theme/app_spacing.dart';
 import 'package:pats_space/core/theme/app_text_styles.dart';
+import 'package:pats_space/core/widgets/app_review_prompt_dialog.dart';
 import 'package:pats_space/features/ads/controllers/rewarded_water_controller.dart';
 import 'package:pats_space/features/ads/services/ads_config.dart';
 import 'package:pats_space/features/ads/widgets/rewarded_water_sheet.dart';
@@ -58,9 +60,12 @@ class _SpaceScreenState extends State<SpaceScreen> {
   final List<_PlantUnlockReveal> _plantUnlockReveals = [];
   late Set<GardenPlantType> _knownUnlockedPlantTypes;
   late bool _knownMeadowUnlocked;
+  late int _knownTotalBlooms;
+  final _appRatingService = AppRatingService();
   int _nextCoinFlightId = 0;
   int _nextPlantUnlockRevealId = 0;
   bool _showMeadowUnlockReveal = false;
+  int? _pendingBloomReviewTotal;
   bool _arrangingDecorations = false;
   GardenDecoration? _selectedDecoration;
   int? _selectedArrangedPotIndex;
@@ -74,6 +79,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
       ...widget.gardenController.state.unlockedPlantTypes,
     };
     _knownMeadowUnlocked = widget.gardenController.state.meadowUnlocked;
+    _knownTotalBlooms = widget.gardenController.state.totalBlooms;
     widget.gardenController.addListener(_handleGardenChanged);
   }
 
@@ -89,6 +95,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
       ...widget.gardenController.state.unlockedPlantTypes,
     };
     _knownMeadowUnlocked = widget.gardenController.state.meadowUnlocked;
+    _knownTotalBlooms = widget.gardenController.state.totalBlooms;
     widget.gardenController.addListener(_handleGardenChanged);
   }
 
@@ -161,6 +168,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
 
     final unlockedPlantTypes = widget.gardenController.state.unlockedPlantTypes;
     final meadowUnlocked = widget.gardenController.state.meadowUnlocked;
+    final totalBlooms = widget.gardenController.state.totalBlooms;
     final newlyUnlocked = GardenPlantType.plantable
         .where(
           (plantType) =>
@@ -172,6 +180,17 @@ class _SpaceScreenState extends State<SpaceScreen> {
     _knownUnlockedPlantTypes = {...unlockedPlantTypes};
     final meadowJustUnlocked = meadowUnlocked && !_knownMeadowUnlocked;
     _knownMeadowUnlocked = meadowUnlocked;
+    final bloomCompleted = totalBlooms > _knownTotalBlooms;
+    _knownTotalBlooms = totalBlooms;
+
+    final hasUnlockReveal = newlyUnlocked.isNotEmpty || meadowJustUnlocked;
+    if (bloomCompleted && !widget.tutorialActive) {
+      if (hasUnlockReveal) {
+        _pendingBloomReviewTotal = totalBlooms;
+      } else {
+        unawaited(_maybePromptForBloomReview(totalBlooms));
+      }
+    }
 
     if ((newlyUnlocked.isEmpty && !meadowJustUnlocked) || !mounted) {
       return;
@@ -208,6 +227,24 @@ class _SpaceScreenState extends State<SpaceScreen> {
         }
       });
     });
+  }
+
+  Future<void> _maybePromptForBloomReview(int totalBlooms) async {
+    final showCustomPrompt = await _appRatingService
+        .shouldShowCustomPromptAfterBloom(totalBlooms);
+    if (!mounted) {
+      return;
+    }
+
+    await _appRatingService.maybeRequestNativeReviewAfterBloom(
+      totalBlooms,
+      suppressPrompt: showCustomPrompt,
+    );
+    if (!mounted || !showCustomPrompt) {
+      return;
+    }
+
+    await showPatsspaceReviewPrompt(context, ratingService: _appRatingService);
   }
 
   void _runGardenAction(VoidCallback action) {
@@ -286,6 +323,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
     setState(() {
       _plantUnlockReveals.removeWhere((reveal) => reveal.id == id);
     });
+    _showPendingBloomReviewIfPossible();
   }
 
   void _dismissMeadowUnlockReveal({bool openMeadow = false}) {
@@ -293,9 +331,22 @@ class _SpaceScreenState extends State<SpaceScreen> {
       return;
     }
     setState(() => _showMeadowUnlockReveal = false);
+    _showPendingBloomReviewIfPossible();
     if (openMeadow) {
       _selectArea(GardenArea.second);
     }
+  }
+
+  void _showPendingBloomReviewIfPossible() {
+    final totalBlooms = _pendingBloomReviewTotal;
+    if (totalBlooms == null ||
+        _plantUnlockReveals.isNotEmpty ||
+        _showMeadowUnlockReveal ||
+        !mounted) {
+      return;
+    }
+    _pendingBloomReviewTotal = null;
+    unawaited(_maybePromptForBloomReview(totalBlooms));
   }
 
   Future<void> _confirmCleanUpGarden() async {
