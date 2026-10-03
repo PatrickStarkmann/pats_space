@@ -71,6 +71,51 @@ void main() {
       expect(controller.remainingSeconds, 18);
     });
 
+    test('creates a partial record for an interrupted focus period', () {
+      var now = DateTime(2026, 9, 30, 10);
+      var reportedDuration = Duration.zero;
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings,
+        clock: () => now,
+        onFocusTimeEnded: (duration) => reportedDuration = duration,
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      now = now.add(const Duration(minutes: 5));
+      controller.resumeFromBackground();
+
+      final record = controller.partialFocusRecord;
+
+      expect(record, isNotNull);
+      expect(record!.focusDuration, const Duration(minutes: 5));
+      expect(record.mode, FocusMode.pomodoro);
+
+      controller.cancelFocusRound(reportUnfinishedFocusTime: false);
+      expect(reportedDuration, Duration.zero);
+    });
+
+    test('creates a partial record for an interrupted stopwatch period', () {
+      var now = DateTime(2026, 9, 30, 10);
+      final controller = FocusTimerController(
+        initialSettings: FocusTimerController.defaultSettings.copyWith(
+          mode: FocusMode.stopwatch,
+        ),
+        clock: () => now,
+      );
+      addTearDown(controller.dispose);
+
+      controller.toggle();
+      now = now.add(const Duration(minutes: 5));
+      controller.resumeFromBackground();
+
+      final record = controller.partialFocusRecord;
+
+      expect(record, isNotNull);
+      expect(record!.focusDuration, const Duration(minutes: 5));
+      expect(record.mode, FocusMode.stopwatch);
+    });
+
     testWidgets('uses the optional 30-second focus duration', (tester) async {
       final controller = FocusTimerController(
         initialSettings: FocusTimerController.defaultSettings.copyWith(

@@ -192,9 +192,45 @@ class FocusTimerController extends ChangeNotifier {
     }
   }
 
-  void cancelFocusRound() {
+  /// Returns the currently running focus period as a partial record.
+  ///
+  /// Call this before cancelling a round when elapsed focus time should still
+  /// count towards a user's history.
+  FocusSessionRecord? get partialFocusRecord {
+    final mode = switch (_phase) {
+      FocusSessionPhase.focus => FocusMode.pomodoro,
+      FocusSessionPhase.stopwatch => FocusMode.stopwatch,
+      FocusSessionPhase.idle || FocusSessionPhase.breakTime => null,
+    };
+    if (mode == null) {
+      return null;
+    }
+
+    final duration = elapsedFocusDuration;
+    if (duration <= Duration.zero) {
+      return null;
+    }
+
+    final completedAt = _clock();
+    final startedAt = _focusStartedAt ?? completedAt.subtract(duration);
+    return FocusSessionRecord(
+      id: completedAt.microsecondsSinceEpoch.toString(),
+      tag: FocusTag(
+        name: _settings.focusLabel,
+        accentColor: _settings.accentColor,
+        badgeIcon: _settings.badgeIcon,
+      ),
+      mode: mode,
+      focusDuration: duration,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      animationPair: activeAnimationPair,
+    );
+  }
+
+  void cancelFocusRound({bool reportUnfinishedFocusTime = true}) {
     _completedSessions = 0;
-    resetToIdle();
+    resetToIdle(reportUnfinishedFocusTime: reportUnfinishedFocusTime);
   }
 
   void acknowledgeRoundCompletion() {
@@ -247,8 +283,10 @@ class FocusTimerController extends ChangeNotifier {
     }
   }
 
-  void resetToIdle() {
-    _reportUnfinishedFocusTime();
+  void resetToIdle({bool reportUnfinishedFocusTime = true}) {
+    if (reportUnfinishedFocusTime) {
+      _reportUnfinishedFocusTime();
+    }
     _resetToIdleWithoutNotify();
     notifyListeners();
   }

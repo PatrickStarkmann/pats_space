@@ -749,7 +749,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
 
-      _completeActiveRoundAsAborted();
+      await _completeActiveRoundAsAborted();
     }
 
     _timerController.updateSettings(updated);
@@ -806,15 +806,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
 
     if (result ?? false) {
-      _completeActiveRoundAsAborted();
+      await _completeActiveRoundAsAborted();
     }
   }
 
-  void _completeActiveRoundAsAborted() {
-    final focusDuration = _timerController.elapsedFocusDuration;
-    final waterReward =
-        _pendingWaterReward +
-        FocusRewardCalculator.waterForPartialFocus(focusDuration);
+  Future<void> _completeActiveRoundAsAborted() async {
+    final partialRecord = _timerController.partialFocusRecord;
+    final focusDuration = partialRecord?.focusDuration ?? Duration.zero;
+    final partialWaterReward = FocusRewardCalculator.waterForPartialFocus(
+      focusDuration,
+    );
+    final waterReward = _pendingWaterReward + partialWaterReward;
     final rewardDuration = _pendingRewardDuration + focusDuration;
 
     unawaited(
@@ -824,7 +826,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         groupFocus: _socialFocusController.hasActiveRoom,
       ),
     );
-    _timerController.cancelFocusRound();
+    // Store qualifying partial focus time before the timer is reset. This is
+    // the canonical source for both Stats and the weekly friends leaderboard.
+    if (partialRecord != null &&
+        partialWaterReward > 0 &&
+        widget.onTutorialFocusCompleted == null) {
+      final record = partialRecord.copyWith(waterReward: partialWaterReward);
+      widget.historyController.addRecord(record);
+      await widget.historyController.persist();
+      await widget.leaderboardController.addFocusTime(focusDuration);
+    }
+
+    // The leaderboard update above is deliberately awaited. Do not send the
+    // same partial duration through the controller callback a second time.
+    _timerController.cancelFocusRound(reportUnfinishedFocusTime: false);
     if (waterReward > 0) {
       _applyOrStoreWaterReward(waterReward, storeOffline: true);
     }
